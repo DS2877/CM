@@ -561,6 +561,29 @@ local function buildHills(world: Folder, rng: Random)
 	end
 end
 
+-- Is a point inside (or right next to) a farm, its barn, the plaza or a path? Decor stays out.
+local FARM_KEEP_OUT = (3 * (World.PlotSize + World.PlotGap) + World.FarmPadding) * 1.5 + 6
+local function blocked(pos: Vector3): boolean
+	local flat = Vector3.new(pos.X, 0, pos.Z)
+	if flat.Magnitude < 40 then
+		return true -- plaza
+	end
+	for i = 0, World.FarmCount - 1 do
+		local a = i * (2 * math.pi / World.FarmCount)
+		local dir = Vector3.new(math.sin(a), 0, math.cos(a))
+		local center = dir * World.FarmRingRadius
+		if (flat - center).Magnitude < FARM_KEEP_OUT then
+			return true
+		end
+		-- the path from the plaza to this farm
+		local along = flat:Dot(dir)
+		if along > 0 and along < World.FarmRingRadius and (flat - dir * along).Magnitude < 9 then
+			return true
+		end
+	end
+	return false
+end
+
 local function buildDecor(world: Folder)
 	local decor = folder("Decor", world)
 	local rng = Random.new(World.Seed)
@@ -570,9 +593,11 @@ local function buildDecor(world: Folder)
 	-- Trees between farms
 	for i = 0, World.FarmCount - 1 do
 		local a = (i + 0.5) * angleStep
-		for _, r in { 88, 118 } do
+		for _, r in { 95, 160, 215 } do
 			local pos = Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
-			buildTree(decor, pos, 0.9 + rng:NextNumber() * 0.4, rng)
+			if not blocked(pos) then
+				buildTree(decor, pos, 0.9 + rng:NextNumber() * 0.4, rng)
+			end
 		end
 	end
 
@@ -582,9 +607,9 @@ local function buildDecor(world: Folder)
 	while placed < World.TreeCount and attempts < 1000 do
 		attempts += 1
 		local a = rng:NextNumber() * 2 * math.pi
-		local r = 165 + rng:NextNumber() * 140
+		local r = 60 + rng:NextNumber() * 255
 		local pos = Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
-		if math.abs(pos.X) < 315 and math.abs(pos.Z) < 315 then
+		if math.abs(pos.X) < 315 and math.abs(pos.Z) < 315 and not blocked(pos) then
 			buildTree(decor, pos, 0.9 + rng:NextNumber() * 0.8, rng)
 			placed += 1
 		end
@@ -594,10 +619,8 @@ local function buildDecor(world: Folder)
 	for _ = 1, 90 do
 		local a = rng:NextNumber() * 2 * math.pi
 		local r = 36 + rng:NextNumber() * 270
-		local angleToFarm = (a % angleStep) / angleStep
-		local onFarm = r > 62 and r < 138 and (angleToFarm < 0.32 or angleToFarm > 0.68)
-		if not onFarm then
-			local center = Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
+		local center = Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
+		if not blocked(center) then
 			local color = COLORS.flowers[rng:NextInteger(1, #COLORS.flowers)]
 			for _ = 1, 3 do
 				local offset = Vector3.new(rng:NextNumber() * 3 - 1.5, 0, rng:NextNumber() * 3 - 1.5)
@@ -619,9 +642,7 @@ local function buildDecor(world: Folder)
 		local a = rng:NextNumber() * 2 * math.pi
 		local r = 40 + rng:NextNumber() * 250
 		local pos = Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
-		local angleToFarm = (a % angleStep) / angleStep
-		local nearFarm = r > 65 and r < 135 and (angleToFarm < 0.3 or angleToFarm > 0.7)
-		if not nearFarm and r > 40 then
+		if not blocked(pos) then
 			local s = 1.5 + rng:NextNumber() * 2.5
 			part({
 				Name = "Rock",
@@ -643,7 +664,7 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 	local center = CFrame.lookAt(centerPos, Vector3.zero)
 
 	local cell = World.PlotSize + World.PlotGap
-	local half = 2 * cell - World.PlotGap / 2 + World.FarmPadding
+	local half = 3 * cell - World.PlotGap / 2 + World.FarmPadding
 
 	local model = Instance.new("Model")
 	model.Name = "Farm_" .. id

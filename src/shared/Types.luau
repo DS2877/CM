@@ -48,22 +48,6 @@ export type DexState = {
 	stamps: { [string]: boolean }, -- "type|mutation"
 }
 
-export type RevealedCarrot = {
-	type: string,
-	size: string,
-	mutations: { string },
-	rarity: string,
-	value: number,
-	isNewType: boolean,
-}
-
-export type OfflineResult = {
-	seconds: number,
-	carrots: { RevealedCarrot }, -- sorted by value, best last
-	total: number,
-	soldTotal: number, -- part that went straight to cash because the basket was full
-}
-
 export type Notice = {
 	text: string,
 	kind: string?, -- "info" | "good" | "bad"

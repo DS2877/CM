@@ -32,13 +32,20 @@ return function()
 	-- First purchase reachable quickly: starting cash + four smallest carrots >= first cost.
 	assert(Economy.StartingCash + 4 * 8 >= Progression.cost(growth, 0), "first upgrade within ~4 harvests")
 
-	-- Farm Size: explicit costs and plot counts, 4 -> 6 -> 9 -> 12 -> 16
+	-- Farm Size: explicit costs and plot counts, 4 -> 6 -> 9 -> 12 -> 16 -> 20 -> 25 -> 30 -> 36
 	local farm = track("FarmSize")
-	assert(Progression.maxLevel(farm) == 4, "farm size has 4 levels")
+	local top = Progression.maxLevel(farm)
+	assert(top == 8, "farm size has 8 levels")
 	assert(Progression.plots(farm, 0, Economy.StartingPlots) == 4, "4 plots at start")
-	assert(Progression.plots(farm, 4, Economy.StartingPlots) == Economy.MaxPlots, "16 plots at max")
-	assert(Progression.isMaxed(farm, 4) and not Progression.isMaxed(farm, 3), "farm size max")
-	assert(Progression.cost(farm, 4) == math.huge, "no cost past max")
+	assert(Progression.plots(farm, top, Economy.StartingPlots) == Economy.MaxPlots, "36 plots at max")
+	assert(Progression.isMaxed(farm, top) and not Progression.isMaxed(farm, top - 1), "farm size max")
+	assert(Progression.cost(farm, top) == math.huge, "no cost past max")
+	-- Every level's plot count has a cell in the world, and costs only go up
+	local World = require("../src/shared/Config/World")
+	assert(#World.PlotCells >= Economy.MaxPlots, "a world cell for every plot")
+	for l = 1, top - 1 do
+		assert(Progression.cost(farm, l) > Progression.cost(farm, l - 1), "farm costs rise")
+	end
 
 	-- Luck/Value/Harvest Power effects
 	assert(Progression.multiplier(track("Luck"), 0) == 1, "no luck at level 0")

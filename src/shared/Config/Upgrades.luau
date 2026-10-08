@@ -68,10 +68,12 @@ local Upgrades: { UpgradeDef } = {
 		enabled = true,
 		baseCost = 0,
 		costGrowth = 1,
-		maxLevel = 4,
+		maxLevel = 8,
 		perLevel = 0,
-		costs = { 1500, 20000, 200000, 1500000 },
-		levels = { 6, 9, 12, 16 },
+		-- 4 -> 36 plots. The first four steps are the early game; the last four make the farm HUGE
+		-- (a long-term goal you can see from across the map).
+		costs = { 1500, 20000, 200000, 1500000, 6000000, 40000000, 250000000, 1500000000 },
+		levels = { 6, 9, 12, 16, 20, 25, 30, 36 },
 		emoji = "🌱",
 		color = { 255, 140, 60 },
 	},

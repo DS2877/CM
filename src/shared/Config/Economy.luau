@@ -29,16 +29,37 @@ local Economy = {
 		0.8,
 		1.35,
 		1.0,
+		1.2,
+		0.9,
+		1.45,
+		1.05,
+		0.85,
+		1.3,
+		1.1,
+		1.4,
+		0.95,
+		1.25,
+		1.0,
+		1.5,
+		0.9,
+		1.15,
+		1.35,
+		0.8,
+		1.2,
+		1.05,
+		1.45,
+		0.95,
 	},
 	GrowJitter = 0.08, -- +/- random fraction added per planting
 	HarvestTolerance = 0.25, -- seconds of latency forgiveness when harvesting
 
-	-- Harvesting immediately replants a Basic seed so a plot is never idle.
-	AutoReplant = true,
+	-- Planting is the player's move (and a seed choice), so harvesting leaves the plot empty.
+	-- The Auto Harvest game pass harvests AND replants while you're in the game.
+	AutoReplant = false,
 
 	-- Farm
 	StartingPlots = 4,
-	MaxPlots = 16,
+	MaxPlots = 36,
 
 	-- Basket (harvested carrots waiting to be sold). If full, harvests auto-sell at base price.
 	-- Starting capacity; the Basket Size upgrade raises it (Config/Upgrades).
@@ -48,20 +69,8 @@ local Economy = {
 	PityLegendary = 250,
 	PityRarity = "Legendary",
 
-	-- Offline growth: only plots that were growing when you left keep going (empty plots make
-	-- nothing). The carrot already in the ground finishes as rolled; after that each plot replants
-	-- Basic seeds at OfflineRate of online speed, into a capped basket revealed on login.
-	-- Away less than OfflineMinSeconds: plots come back as they were (finished ones ready to tap),
-	-- no reveal. OfflineRate < 1 so leaving and rejoining never beats playing.
-	OfflineCapSeconds = 8 * 3600,
-	OfflineMaxCarrots = 100,
-	OfflineMinSeconds = 5 * 60,
-	OfflineRate = 0.25,
-	-- A plot never makes an offline carrot faster than this, whatever its upgrades
-	OfflineMinCycle = 240,
-	-- Extra offline carrots per hour away (all plots), so 10 min ~ 6 carrots, 1 h ~ 30,
-	-- the 100 cap after ~3 h. A short break is a treat; a night away fills the basket.
-	OfflinePerHour = 30,
+	-- Offline: the carrots you planted keep growing while you're away (Server/Offline). No extra
+	-- carrots, nothing harvested for you; no settings needed.
 
 	-- Global cap for combined boost multipliers in the value formula.
 	BoostCap = 6,

@@ -99,11 +99,11 @@ ID:na läggs i `src/shared/Config/Products.luau` (`passId`, `productId`, `giftPr
 | Del | Status | Hur det testas |
 |---|---|---|
 | Alla 5 uppgraderingsspår | Klar | UPGRADES-rutan: Growth Speed, Luck, Value, Farm Size, Harvest Power. Varje rad visar nivå, "nu → nästa" och pris. Målbaren pekar alltid på billigaste köpet. |
-| Plots 4 → 6 → 9 → 12 → 16 | Klar | Farm Size-spåret öppnar nya plots direkt (växande morötter behålls). Nya plots säger "TAP TO PLANT". |
+| Plots 4 → 36 | Klar (utökad 8 okt) | Farm Size i 8 steg: 6, 9, 12, 16, 20, 25, 30, 36 plots (6×6). Farmen växer utåt från mitten. Simulering: 16 plots efter ~3 h, därefter långsiktigt mål (prestige tar över). Farmerna ligger nu på radie 150 så att 6×6-farmer får plats med luft emellan. |
 | Frön | Klar | SEEDS-rutan: Rare ($250, aldrig Common, 3× tur), Golden ($2,000, alltid Golden ×3), Mystery ($700, blir Rare 60 % / Golden 37 % / Secret 3 % – oddsen visas), Secret (bara från CarrotDex-belöningar, alltid Legendary+). Köp ×1/×10, USE väljer frö. Priser skalar med Value-uppgraderingen. Bara cash, aldrig Robux. Valt frö används för varje plantering (även auto-omplantering) tills det tar slut. |
 | CarrotDex, två lager | Klar | INDEX-rutan: 24 morotstyper (4 Common, 4 Uncommon, 4 Rare, 4 Epic, 3 Legendary, 3 Mythic, 2 Secret) i 3D. Ej hittade visas som siluett med "???", odds "1 in X" syns alltid. Lager 2: tre mutationsprickar per typ (72 stämplar). Röd "!" på Index när du hittat något nytt. Milstolpar ger frön automatiskt (4 hittade → 5 Rare, 8 → 3 Golden, 12 → 5 Mystery, 16/20/24 → Secret; stämplar 5/15/30/50/72). |
 | Synlig pity-mätare | Klar | 👑-baren uppe till vänster: "Legendary in 123" – garanterad Legendary inom 250 planteringar. |
-| Offline-tillväxt + korg | Klar (fixad igen 8 okt) | Det som växer när du går sparas med sin redan slumpade morot. Tomma plots ger ingenting. Under 5 min borta: plots kommer tillbaka som de var. Längre: sparade morötter blir klara, sedan en långsam extra-ström: max 1 morot per plot var 4:e minut och max 30 extra per timme borta (oberoende av uppgraderingar). Ungefär: 10 min ≈ 10 morötter, 1 h ≈ 35, natt = tak 100 (Big Basket 300). Test: plantera, lämna 10 min, kom tillbaka – ett litet avslöjande, inte en full korg. |
+| Offline | Klar (slutlig regel 8 okt) | Det du planterat fortsätter växa medan du är borta, inget mer. När du kommer tillbaka står samma morötter i sina plots, färdiga är redo att skörda, och du skördar själv. Aldrig fler morötter än du planterade, tomma plots förblir tomma. "Welcome back! 4 carrots are ready to harvest". Test: plantera, lämna 2 min, kom tillbaka – morötterna står klara i plots. |
 | tools/simulate.luau | Klar | `lune run tools/simulate` → `tools/simulation-report.md`. 24 körningar × 4 h. |
 
 ### Simulering (sammanfattning, se tools/simulation-report.md)
@@ -166,6 +166,12 @@ Första Legendary ~6 min, första Mythic ~19 min, Secret i ~40 % av körningarna
 Bra att veta vid test: du kan trycka på dina plots (eller etiketten ovanför) så länge de syns på skärmen. SELL och UPGRADES funkar överallt.
 
 ## Beslut tagna under bygget (regel 10)
+
+Plantering, offline, stora farmer och HD-morötter 8 okt:
+- **Ingen auto-omplantering.** Skörd lämnar ploten tom och du trycker för att plantera, så valt frö spelar roll på varje plot. Auto Harvest-passet skördar och planterar om (bara när du är i spelet), vilket gör passet värt något.
+- **Offline: "du kan inte skörda mer än du planterade".** Det sparade växer klart i realtid och står redo i plots när du kommer tillbaka. Ingen popup, inga extra morötter, ingen korg fylls. All gammal offline-belöningskod (avslöjandet, takt, tak, Big Basket-offline) är borttagen. Big Basket = 3× korg.
+- **Farm Size till 36 plots** (8 steg, sista 1,5 miljarder).
+- **HD-morötter:** 11 segment med organisk avsmalning, skuggning från axel till spets, tillväxtringar, solgrön axel, rotsvans och rothår, stjälkhals med böjda fjäderblad i två gröna. Full detalj på din farm, i skördeeffekter och Index; lättare version på andras farmer (prestanda med 8 × 36 plots på mobil).
 
 Sälja och uppgraderingsbaren 8 okt:
 - **SELL-knappen stannar.** På mobil skulle en promenad per korg döda 30-sekundersloopen. Marknaden ska vara en belöning, inte en tull: sälj var som helst = baspris, vid marknaden alltid +20 % (`Events.MarketBonus`), plus boom-multiplikatorn under boom. SELL-rutan visar "MARKET PRICE!" när du står där. Tidigare gav marknaden bara något under boom, så den var meningslös 7 av 10 minuter.

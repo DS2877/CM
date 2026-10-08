@@ -47,7 +47,7 @@
 | Growth Speed | 22 | 25 |
 | Luck | 18 | 40 |
 | Value | 23 | 100 |
-| Farm Size | 4 | 4 |
+| Farm Size | 4 | 8 |
 | Harvest Power | 18 | 40 |
 | Basket Size | 4 | 5 |
 
@@ -57,4 +57,8 @@
 - 9 plots: 17:39 (24/24 runs)
 - 12 plots: 57:20 (24/24 runs)
 - 16 plots: 2:55:36 (23/24 runs)
+- 20 plots: not reached (0/24 runs)
+- 25 plots: not reached (0/24 runs)
+- 30 plots: not reached (0/24 runs)
+- 36 plots: not reached (0/24 runs)
 

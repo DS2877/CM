@@ -299,7 +299,9 @@ local function harvest(player: Player, plot: PlotRuntime)
 	Announce.harvest(player, carrot, value)
 
 	clearPlot(plot)
-	if EconomyConfig.AutoReplant then
+	-- Planting is the player's move. The Auto Harvest pass is the convenience upgrade: it harvests
+	-- and replants (with the selected seed) while you're in the game.
+	if EconomyConfig.AutoReplant or Perks.hasPass(player, "AutoHarvest") then
 		plant(player, plot)
 	end
 end

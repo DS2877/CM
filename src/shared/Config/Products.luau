@@ -52,8 +52,6 @@ local Products = {
 	GrowthPassMult = 2, -- 2x Growth: grow time / 2
 	GrowthPassMinTime = 1.5, -- absolute floor with the pass
 	BigBasketMult = 3, -- Big Basket: 3x basket capacity
-	BigBasketOfflineSeconds = 16 * 3600, -- and a longer offline cap
-	BigBasketOfflineCarrots = 300,
 	VipDaily = { seed = "Golden", amount = 3 }, -- Market VIP daily bonus
 
 	-- Contextual offers
@@ -73,7 +71,7 @@ local Products = {
 		{
 			id = "AutoHarvest",
 			name = "Auto Harvest",
-			description = "Ready carrots harvest themselves while you play",
+			description = "Ready carrots harvest and replant themselves while you play",
 			price = 349,
 			passId = 0,
 			giftProductId = 0,
@@ -93,7 +91,7 @@ local Products = {
 		{
 			id = "BigBasket",
 			name = "Big Basket",
-			description = "3x basket size and a longer offline harvest",
+			description = "3x basket size",
 			price = 299,
 			passId = 0,
 			giftProductId = 0,

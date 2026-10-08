@@ -51,7 +51,6 @@ local Assets = {
 		Bell = "rbxassetid://9125935023", -- Shop Door Bell Ceramic Mug Cowbell Hits Ring (SFX)
 		BoomEnd = "rbxassetid://1841186475", -- Goodnight Mr Uke (APM / KPM, 5 s)
 		Announce = "rbxassetid://1841390412", -- Bouncy Bouncy Sting 1 (APM, 6 s)
-		RevealTick = "",
 	},
 	-- Music playlists per state (Controllers/Music). Tracks play in order, then wrap.
 	Music = {

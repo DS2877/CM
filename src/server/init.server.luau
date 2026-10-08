@@ -71,17 +71,8 @@ local function onPlayerAdded(player: Player)
 	Dex.onPlayerReady(player)
 	Farm.onPlayerReady(player)
 	player:SetAttribute("Loaded", true)
-	-- Put back what was in the ground once game passes are known (Big Basket / 2x Growth change
-	-- the offline result). The reveal remote is queued until the client's controller connects.
-	task.spawn(function()
-		local waited = 0
-		while player.Parent and player:GetAttribute("PassesLoaded") ~= true and waited < 8 do
-			waited += task.wait(0.1)
-		end
-		if player.Parent then
-			Offline.restore(player)
-		end
-	end)
+	-- Put back what the player left growing in the ground
+	Offline.restore(player)
 end
 
 local function onPlayerRemoving(player: Player)

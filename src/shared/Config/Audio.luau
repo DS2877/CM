@@ -99,9 +99,6 @@ local Audio = {
 		Bell = { group = "SFX", volume = 0.7, pitch = { 1, 1 }, duck = 3 },
 		BoomEnd = { group = "SFX", volume = 0.45, pitch = { 1, 1 }, duck = 4.5 },
 		Announce = { group = "SFX", volume = 0.35, pitch = { 1, 1 }, cooldown = 6, duck = 5 },
-
-		-- Offline reveal: the harvest plop on a rising ladder
-		RevealTick = { group = "SFX", volume = 0.45, pitch = { 1, 1 }, fallback = "Harvest" },
 	} :: { [string]: Cue },
 }
 

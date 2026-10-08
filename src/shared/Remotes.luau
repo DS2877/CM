@@ -24,7 +24,6 @@ Remotes.Names = {
 	Announce = "Announce", -- (Types.Announcement)
 	Notice = "Notice", -- (Types.Notice)
 	DexSync = "DexSync", -- (Types.DexState)
-	OfflineReveal = "OfflineReveal", -- (Types.OfflineResult)
 	Watered = "Watered", -- (farmId: number, byName: string)
 	Offer = "Offer", -- (productId: string) show a contextual offer once
 }

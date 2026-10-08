@@ -3,6 +3,12 @@
 -- "Root" at the carrot's shoulder (top of the orange body); the body hangs below it and the
 -- leaves point up. Everything else is welded to Root, so moving Root moves the whole carrot.
 -- If Config/Assets.Meshes.Carrot is set later, this is the place to swap in the mesh.
+--
+-- HD anatomy (detail "high"): an organic taper over many segments (full shoulder, accelerating
+-- taper), shading from a lighter shoulder to a deeper tip, growth rings, a sun-greened shoulder
+-- cap, a thin root tail with root hairs, and a neck with arched feathery fronds in two greens.
+-- Detail "low" (other players' farms) keeps the silhouette with a fraction of the parts, so
+-- eight farms of ready carrots stay smooth on phones.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -14,7 +20,20 @@ local CarrotModel = {}
 
 local LENGTH = 2.4
 local RADIUS = 0.6
-local SEGMENTS = 5
+
+export type Detail = "high" | "low"
+
+local DETAIL = {
+	high = { segments = 11, rings = 4, hairs = 3, fronds = 5, leaflets = 3 },
+	low = { segments = 5, rings = 0, hairs = 0, fronds = 3, leaflets = 1 },
+}
+
+-- Radius along the body, t = 0 at the shoulder, 1 at the tip. A rounded shoulder, then a taper
+-- that accelerates toward a fine point (a real carrot, not a cone).
+local function profile(t: number): number
+	local shoulder = if t < 0.08 then 0.9 + (t / 0.08) * 0.1 else 1
+	return shoulder * (1 - 0.9 * t ^ 1.35)
+end
 
 local SPARKLE = "rbxasset://textures/particles/sparkles_main.dds"
 
@@ -102,26 +121,57 @@ local function segment(
 	return p
 end
 
+-- Carrot greens: a short neck, then arched stems with feathery leaflets in two greens.
 local function leaves(
 	model: Model,
 	root: BasePart,
 	color: Color3,
 	count: number,
 	size: number,
-	material: Enum.Material
+	material: Enum.Material,
+	leaflets: number?
 )
+	local per = leaflets or 2
+	local light = color:Lerp(Color3.fromRGB(190, 240, 120), 0.3)
+	local neck = newPart(model, root, {
+		Name = "Leaf",
+		Shape = Enum.PartType.Cylinder,
+		Color = color:Lerp(Color3.new(0, 0, 0), 0.15),
+		Material = material,
+		Size = Vector3.new(0.35 * size, 0.32 * size, 0.32 * size),
+	})
+	neck.CFrame = root.CFrame * CFrame.new(0, 0.12 * size, 0) * CFrame.Angles(0, 0, math.rad(90))
 	for i = 0, count - 1 do
 		local a = i * (2 * math.pi / count) + 0.4
-		local leaf = newPart(model, root, {
+		local tilt = math.rad(16 + (i % 2) * 14)
+		local stemLen = (1.1 + (i % 3) * 0.18) * size
+		local base = root.CFrame
+			* CFrame.new(0, 0.25 * size, 0)
+			* CFrame.Angles(0, a, 0)
+			* CFrame.Angles(tilt, 0, 0)
+		local stem = newPart(model, root, {
 			Name = "Leaf",
 			Color = color,
 			Material = material,
-			Size = Vector3.new(0.14, 1.35, 0.42) * size,
+			Size = Vector3.new(0.07, stemLen, 0.07) * Vector3.new(size, 1, size),
 		})
-		leaf.CFrame = root.CFrame
-			* CFrame.Angles(0, a, 0)
-			* CFrame.Angles(math.rad(20), 0, 0)
-			* CFrame.new(0, 0.7 * size + 0.1, 0)
+		stem.CFrame = base * CFrame.new(0, stemLen / 2, 0)
+		-- Leaflets fan out along the upper stem, alternating sides, arching outward
+		for k = 1, per do
+			local f = 0.45 + 0.55 * (k / per)
+			local side = if k % 2 == 0 then -1 else 1
+			local leaflet = newPart(model, root, {
+				Name = "Leaf",
+				Color = if k % 2 == 0 then light else color,
+				Material = material,
+				Size = Vector3.new(0.05, 0.62, 0.3) * size,
+			})
+			leaflet.CFrame = base
+				* CFrame.new(0, stemLen * f, 0)
+				* CFrame.Angles(0, 0, math.rad(side * 38))
+				* CFrame.Angles(math.rad(10), 0, 0)
+				* CFrame.new(0, 0.26 * size, 0)
+		end
 	end
 end
 
@@ -138,7 +188,8 @@ local function emitter(parent: Instance, props: { [string]: any }): ParticleEmit
 end
 
 -- Full carrot for a ready/harvested carrot. `scale` is the size's visual scale.
-function CarrotModel.build(typeId: string, mutations: { string }, scale: number): Model
+function CarrotModel.build(typeId: string, mutations: { string }, scale: number, detail: Detail?): Model
+	local d = DETAIL[detail or "high"]
 	local def = CarrotInfo.type(typeId)
 	local model, root = newModel("Carrot")
 	local shape = if def and def.shapeScale then def.shapeScale else 1
@@ -177,33 +228,80 @@ function CarrotModel.build(typeId: string, mutations: { string }, scale: number)
 	end
 
 	local body: { BasePart } = {}
-	local segLen = length / SEGMENTS
-	for i = 0, SEGMENTS - 1 do
-		local d = radius * 2 * (1 - i * 0.16)
-		local x = if def and def.twisted then math.sin(i * 1.7) * radius * 0.35 else 0
-		local p = segment(model, root, -(i + 0.5) * segLen, x, segLen + 0.04, d, {
+	local segments = d.segments
+	local segLen = length / segments
+	local twist = def ~= nil and def.twisted == true
+	local function xAt(i: number): number
+		return if twist then math.sin(i * 1.7 * 5 / segments) * radius * 0.35 else 0
+	end
+	-- Shading: lighter at the sun-facing shoulder, deeper toward the tip
+	local shoulderTone = bodyColor:Lerp(Color3.new(1, 1, 1), 0.1)
+	local tipTone = bodyColor:Lerp(Color3.new(0, 0, 0), 0.18)
+	for i = 0, segments - 1 do
+		local t = (i + 0.5) / segments
+		local diameter = radius * 2 * profile(t)
+		local tone = shoulderTone:Lerp(tipTone, t)
+		local striped = stripeColor and (math.floor(i * 5 / segments) % 2 == 1)
+		local p = segment(model, root, -(i + 0.5) * segLen, xAt(i), segLen + 0.04, diameter, {
 			Name = "Body",
-			Color = if stripeColor and i % 2 == 1 then stripeColor else bodyColor,
+			Color = if striped and stripeColor then stripeColor else tone,
 			Material = material,
 			Reflectance = reflectance,
 			Transparency = transparency,
 		})
 		table.insert(body, p)
 	end
-	local tipD = radius * 2 * (1 - SEGMENTS * 0.16) * 0.9
-	local tip = newPart(model, root, {
+	-- Rounded shoulder cap, slightly sun-greened on a normal carrot
+	local cap = segment(model, root, -0.02, xAt(0), 0.1, radius * 2 * 0.86, {
 		Name = "Body",
-		Shape = Enum.PartType.Ball,
-		Size = Vector3.one * math.max(0.15, tipD),
-		Color = bodyColor,
+		Color = if mutation == nil and not stripeColor
+			then bodyColor:Lerp(Color3.fromRGB(150, 170, 60), 0.35)
+			else shoulderTone,
 		Material = material,
 		Reflectance = reflectance,
 		Transparency = transparency,
 	})
-	tip.CFrame = root.CFrame * CFrame.new(0, -length, 0)
-	table.insert(body, tip)
+	table.insert(body, cap)
+	-- Growth rings: thin, slightly darker bands proud of the surface
+	for r = 1, d.rings do
+		local t = r / (d.rings + 1.4)
+		local i = math.floor(t * segments)
+		segment(model, root, -t * length, xAt(i), 0.05, radius * 2 * profile(t) + 0.05, {
+			Name = "Ring",
+			Color = bodyColor:Lerp(Color3.new(0, 0, 0), 0.28),
+			Material = material,
+			Reflectance = reflectance,
+			Transparency = transparency,
+		})
+	end
+	-- Thin root tail
+	local tailD = math.max(0.06, radius * 2 * profile(1) * 0.9)
+	local tail = segment(model, root, -length - 0.15, xAt(segments - 1), 0.36, tailD, {
+		Name = "Body",
+		Color = tipTone,
+		Material = material,
+		Reflectance = reflectance,
+		Transparency = transparency,
+	})
+	table.insert(body, tail)
+	-- Root hairs on the lower half
+	for h = 1, d.hairs do
+		local t = 0.45 + h * 0.13
+		local hair = newPart(model, root, {
+			Name = "Hair",
+			Color = tipTone:Lerp(Color3.new(1, 1, 1), 0.25),
+			Material = material,
+			Size = Vector3.new(0.035, 0.035, 0.32),
+			Transparency = transparency,
+		})
+		hair.CFrame = root.CFrame
+			* CFrame.new(xAt(math.floor(t * segments)), -t * length, 0)
+			* CFrame.Angles(0, h * 2.1, 0)
+			* CFrame.new(0, 0, radius * profile(t) + 0.12)
+			* CFrame.Angles(math.rad(-25), 0, 0)
+	end
 
-	leaves(model, root, leafColor, 4, shape, leafMaterial)
+	leaves(model, root, leafColor, d.fronds, shape, leafMaterial, d.leaflets)
 
 	if def and def.crown then
 		for i = 0, 4 do
@@ -219,16 +317,16 @@ function CarrotModel.build(typeId: string, mutations: { string }, scale: number)
 	end
 	if def and def.spikes then
 		-- Little dragon spikes down both sides
-		for i = 0, SEGMENTS - 2 do
+		for i = 0, 3 do
 			for _, side in { -1, 1 } do
 				local spike = newPart(model, root, {
 					Name = "Spike",
 					Color = Color3.fromRGB(255, 200, 60),
 					Size = Vector3.new(0.18, 0.35, 0.5),
 				})
-				local d = radius * (1 - i * 0.16)
+				local t = (i + 0.5) / 5
 				spike.CFrame = root.CFrame
-					* CFrame.new(side * d, -(i + 0.5) * segLen, 0)
+					* CFrame.new(side * radius * profile(t), -t * length, 0)
 					* CFrame.Angles(0, 0, side * math.rad(-60))
 			end
 		end
@@ -373,7 +471,7 @@ end
 -- `showShoulder` adds the orange top peeking out of the soil (phases 3–4).
 function CarrotModel.sprout(): Model
 	local model, root = newModel("Sprout")
-	leaves(model, root, Color3.fromRGB(80, 175, 65), 3, 1, Enum.Material.SmoothPlastic)
+	leaves(model, root, Color3.fromRGB(80, 175, 65), 3, 1, Enum.Material.SmoothPlastic, 1)
 	local shoulder = segment(model, root, -0.12, 0, 0.3, RADIUS * 1.8, {
 		Name = "Shoulder",
 		Color = Color3.fromRGB(235, 125, 35),
