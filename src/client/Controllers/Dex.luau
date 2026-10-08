@@ -236,6 +236,7 @@ local function build()
 
 	panel.onOpen = function()
 		refresh()
+		Remotes.get(Remotes.Names.Track):FireServer("OpenedDex", "")
 		for id in state.types do
 			seen[id] = true
 		end

@@ -19,6 +19,9 @@ local Remotes = require(Shared.Remotes)
 local Types = require(Shared.Types)
 local Data = require(script.Parent.Data)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
+local Telemetry = require(script.Parent.Telemetry)
+local Perks = require(script.Parent.Perks)
+local ProductsConfig = require(Config.Products)
 
 local Economy = {}
 
@@ -46,10 +49,13 @@ end
 
 function Economy.basketCapacity(player: Player): number
 	local track = trackById.BasketSize
-	if not track then
-		return EconomyConfig.BasketCapacity
+	local capacity = if track
+		then Progression.stepValue(track, level(player, "BasketSize"), EconomyConfig.BasketCapacity)
+		else EconomyConfig.BasketCapacity
+	if Perks.hasPass(player, "BigBasket") then
+		capacity *= ProductsConfig.BigBasketMult
 	end
-	return Progression.stepValue(track, level(player, "BasketSize"), EconomyConfig.BasketCapacity)
+	return capacity
 end
 
 function Economy.eventState(): EventSchedule.State
@@ -79,7 +85,7 @@ function Economy.valueOf(player: Player, carrot: Types.Carrot, atMarket: boolean
 		market = market,
 		valueUpgrade = Economy.valueBonus(player),
 		prestige = 1,
-		boosts = 1,
+		boosts = Perks.valueBoost(player),
 	})
 end
 
@@ -110,7 +116,7 @@ function Economy.sync(player: Player)
 	player:SetAttribute("BasketCapacity", Economy.basketCapacity(player))
 end
 
-function Economy.addCash(player: Player, amount: number, _source: string)
+function Economy.addCash(player: Player, amount: number, source: string)
 	local data = Data.get(player)
 	if not data or amount <= 0 then
 		return
@@ -118,16 +124,18 @@ function Economy.addCash(player: Player, amount: number, _source: string)
 	data.Cash += amount
 	data.Stats.TotalEarned += amount
 	Economy.sync(player)
+	Telemetry.source(player, amount, source)
 end
 
 -- Returns true if the player could afford it.
-function Economy.spend(player: Player, amount: number, _sink: string): boolean
+function Economy.spend(player: Player, amount: number, sink: string): boolean
 	local data = Data.get(player)
 	if not data or amount < 0 or data.Cash < amount then
 		return false
 	end
 	data.Cash -= amount
 	Economy.sync(player)
+	Telemetry.sink(player, amount, sink)
 	return true
 end
 
@@ -201,6 +209,7 @@ function Economy.sellAll(player: Player): (number, number)
 	for _, cb in saleCallbacks do
 		task.spawn(cb, player, total, count)
 	end
+	Telemetry.funnel(player, "FirstSell")
 	return total, count
 end
 

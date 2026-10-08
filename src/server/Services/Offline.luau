@@ -17,6 +17,8 @@ local Data = require(script.Parent.Data)
 local Economy = require(script.Parent.Economy)
 local Dex = require(script.Parent.Dex)
 local Farm = require(script.Parent.Farm)
+local Perks = require(script.Parent.Perks)
+local ProductsConfig = require(Config.Products)
 
 local Offline = {}
 
@@ -31,6 +33,9 @@ local SAVE_INTERVAL = 30
 
 -- Number of harvests each plot would have finished in `seconds`, capped in total.
 local function harvestsPerPlot(player: Player, seconds: number): { number }
+	local maxCarrots = if Perks.hasPass(player, "BigBasket")
+		then ProductsConfig.BigBasketOfflineCarrots
+		else EconomyConfig.OfflineMaxCarrots
 	local plots = Farm.unlockedPlots(player)
 	local counts = {}
 	local total = 0
@@ -38,16 +43,16 @@ local function harvestsPerPlot(player: Player, seconds: number): { number }
 		counts[i] = math.floor(seconds / Farm.growTimeFor(player, i))
 		total += counts[i]
 	end
-	if total > EconomyConfig.OfflineMaxCarrots then
+	if total > maxCarrots then
 		-- Scale down proportionally so every plot contributes.
-		local scale = EconomyConfig.OfflineMaxCarrots / total
+		local scale = maxCarrots / total
 		total = 0
 		for i = 1, plots do
 			counts[i] = math.floor(counts[i] * scale)
 			total += counts[i]
 		end
 		local i = 1
-		while total < EconomyConfig.OfflineMaxCarrots do
+		while total < maxCarrots do
 			counts[i] += 1
 			total += 1
 			i = i % plots + 1
@@ -79,7 +84,10 @@ function Offline.reveal(player: Player, last: number)
 	if away < EconomyConfig.OfflineMinSeconds then
 		return
 	end
-	local seconds = math.min(away, EconomyConfig.OfflineCapSeconds)
+	local cap = if Perks.hasPass(player, "BigBasket")
+		then ProductsConfig.BigBasketOfflineSeconds
+		else EconomyConfig.OfflineCapSeconds
+	local seconds = math.min(away, cap)
 
 	local carrots: { Types.RevealedCarrot } = {}
 	local total, soldTotal = 0, 0

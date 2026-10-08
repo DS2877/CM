@@ -66,6 +66,7 @@ local upgradesTile: TextButton
 local upgradesBadge: Frame
 local tiles: { [string]: TextButton } = {}
 local tileHandlers: { [string]: () -> () } = {}
+local oddsHandler: (() -> ())? = nil
 local tileBadges: { [string]: { frame: Frame, label: TextLabel } } = {}
 local pityFill: Frame
 local pityLabel: TextLabel
@@ -301,7 +302,7 @@ local function build()
 		Name = "Left",
 		AnchorPoint = Vector2.new(0, 0),
 		Position = UDim2.new(0, 12, 0, 148),
-		Size = UDim2.fromOffset(212, 66),
+		Size = UDim2.fromOffset(284, 66),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
@@ -328,6 +329,13 @@ local function build()
 			dark = Color3.fromRGB(20, 70, 150),
 			icon = "Index",
 			emoji = "📖",
+		},
+		{
+			name = "Shop",
+			color = Color3.fromRGB(255, 120, 190),
+			dark = Color3.fromRGB(140, 30, 90),
+			icon = "Shop",
+			emoji = "🛒",
 		},
 	}
 	for i, d in tileDefs do
@@ -471,6 +479,23 @@ local function build()
 		ZIndex = 2,
 		Parent = bar,
 	}, C.goalDark, 2)
+	-- 🔍 My odds (Carrot Scanner)
+	local oddsButton: TextButton = UI.new("TextButton", {
+		Position = UDim2.fromOffset(212, 0),
+		Size = UDim2.fromOffset(28, 28),
+		BackgroundColor3 = Color3.fromRGB(90, 220, 200),
+		Text = "",
+		Parent = pityRow,
+	}, { UI.corner(14), UI.stroke(Color3.fromRGB(10, 100, 90), 2.5) })
+	local oddsIcon = UI.icon("Scanner", "🔍")
+	oddsIcon.Position = UDim2.fromOffset(4, 4)
+	oddsIcon.Size = UDim2.new(1, -8, 1, -8)
+	oddsIcon.Parent = oddsButton
+	oddsButton.Activated:Connect(function()
+		if oddsHandler then
+			oddsHandler()
+		end
+	end)
 
 	-- Active buffs: friend bonus, watered
 	buffLabel = bigText({
@@ -622,9 +647,22 @@ local function refreshBuffs()
 			string.format("👥 +%d%% luck", math.floor(attrNumber("FriendBoost") * 100 + 0.5))
 		)
 	end
-	local watered = attrNumber("Buff_Watered") - workspace:GetServerTimeNow()
+	local nowT = workspace:GetServerTimeNow()
+	local watered = attrNumber("Buff_Watered") - nowT
 	if watered > 0 then
 		table.insert(parts, "💧 " .. Format.duration(watered))
+	end
+	local luck = attrNumber("LuckBoost")
+	if luck > 1 then
+		local left = math.max(attrNumber("Boost_Luck2"), attrNumber("Boost_Luck4"), attrNumber("Boost_Luck8"))
+		table.insert(parts, string.format("🍀x%d %s", luck, Format.duration(left)))
+	end
+	if attrNumber("Boost_Value2") > 0 then
+		table.insert(parts, "💰x2 " .. Format.duration(attrNumber("Boost_Value2")))
+	end
+	local serverEnds = workspace:GetAttribute("ServerLuckEnds")
+	if typeof(serverEnds) == "number" and serverEnds > nowT then
+		table.insert(parts, "🌍x2 " .. Format.duration(serverEnds - nowT))
 	end
 	buffLabel.Text = table.concat(parts, "   ")
 end
@@ -735,6 +773,10 @@ end
 -- What a left tile does when tapped ("Upgrades", "Seeds", "Index").
 function HUD.setTileHandler(name: string, fn: () -> ())
 	tileHandlers[name] = fn
+end
+
+function HUD.setOddsHandler(fn: () -> ())
+	oddsHandler = fn
 end
 
 -- Show a badge on a tile (nil hides it).

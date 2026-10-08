@@ -15,6 +15,8 @@ Remotes.Names = {
 	BuySeed = "BuySeed", -- (seedId: string, amount: number)
 	SelectSeed = "SelectSeed", -- (seedId: string)
 	WaterFarm = "WaterFarm", -- (farmId: number)
+	SetGiftTarget = "SetGiftTarget", -- (targetUserId: number, passId: string)
+	Track = "Track", -- (event: string, detail: string) whitelisted analytics from UI
 	-- server -> client
 	HarvestResult = "HarvestResult", -- (Types.HarvestResult)
 	SellResult = "SellResult", -- (Types.SellResult)
@@ -23,6 +25,7 @@ Remotes.Names = {
 	DexSync = "DexSync", -- (Types.DexState)
 	OfflineReveal = "OfflineReveal", -- (Types.OfflineResult)
 	Watered = "Watered", -- (farmId: number, byName: string)
+	Offer = "Offer", -- (productId: string) show a contextual offer once
 }
 
 local FOLDER_NAME = "Remotes"

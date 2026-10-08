@@ -14,6 +14,7 @@ local Dex = require(Controllers.Dex)
 local Offline = require(Controllers.Offline)
 local Farms = require(Controllers.Farms)
 local MarketBoard = require(Controllers.MarketBoard)
+local Store = require(Controllers.Store)
 local Plot = require(Controllers.Plot)
 local HarvestFX = require(Controllers.HarvestFX)
 
@@ -33,3 +34,16 @@ Dex.start()
 HarvestFX.start()
 Offline.start()
 MarketBoard.start()
+Store.start()
+
+-- Market VIP: the lounge door lets VIPs through (collision changed locally only).
+local function vipDoor()
+	local door = workspace:FindFirstChild("World")
+	door = door and door:FindFirstChild("VipLounge")
+	door = door and door:FindFirstChild("VIPDoor")
+	if door and door:IsA("BasePart") then
+		door.CanCollide = player:GetAttribute("Pass_MarketVIP") ~= true
+	end
+end
+player:GetAttributeChangedSignal("Pass_MarketVIP"):Connect(vipDoor)
+vipDoor()

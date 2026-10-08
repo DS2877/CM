@@ -14,6 +14,7 @@ local Remotes = require(Shared.Remotes)
 local Data = require(script.Parent.Data)
 local Economy = require(script.Parent.Economy)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
+local Telemetry = require(script.Parent.Telemetry)
 
 local Upgrade = {}
 
@@ -91,6 +92,7 @@ function Upgrade.buy(player: Player, id: string): boolean
 	end
 	data.Upgrades[id] = level + 1
 	data.Stats.Upgrades += 1
+	Telemetry.funnel(player, "FirstUpgrade")
 	-- Value changes what the basket is worth
 	Economy.sync(player)
 	Upgrade.sync(player)

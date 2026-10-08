@@ -809,6 +809,92 @@ local function buildLeaderboard(
 	return { id = def.id, rows = rows }
 end
 
+-- VIP lounge next to the plaza (Market VIP pass). The door is solid for everyone; VIP clients
+-- turn its collision off locally.
+local function buildVipLounge(parent: Instance)
+	local a = math.rad(247.5)
+	local pos = Vector3.new(math.sin(a) * 46, 0, math.cos(a) * 46)
+	local cf = CFrame.lookAt(pos, Vector3.zero)
+	local model = Instance.new("Model")
+	model.Name = "VipLounge"
+	local size = 16
+	local gold = Color3.fromRGB(255, 205, 60)
+	part({
+		Name = "Floor",
+		Size = Vector3.new(size, 0.4, size),
+		CFrame = cf * CFrame.new(0, 0.2, 0),
+		Material = Enum.Material.SmoothPlastic,
+		Color = Color3.fromRGB(255, 240, 190),
+		CastShadow = false,
+	}, model)
+	local wallH = 5
+	local function wall(localCF: CFrame, length: number)
+		part({
+			Name = "Wall",
+			Size = Vector3.new(length, wallH, 0.6),
+			CFrame = cf * localCF * CFrame.new(0, wallH / 2, 0),
+			Material = Enum.Material.SmoothPlastic,
+			Color = gold,
+		}, model)
+	end
+	local h = size / 2
+	wall(CFrame.new(0, 0, h), size)
+	wall(CFrame.new(-h, 0, 0) * CFrame.Angles(0, math.pi / 2, 0), size)
+	wall(CFrame.new(h, 0, 0) * CFrame.Angles(0, math.pi / 2, 0), size)
+	local door = 6
+	local side = (size - door) / 2
+	wall(CFrame.new(-h + side / 2, 0, -h), side)
+	wall(CFrame.new(h - side / 2, 0, -h), side)
+	part({
+		Name = "VIPDoor",
+		Size = Vector3.new(door, wallH + 1, 0.4),
+		CFrame = cf * CFrame.new(0, (wallH + 1) / 2, -h),
+		Material = Enum.Material.Neon,
+		Color = gold,
+		Transparency = 0.6,
+		CastShadow = false,
+	}, model)
+	-- Benches and a golden trophy carrot
+	for _, x in { -4.5, 4.5 } do
+		part({
+			Name = "Bench",
+			Size = Vector3.new(4, 1.2, 1.6),
+			CFrame = cf * CFrame.new(x, 0.9, h - 2),
+			Material = Enum.Material.WoodPlanks,
+			Color = COLORS.wood,
+		}, model)
+	end
+	statueCarrot(model, (cf * CFrame.new(0, 7, 2)).Position, 0.6)
+	for _, p in model:GetDescendants() do
+		if p:IsA("BasePart") and p.Parent and p.Parent.Name == "CarrotStatue" then
+			p.Color = gold
+			p.Material = Enum.Material.Neon
+		end
+	end
+	local signPart = part({
+		Name = "SignAnchor",
+		Size = Vector3.one,
+		CFrame = cf * CFrame.new(0, 9, -h),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+	}, model)
+	local bb = Instance.new("BillboardGui")
+	bb.Size = UDim2.fromScale(12, 2.5)
+	bb.LightInfluence = 0
+	bb.MaxDistance = 150
+	bb.Parent = signPart
+	label(bb, {
+		Size = UDim2.fromScale(1, 1),
+		Text = "⭐ VIP LOUNGE ⭐",
+		Font = Enum.Font.LuckiestGuy,
+		TextColor3 = gold,
+		TextStrokeTransparency = 0,
+		TextStrokeColor3 = Color3.fromRGB(110, 60, 0),
+	})
+	model.Parent = parent
+end
+
 function WorldBuilder.build(): WorldBuild
 	buildLighting()
 
@@ -846,6 +932,8 @@ function WorldBuilder.build(): WorldBuild
 		CanQuery = false,
 		CastShadow = false,
 	}, world)
+
+	buildVipLounge(world)
 
 	local boards = folder("Leaderboards", world)
 	local leaderboards = {}

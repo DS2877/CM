@@ -24,6 +24,9 @@ local Upgrade = require(script.Parent.Upgrade)
 local Seeds = require(script.Parent.Seeds)
 local Buffs = require(script.Parent.Buffs)
 local Leaderboards = require(script.Parent.Leaderboards)
+local Perks = require(script.Parent.Perks)
+local Telemetry = require(script.Parent.Telemetry)
+local ProductsConfig = require(Config.Products)
 local SocialConfig = require(Config.Social)
 local SeedsConfig = require(Config.Seeds)
 local Dex = require(script.Parent.Dex)
@@ -134,7 +137,11 @@ function Farm.rollFor(player: Player, seed: SeedsConfig.SeedDef): Roller.RollRes
 	local data: Data.PlayerData = maybeData
 
 	local ctx: Roller.RollContext = {
-		luck = Upgrade.luck(player) * seed.luck * friendLuck(player),
+		luck = Upgrade.luck(player)
+			* seed.luck
+			* friendLuck(player)
+			* Perks.luckBoost(player)
+			* Perks.serverLuck(),
 		mutationLuck = Upgrade.mutationLuck(player) * seed.mutationLuck,
 		sizeLuck = Upgrade.sizeLuck(player),
 	}
@@ -181,6 +188,9 @@ function Farm.growTimeFor(player: Player, plotIndex: number): number
 	if Buffs.isActive(player, "Watered") then
 		t = math.max(EconomyConfig.MinGrowTime, t / (1 + SocialConfig.WaterGrowthBonus))
 	end
+	if Perks.hasPass(player, "Growth2x") then
+		t = math.max(ProductsConfig.GrowthPassMinTime, t / ProductsConfig.GrowthPassMult)
+	end
 	return t
 end
 
@@ -207,6 +217,7 @@ local function plant(player: Player, plot: PlotRuntime)
 	p:SetAttribute("Rarity", "")
 	p:SetAttribute("RevealTier", revealTier(roll))
 	p:SetAttribute("Seed", seedId)
+	Telemetry.funnel(player, "FirstPlant")
 	p:SetAttribute("GrowTime", growTime)
 	p:SetAttribute("PlantedAt", plot.plantedAt)
 	p:SetAttribute("State", "Growing")
@@ -225,6 +236,13 @@ local function makeReady(plot: PlotRuntime)
 	p:SetAttribute("Mutations", table.concat(roll.mutations, "+"))
 	p:SetAttribute("Rarity", roll.rarity)
 	p:SetAttribute("State", "Ready")
+end
+
+local rareCallbacks: { (player: Player) -> () } = {}
+
+-- Called after a Rare-or-better harvest (the Starter Bundle offer listens to this).
+function Farm.onRareHarvest(callback: (player: Player) -> ())
+	table.insert(rareCallbacks, callback)
 end
 
 local function harvest(player: Player, plot: PlotRuntime)
@@ -255,6 +273,18 @@ local function harvest(player: Player, plot: PlotRuntime)
 		totalTypes = CarrotInfo.TotalTypes,
 	}
 	Remotes.get(Remotes.Names.HarvestResult):FireClient(player, result)
+	Telemetry.funnel(player, "FirstHarvest")
+	local order = CarrotInfo.rarityOrder(roll.rarity)
+	if order >= 3 then
+		Telemetry.funnel(player, "FirstRare")
+		Telemetry.event(player, "RareHarvest", value, { roll.rarity, roll.mutations[1] or "None" })
+		for _, cb in rareCallbacks do
+			task.spawn(cb, player)
+		end
+	end
+	if #roll.mutations > 0 then
+		Telemetry.funnel(player, "FirstMutation")
+	end
 	Leaderboards.report(player, "WeeklyBest", value)
 	Leaderboards.report(player, "Dex", found)
 	Announce.harvest(player, carrot, value)
@@ -453,6 +483,22 @@ function Farm.onPlayerReady(player: Player)
 	task.spawn(pivotCharacter, player, farm)
 end
 
+-- Instant Grow (developer product): every growing carrot on the player's farm is ready now.
+function Farm.instantGrow(player: Player)
+	local farm = farmOf[player]
+	if not farm then
+		return
+	end
+	local t = now()
+	for _, plot in farm.plots do
+		if plot.state == "Growing" then
+			plot.growTime = math.max(0, t - plot.plantedAt)
+			plot.part:SetAttribute("GrowTime", math.max(0.1, plot.growTime))
+			makeReady(plot)
+		end
+	end
+end
+
 function Farm.release(player: Player)
 	local farm = farmOf[player]
 	if not farm then
@@ -543,6 +589,16 @@ function Farm.start(world: WorldBuilder.WorldBuild)
 				for _, plot in farm.plots do
 					if plot.state == "Growing" and t >= plot.plantedAt + plot.growTime then
 						makeReady(plot)
+						local owner = farm.owner
+						if owner and Perks.hasPass(owner, "AutoHarvest") then
+							-- Auto Harvest (only while the owner is in the server): give the
+							-- ready pop a moment to show, then harvest.
+							task.delay(0.8, function()
+								if farm.owner == owner and (plot.state :: string) == "Ready" then
+									harvest(owner, plot)
+								end
+							end)
+						end
 					end
 				end
 			end

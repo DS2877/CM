@@ -1,6 +1,37 @@
 # STATUS – Carrot Market
 
-Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 3 – marknad och socialt (byggd, väntar på grind-test)**. Fas 1–2 publicerade.
+Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 4 – robust och monetiserat (byggd, väntar på produkt-ID:n och grind-test)**. Fas 1–3 publicerade.
+
+## Fas 4 – robust och monetiserat
+
+| Del | Status | Hur det testas |
+|---|---|---|
+| RemoteEvent-validering överallt | Klar | Alla klient→server-remotes (PlotAction, SellAll, BuyUpgrade, BuySeed, SelectSeed, WaterFarm, SetGiftTarget, Track) typkontrolleras och rate-limitas per spelare. Klienten skickar bara avsikter. |
+| ProcessReceipt med kvittologg | Klar | Varje PurchaseId sparas i köparens profil och profilen sparas (väntar på bekräftelse) innan Roblox får "granted". Misslyckas sparningen svarar vi NotProcessedYet och Roblox försöker igen – kvittologgen hindrar dubbelutdelning. |
+| Gamepasses | Klar (ID:n saknas) | 2x Growth, Auto Harvest (bara i servern), Market VIP (VIP-skylt över huvudet, VIP-lounge vid torget, 3 Golden Seeds per dag), Big Basket (3× korg, 16 h/300 morötter offline), Carrot Scanner (🔍 visar exakta odds). |
+| Developer products | Klar (ID:n saknas) | Luck Boost, Value Boost, Instant Grow, Super Luck, Server Luck (hela servern + namn i utrop), Mega Luck (aura), Golden Seed Pack. Boosts räknar bara speltid och syns som timers uppe till vänster. |
+| Bundles | Klar (ID:n saknas) | Starter Bundle (en gång, visas efter första Rare – aldrig vid inloggning), Lucky Farmer, Market Tycoon. Allt med känt innehåll. |
+| Kontextuella erbjudanden | Klar | Under boom vid marknaden: "💰 x2 Value"-knapp vid SELL. Döljs när pity-mätaren är ≥ 90 % full. |
+| Gåvor | Klar (ID:n saknas) | Varje pass har "🎁 Gift" → välj en spelare i servern → köp gåvoprodukten → "Philip gave Anna Auto Harvest!". Om mottagaren lämnat levereras gåvan via ProfileStore-meddelande nästa gång de spelar. |
+| Telemetry (AnalyticsService) | Klar | Onboarding-funnel (Join → FirstPlant → FirstHarvest → FirstSell → FirstUpgrade → FirstRare → FirstMutation → OpenedDex), ekonomi (cash in per källa, cash ut per sänka), Rare+-skördar, visningar/klick på erbjudanden. |
+| Butik i spelet | Klar | Ny rosa "Shop"-ruta: Boosts, Bundles, Game Passes med riktiga Robux-priser (hämtas från Roblox när ID:t finns). Utan ID står det "Soon!". |
+
+### Philip: skapa detta i Creator Hub och skicka mig ID:na
+
+Game passes (Creator Hub → Monetization → Passes): 2x Growth (399), Auto Harvest (349), Market VIP (499), Big Basket (299), Carrot Scanner (199).
+
+Developer products (Monetization → Developer Products): Luck Boost (49), Value Boost (79), Instant Grow (29), Super Luck (149), Server Luck (199), Mega Luck (249), Golden Seed Pack (99), Starter Bundle (99), Lucky Farmer (299), Market Tycoon (799), samt en gåvoprodukt per pass: Gift 2x Growth (399), Gift Auto Harvest (349), Gift Market VIP (499), Gift Big Basket (299), Gift Carrot Scanner (199).
+
+ID:na läggs i `src/shared/Config/Products.luau` (`passId`, `productId`, `giftProductId`). Inget annat behöver ändras.
+
+## Grind för fas 4 – be Philip testa
+
+1. Öppna Shop-rutan: syns allt tydligt med priser/"Soon!"?
+2. När ID:na finns: köp en Luck Boost (testköp i Studio är gratis) – syns timern och räknar den bara ner när du spelar?
+3. Köp Carrot Scanner och tryck 🔍 vid pity-mätaren.
+4. Hitta din första Rare på ett nytt konto – kommer Starter Bundle-erbjudandet (en gång)?
+5. Gåva: med en vän i servern, tryck 🎁 Gift på ett pass.
+6. Kolla Creator Hub → Analytics efter ett dygn: onboarding-funneln och ekonomin ska fyllas på.
 
 ## Fas 3 – marknad och socialt
 
@@ -101,6 +132,17 @@ Bra att veta vid test: du kan trycka på dina plots (eller etiketten ovanför) s
 
 ## Beslut tagna under bygget (regel 10)
 
+Fas 4:
+- **Luck-boosts staplas inte:** den starkaste aktiva personliga luck-boosten gäller (×2/×4/×8), gånger Server Luck och vänbonus. Annars blir tur orimlig. Value-boosts multipliceras men taket ×6 gäller.
+- **Samma boost köpt igen lägger till tid** i stället för att nollställa.
+- **2x Growth** halverar växttiden även under golvet 3 s, men aldrig under 1,5 s.
+- **Auto Harvest** väntar 0,8 s efter att moroten blivit klar så att pop-ögonblicket syns.
+- **Gåvor** kräver en egen developer product per pass (Roblox kan inte köpa ett pass åt någon annan). Om mottagaren redan äger passet när köpet går igenom får köparen passet, eller 20 Golden Seeds om även köparen äger det.
+- **Starter Bundle** visas bara om dess produkt-ID finns, en gång per spelare, 1,5 s efter första Rare.
+- **Mystery Seeds säljs aldrig för Robux** – ett Lune-test (`tests/Products.spec.luau`) stoppar bygget om någon lägger till dem i en Robux-produkt.
+- **Profilversion 4** (kvitton, boosts, gåvor) med migrering.
+
+
 Fas 3:
 - **Boompriset betalas bara vid marknaden** (designplan §2: sälj på plats till fullt pris, marknaden ger bonus under boom). Det gör korgen och marknaden till ett riktigt beslut.
 - **Boom i slutet av varje 10-minuterscykel** (7 min väntan, 3 min boom) så nedräkningen alltid pekar framåt. Boomtypen väljs med en deterministisk hash av cykelnumret.
@@ -150,6 +192,7 @@ Fas 1:
 | Images.Seeds / Index / Crown | HUD-ikoner (fas 2) | Emoji-fallback (🌱 📖 👑) |
 | Sounds.Bell | Marknadsklocka | Platshållare `electronicpingshort.wav` |
 | Sounds.Water | Vattning | Tyst |
+| Images.Shop / Scanner | HUD-ikoner (fas 4) | Emoji-fallback (🛒 🔍) |
 | Images.Icon | Spelikon | Saknas |
 
 ## Kvar / kända begränsningar

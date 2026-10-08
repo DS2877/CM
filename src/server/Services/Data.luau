@@ -38,6 +38,14 @@ export type PlayerData = {
 	Best: BestCarrot,
 	Likes: number, -- hearts received on your farm
 	LikedToday: { Day: number, Users: { [string]: boolean } }, -- farms you liked today
+	-- Phase 4: monetization
+	Receipts: { string }, -- processed PurchaseIds (newest last, capped) for idempotent receipts
+	Boosts: { [string]: number }, -- boost id -> seconds of PLAY time left
+	GiftedPasses: { [string]: boolean }, -- passes received as gifts
+	Bought: { [string]: boolean }, -- one-time products already bought
+	StarterOffered: boolean,
+	VipDailyDay: number,
+	Funnel: { [string]: boolean }, -- onboarding funnel steps already logged
 	Stats: Stats,
 }
 
@@ -58,6 +66,13 @@ local TEMPLATE: PlayerData = {
 	Best = { Type = "", Size = "", Mutations = "", Value = 0 },
 	Likes = 0,
 	LikedToday = { Day = 0, Users = {} },
+	Receipts = {},
+	Boosts = {},
+	GiftedPasses = {},
+	Bought = {},
+	StarterOffered = false,
+	VipDailyDay = 0,
+	Funnel = {},
 	Stats = {
 		Plantings = 0,
 		Harvests = 0,
@@ -78,9 +93,14 @@ local MIGRATIONS: { [number]: (data: PlayerData) -> () } = {
 	end,
 	-- v2 -> v3 (phase 3): pedestal, likes, biggest sale. Filled by Reconcile; nothing to convert.
 	[2] = function(_data: PlayerData) end,
+	-- v3 -> v4 (phase 4): receipts, boosts, gifts. Filled by Reconcile.
+	[3] = function(_data: PlayerData) end,
 }
 
 local Data = {}
+
+-- (player, data, message) -> true when the message was handled
+local messageHandlers: { (player: Player, data: PlayerData, message: any) -> boolean } = {}
 
 local store = ProfileStore.New(Economy.DataStoreName, TEMPLATE)
 local profiles: { [Player]: any } = {}
@@ -124,6 +144,16 @@ function Data.load(player: Player): PlayerData?
 	profile:Reconcile()
 	migrate(profile.Data)
 
+	-- Messages from other servers (gifted passes while this player was elsewhere/offline).
+	profile:MessageHandler(function(message: any, processed: () -> ())
+		for _, handler in messageHandlers do
+			if handler(player, profile.Data, message) then
+				processed()
+				return
+			end
+		end
+	end)
+
 	profile.OnSessionEnd:Connect(function()
 		profiles[player] = nil
 		if player.Parent == Players then
@@ -142,6 +172,38 @@ end
 function Data.get(player: Player): PlayerData?
 	local profile = profiles[player]
 	return if profile then profile.Data else nil
+end
+
+-- Saves now and waits until the DataStore write finished (for purchases). Returns success.
+function Data.saveAndWait(player: Player, timeout: number?): boolean
+	local profile = profiles[player]
+	if not profile or not profile:IsActive() then
+		return false
+	end
+	local done = false
+	local conn = profile.OnAfterSave:Connect(function()
+		done = true
+	end)
+	profile:Save()
+	local waited = 0
+	local limit = timeout or 15
+	while not done and waited < limit and profile:IsActive() do
+		waited += task.wait(0.1)
+	end
+	conn:Disconnect()
+	return done
+end
+
+-- Deliver a message to a player's profile, wherever they are (or next time they join).
+function Data.message(userId: number, message: { [string]: any }): boolean
+	local ok, result = pcall(function()
+		return store:MessageAsync("Player_" .. userId, message)
+	end)
+	return ok and result == true
+end
+
+function Data.onMessage(handler: (player: Player, data: PlayerData, message: any) -> boolean)
+	table.insert(messageHandlers, handler)
 end
 
 function Data.release(player: Player)

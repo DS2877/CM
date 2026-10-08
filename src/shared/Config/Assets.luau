@@ -31,6 +31,8 @@ local Assets = {
 		Seeds = "",
 		Index = "",
 		Crown = "",
+		Shop = "",
+		Scanner = "",
 		Icon = "",
 	},
 }
