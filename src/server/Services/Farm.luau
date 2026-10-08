@@ -194,19 +194,17 @@ function Farm.growTimeFor(player: Player, plotIndex: number): number
 	return t
 end
 
-local function plant(player: Player, plot: PlotRuntime)
-	local seed, seedId = Seeds.consume(player)
-	local maybeRoll = Farm.rollFor(player, seed)
-	if not maybeRoll then
-		return
-	end
-	local roll: Roller.RollResult = maybeRoll
-
-	local jitter = 1 + (Roll.number() * 2 - 1) * EconomyConfig.GrowJitter
-	local growTime = math.max(EconomyConfig.MinGrowTime, Farm.growTimeFor(player, plot.index) * jitter)
-
+-- Puts an already-rolled carrot in the ground. `plantedAt` may lie in the past (a plot restored
+-- after a rejoin keeps its progress).
+local function setGrowing(
+	plot: PlotRuntime,
+	roll: Roller.RollResult,
+	growTime: number,
+	plantedAt: number,
+	seedId: string
+)
 	plot.state = "Growing"
-	plot.plantedAt = now()
+	plot.plantedAt = plantedAt
 	plot.growTime = growTime
 	plot.roll = roll
 
@@ -217,10 +215,21 @@ local function plant(player: Player, plot: PlotRuntime)
 	p:SetAttribute("Rarity", "")
 	p:SetAttribute("RevealTier", revealTier(roll))
 	p:SetAttribute("Seed", seedId)
-	Telemetry.funnel(player, "FirstPlant")
 	p:SetAttribute("GrowTime", growTime)
-	p:SetAttribute("PlantedAt", plot.plantedAt)
+	p:SetAttribute("PlantedAt", plantedAt)
 	p:SetAttribute("State", "Growing")
+end
+
+local function plant(player: Player, plot: PlotRuntime)
+	local seed, seedId = Seeds.consume(player)
+	local maybeRoll = Farm.rollFor(player, seed)
+	if not maybeRoll then
+		return
+	end
+	local jitter = 1 + (Roll.number() * 2 - 1) * EconomyConfig.GrowJitter
+	local growTime = math.max(EconomyConfig.MinGrowTime, Farm.growTimeFor(player, plot.index) * jitter)
+	setGrowing(plot, maybeRoll, growTime, now(), seedId)
+	Telemetry.funnel(player, "FirstPlant")
 end
 
 local function makeReady(plot: PlotRuntime)
@@ -496,6 +505,82 @@ function Farm.instantGrow(player: Player)
 			plot.part:SetAttribute("GrowTime", math.max(0.1, plot.growTime))
 			makeReady(plot)
 		end
+	end
+end
+
+-- Saved plots ---------------------------------------------------------------
+-- What is in the ground survives leaving: each growing or ready plot is saved with its
+-- already-rolled carrot and the time it still needs. Empty plots save nothing, so they never
+-- produce anything offline.
+
+-- Current plots of the player's farm, or nil when they have no farm (nothing to save then).
+function Farm.snapshot(player: Player): { [string]: Data.SavedPlot }?
+	local farm = farmOf[player]
+	if not farm then
+		return nil
+	end
+	local saved: { [string]: Data.SavedPlot } = {}
+	local t = now()
+	for i, plot in farm.plots do
+		local roll = plot.roll
+		if i <= Farm.unlockedPlots(player) and roll and plot.state ~= "Empty" then
+			local carrot: Types.Carrot = { type = roll.type, size = roll.size, mutations = roll.mutations }
+			saved[tostring(i)] = {
+				Key = CarrotInfo.key(carrot),
+				Remaining = math.max(0, plot.plantedAt + plot.growTime - t),
+				GrowTime = plot.growTime,
+				Seed = tostring(plot.part:GetAttribute("Seed") or "Basic"),
+			}
+		end
+	end
+	return saved
+end
+
+-- Rebuilds a roll from a saved plot. Nil if the carrot no longer exists in the config.
+function Farm.rollFromKey(key: string): Roller.RollResult?
+	local carrot = CarrotInfo.fromKey(key)
+	if not carrot then
+		return nil
+	end
+	return {
+		type = carrot.type,
+		size = carrot.size,
+		mutations = carrot.mutations,
+		rarity = CarrotInfo.rarityOfType(carrot.type).id,
+	}
+end
+
+-- Puts a saved carrot back in the ground with `remaining` seconds left (0 = ready to harvest).
+-- Returns false if the plot is not free (the player already planted it), so the caller can hand
+-- the saved carrot over another way instead of overwriting a fresh planting.
+function Farm.restorePlot(
+	player: Player,
+	index: number,
+	roll: Roller.RollResult,
+	remaining: number,
+	growTime: number,
+	seedId: string
+): boolean
+	local farm = farmOf[player]
+	local plot = farm and farm.plots[index]
+	if not plot or index > Farm.unlockedPlots(player) or plot.state ~= "Empty" then
+		return false
+	end
+	growTime = math.max(EconomyConfig.MinGrowTime, growTime)
+	remaining = math.clamp(remaining, 0, growTime)
+	setGrowing(plot, roll, growTime, now() - (growTime - remaining), seedId)
+	if remaining <= 0 then
+		makeReady(plot)
+	end
+	return true
+end
+
+-- Plants a fresh carrot (the player's selected seed) in an empty plot.
+function Farm.replant(player: Player, index: number)
+	local farm = farmOf[player]
+	local plot = farm and farm.plots[index]
+	if plot and plot.state == "Empty" and index <= Farm.unlockedPlots(player) then
+		plant(player, plot)
 	end
 end
 

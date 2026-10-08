@@ -667,9 +667,18 @@ local function refreshBuffs()
 	buffLabel.Text = table.concat(parts, "   ")
 end
 
+local basketWasFull = false
+
 local function refreshBasket()
 	local count = attrNumber("BasketCount")
 	local cap = attrNumber("BasketCapacity")
+	-- Tell the player once each time the basket fills up: from now on harvests sell instantly at
+	-- base price, so selling (ideally at a boom) or a bigger basket is the next move.
+	local full = cap > 0 and count >= cap
+	if full and not basketWasFull and toastList then
+		HUD.toast("Basket full! Sell now or upgrade Basket Size", C.bad, 5)
+	end
+	basketWasFull = full
 	refreshBoom()
 	sellBadgeText.Text = Format.number(count)
 	sellBadge.Visible = count > 0

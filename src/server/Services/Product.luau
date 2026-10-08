@@ -128,6 +128,8 @@ local function refreshPasses(player: Player)
 			setPass(player, pass.id)
 		end
 	end
+	-- Offline growth waits for this: Big Basket and 2x Growth change what grew while away.
+	player:SetAttribute("PassesLoaded", true)
 end
 
 -- Boosts ------------------------------------------------------------------

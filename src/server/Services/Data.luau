@@ -18,6 +18,15 @@ export type Stats = {
 	Upgrades: number,
 }
 
+-- A plot that was growing when the player left: the carrot is already rolled, so it comes back
+-- exactly as promised (including any glow the player saw).
+export type SavedPlot = {
+	Key: string, -- CarrotInfo.key of the rolled carrot
+	Remaining: number, -- seconds it still needed when saved (0 = ready)
+	GrowTime: number,
+	Seed: string,
+}
+
 -- Best carrot ever (shown on the farm pedestal).
 export type BestCarrot = { Type: string, Size: string, Mutations: string, Value: number }
 
@@ -35,6 +44,7 @@ export type PlayerData = {
 	SelectedSeed: string,
 	DexClaims: { Types: number, Stamps: number }, -- milestones already rewarded
 	LastOnline: number, -- os.time() when last seen, for offline growth
+	Growing: { [string]: SavedPlot }, -- plot index (as string) -> what was in the ground
 	Best: BestCarrot,
 	Likes: number, -- hearts received on your farm
 	LikedToday: { Day: number, Users: { [string]: boolean } }, -- farms you liked today
@@ -63,6 +73,7 @@ local TEMPLATE: PlayerData = {
 	SelectedSeed = "Basic",
 	DexClaims = { Types = 0, Stamps = 0 },
 	LastOnline = 0,
+	Growing = {},
 	Best = { Type = "", Size = "", Mutations = "", Value = 0 },
 	Likes = 0,
 	LikedToday = { Day = 0, Users = {} },
@@ -95,6 +106,11 @@ local MIGRATIONS: { [number]: (data: PlayerData) -> () } = {
 	[2] = function(_data: PlayerData) end,
 	-- v3 -> v4 (phase 4): receipts, boosts, gifts. Filled by Reconcile.
 	[3] = function(_data: PlayerData) end,
+	-- v4 -> v5: plots are saved when you leave. Offline growth only finishes what was saved, so
+	-- profiles from before this start with nothing in the ground (no phantom offline basket).
+	[4] = function(data: PlayerData)
+		data.Growing = {}
+	end,
 }
 
 local Data = {}

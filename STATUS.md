@@ -68,7 +68,7 @@ ID:na läggs i `src/shared/Config/Products.luau` (`passId`, `productId`, `giftPr
 | Frön | Klar | SEEDS-rutan: Rare ($250, aldrig Common, 3× tur), Golden ($2,000, alltid Golden ×3), Mystery ($700, blir Rare 60 % / Golden 37 % / Secret 3 % – oddsen visas), Secret (bara från CarrotDex-belöningar, alltid Legendary+). Köp ×1/×10, USE väljer frö. Priser skalar med Value-uppgraderingen. Bara cash, aldrig Robux. Valt frö används för varje plantering (även auto-omplantering) tills det tar slut. |
 | CarrotDex, två lager | Klar | INDEX-rutan: 24 morotstyper (4 Common, 4 Uncommon, 4 Rare, 4 Epic, 3 Legendary, 3 Mythic, 2 Secret) i 3D. Ej hittade visas som siluett med "???", odds "1 in X" syns alltid. Lager 2: tre mutationsprickar per typ (72 stämplar). Röd "!" på Index när du hittat något nytt. Milstolpar ger frön automatiskt (4 hittade → 5 Rare, 8 → 3 Golden, 12 → 5 Mystery, 16/20/24 → Secret; stämplar 5/15/30/50/72). |
 | Synlig pity-mätare | Klar | 👑-baren uppe till vänster: "Legendary in 123" – garanterad Legendary inom 250 planteringar. |
-| Offline-tillväxt + korg | Klar | Lämna i minst 1 minut och kom tillbaka: "While you were away…" avslöjar morötterna en i taget, snabbare och snabbare, bästa sist. Tak 8 h / 100 morötter. Morötterna ligger i korgen (full korg → säljs automatiskt). Offline används bara Basic-frön. |
+| Offline-tillväxt + korg | Klar (fixad 8 okt) | Det som växer när du går sparas, med sin redan slumpade morot. Tomma plots ger **ingenting** offline. Kort paus (< 5 min): plots kommer tillbaka som de var, färdiga är redo att skörda. Längre: sparade morötter blir klara exakt som slumpade, sedan växer just de plotsen vidare med Basic-frön i 25 % av onlinefart. Tak 8 h / 100 morötter (Big Basket: 16 h / 300). "While you were away…" avslöjar dem, bästa sist. Test: plantera alla plots, lämna 6 min, kom tillbaka. Lämna med tomma plots: inget avslöjande, bara ett tips. |
 | tools/simulate.luau | Klar | `lune run tools/simulate` → `tools/simulation-report.md`. 24 körningar × 4 h. |
 
 ### Simulering (sammanfattning, se tools/simulation-report.md)
@@ -131,6 +131,13 @@ Första Legendary ~6 min, första Mythic ~19 min, Secret i ~40 % av körningarna
 Bra att veta vid test: du kan trycka på dina plots (eller etiketten ovanför) så länge de syns på skärmen. SELL och UPGRADES funkar överallt.
 
 ## Beslut tagna under bygget (regel 10)
+
+Buggfix 8 okt (offline):
+- **Buggen:** offline-koden räknade skördar för alla upplåsta plots oavsett om något var planterat, så en inloggning utan att spela gav en full korg gratis. Den gjorde också att man kunde lämna och gå med igen för gratis morötter, och växande morötter (även en glödande Legendary) försvann när man lämnade.
+- **Fixen:** plots sparas när du lämnar (och var 30:e sekund), med morot och återstående tid. Offline färdigställer bara det som sparades. Logiken ligger i `src/shared/OfflinePlan.luau` med Lune-tester.
+- **Offline-fart 25 %** (`OfflineRate`) så att lämna och gå med igen aldrig lönar sig mer än att spela. Kortaste offline-avslöjande är 5 min (`OfflineMinSeconds`).
+- **Profilversion 5:** gamla profiler startar utan något i jorden. Morötter som redan hamnat i korgen av buggen ligger kvar i dev-datan (`CM_Dev_v1`), som ändå byts vid soft launch.
+- **UX:** toast när korgen blir full, tydligare text i avslöjandet och ett tips om man kommer tillbaka till en tom farm.
 
 Fas 4:
 - **Luck-boosts staplas inte:** den starkaste aktiva personliga luck-boosten gäller (×2/×4/×8), gånger Server Luck och vänbonus. Annars blir tur orimlig. Value-boosts multipliceras men taket ×6 gäller.

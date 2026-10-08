@@ -47,7 +47,6 @@ local function onPlayerAdded(player: Player)
 	if not data then
 		return
 	end
-	local lastOnline = Offline.checkIn(player)
 	Telemetry.funnel(player, "Join")
 	Product.onPlayerReady(player)
 	Economy.sync(player)
@@ -56,16 +55,21 @@ local function onPlayerAdded(player: Player)
 	Dex.onPlayerReady(player)
 	Farm.onPlayerReady(player)
 	player:SetAttribute("Loaded", true)
-	-- Give the client a moment to start its controllers before the offline reveal arrives.
-	task.delay(2, function()
+	-- Put back what was in the ground once game passes are known (Big Basket / 2x Growth change
+	-- the offline result). The reveal remote is queued until the client's controller connects.
+	task.spawn(function()
+		local waited = 0
+		while player.Parent and player:GetAttribute("PassesLoaded") ~= true and waited < 8 do
+			waited += task.wait(0.1)
+		end
 		if player.Parent then
-			Offline.reveal(player, lastOnline)
+			Offline.restore(player)
 		end
 	end)
 end
 
 local function onPlayerRemoving(player: Player)
-	Offline.touch(player)
+	Offline.leave(player)
 	Farm.release(player)
 	Data.release(player)
 end

@@ -67,7 +67,7 @@ local function show(result: Types.OfflineResult)
 	UI.label({
 		Position = UDim2.fromOffset(12, 42),
 		Size = UDim2.new(1, -24, 0, 18),
-		Text = string.format("Your farm grew for %s!", awayText(result.seconds)),
+		Text = string.format("Your planted carrots kept growing for %s!", awayText(result.seconds)),
 		TextColor3 = Color3.fromRGB(110, 80, 50),
 		Parent = frame,
 	})
