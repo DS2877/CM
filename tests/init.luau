@@ -10,6 +10,7 @@ local suites = {
 	{ name = "EventSchedule", run = require("./EventSchedule.spec") },
 	{ name = "Products", run = require("./Products.spec") },
 	{ name = "OfflinePlan", run = require("./OfflinePlan.spec") },
+	{ name = "Launch", run = require("./Launch.spec") },
 }
 
 local failures = 0

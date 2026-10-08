@@ -1,6 +1,25 @@
 # STATUS – Carrot Market
 
-Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 4 – robust och monetiserat (byggd, väntar på produkt-ID:n och grind-test)**. Fas 1–3 publicerade.
+Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 5 – soft launch (förberedd, väntar på Philips steg nedan)**. Fas 1–4 publicerade.
+
+## Fas 5 – soft launch
+
+| Del | Status | Hur det testas |
+|---|---|---|
+| Koder | Klar | Shop → överst "🎟️ Codes": skriv kod, REDEEM. Koderna finns i `Config/Launch.luau`: **CARROTS** (5 Rare Seeds), **LAUNCH** (3 Golden), **MARKETBOOM** (3 Mystery). En gång per spelare, okänslig för versaler. Belöningar är bara frön (aldrig Robux-saker). Lune-test vaktar konfigurationen. |
+| Group-belöning | Klar (väntar på grupp) | När `GroupId` sätts: medlemmar får 3 Golden + 5 Rare Seeds en gång. Icke-medlemmar får efter 20 s en vänlig påminnelse. |
+| Favorit-prompt | Klar | Första gången en spelare skördar Legendary eller bättre visas Robloxs "favorite"-prompt 4 s efter avslöjandet (det gladaste ögonblicket), en gång per spelare. |
+| Live-data | Redo | Byt `DataStoreName` i `Config/Economy.luau` från `CM_Dev_v2` till `CM_Live_v1` samma dag som lanseringen. Alla börjar då om rent. |
+
+### Philip: inför soft launch
+1. **Game passes och developer products:** skapa dem och skicka ID:na (lista under Fas 4).
+2. **Roblox-grupp:** skapa gruppen och skicka grupp-ID:t.
+3. **Max Players = 8** (Places → Settings), eftersom världen har exakt 8 farmer.
+4. **Ikon och thumbnails:** ladda upp (designerna finns). Slå på thumbnail-A/B-test.
+5. **Frågeformuläret för innehållsmognad** i Creator Hub.
+6. **Lyssna igenom ljuden** och säg till om något ska bytas.
+7. **Speltesta grinden:** plantera, skörda, uppgradera mot 9 plots, vänta in en boom och sälj vid marknaden, lämna 5 min och kom tillbaka (dina planterade morötter ska stå klara, inget extra).
+8. **Lanseringsdagen:** jag byter till live-data, du gör upplevelsen publik och startar en liten annonskampanj. Mät D1 och sessionstid en vecka innan mer budget.
 
 ## Ljud – brief (ljuddesign 8 okt)
 

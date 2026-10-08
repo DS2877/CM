@@ -57,6 +57,9 @@ export type PlayerData = {
 	VipDailyDay: number,
 	Funnel: { [string]: boolean }, -- onboarding funnel steps already logged
 	MusicOff: boolean, -- player turned music off (🎵 toggle)
+	Codes: { [string]: boolean }, -- promo codes already redeemed
+	GroupRewarded: boolean,
+	FavoritePrompted: boolean,
 	Stats: Stats,
 }
 
@@ -86,6 +89,9 @@ local TEMPLATE: PlayerData = {
 	VipDailyDay = 0,
 	Funnel = {},
 	MusicOff = false,
+	Codes = {},
+	GroupRewarded = false,
+	FavoritePrompted = false,
 	Stats = {
 		Plantings = 0,
 		Harvests = 0,

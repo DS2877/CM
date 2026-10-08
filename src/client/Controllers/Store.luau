@@ -307,7 +307,48 @@ local function buildStore()
 		LayoutOrder = 0,
 		Parent = panel.body,
 	})
-	local order = 1
+	-- Codes first: free stuff at the top of the shop builds trust
+	local codeRow =
+		card(1, "🎟️", Color3.fromRGB(90, 200, 120), "Codes", "Find codes in our group & socials")
+	local box: TextBox = UI.new("TextBox", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -112, 0.5, 0),
+		Size = UDim2.fromOffset(150, 40),
+		BackgroundColor3 = Color3.fromRGB(245, 245, 250),
+		PlaceholderText = "Enter code",
+		Text = "",
+		ClearTextOnFocus = false,
+		Font = Enum.Font.FredokaOne,
+		TextScaled = true,
+		TextColor3 = Color3.fromRGB(40, 40, 60),
+		Parent = codeRow,
+	}, {
+		UI.corner(10),
+		UI.stroke(Color3.fromRGB(40, 110, 60), 2),
+		UI.new("UIPadding", { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }),
+	})
+	local redeem = Panel.button({
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -10, 0.5, 0),
+		Size = UDim2.fromOffset(94, 40),
+		Parent = codeRow,
+	}, Color3.fromRGB(90, 200, 120), Color3.fromRGB(30, 100, 50), "REDEEM")
+	local function submit()
+		local text = string.gsub(box.Text, "^%s+", "")
+		if text ~= "" then
+			Sound.play("Click")
+			Remotes.get(Remotes.Names.RedeemCode):FireServer(text)
+			box.Text = ""
+		end
+	end
+	redeem.Activated:Connect(submit)
+	box.FocusLost:Connect(function(enter)
+		if enter then
+			submit()
+		end
+	end)
+
+	local order = 2
 	header("⚡ Boosts", order)
 	for _, p in Products.DeveloperProducts do
 		if p.kind ~= "bundle" then
@@ -596,6 +637,13 @@ end
 
 function Store.start()
 	buildStore()
+	-- One-time favorite prompt after the player's first big find (server decides when)
+	Remotes.get(Remotes.Names.PromptFavorite).OnClientEvent:Connect(function()
+		pcall(function()
+			game:GetService("AvatarEditorService")
+				:PromptSetFavorite(game.PlaceId, Enum.AvatarItemType.Asset, true)
+		end)
+	end)
 	buildOdds()
 	buildBoomOffer()
 	HUD.setOddsHandler(Store.openOdds)

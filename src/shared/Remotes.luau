@@ -18,6 +18,7 @@ Remotes.Names = {
 	SetGiftTarget = "SetGiftTarget", -- (targetUserId: number, passId: string)
 	Track = "Track", -- (event: string, detail: string) whitelisted analytics from UI
 	SetMusic = "SetMusic", -- (enabled: boolean) saved setting
+	RedeemCode = "RedeemCode", -- (code: string)
 	-- server -> client
 	HarvestResult = "HarvestResult", -- (Types.HarvestResult)
 	SellResult = "SellResult", -- (Types.SellResult)
@@ -26,6 +27,7 @@ Remotes.Names = {
 	DexSync = "DexSync", -- (Types.DexState)
 	Watered = "Watered", -- (farmId: number, byName: string)
 	Offer = "Offer", -- (productId: string) show a contextual offer once
+	PromptFavorite = "PromptFavorite", -- () ask the client to show the favorite prompt (once)
 }
 
 local FOLDER_NAME = "Remotes"

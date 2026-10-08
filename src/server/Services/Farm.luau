@@ -31,6 +31,7 @@ local SocialConfig = require(Config.Social)
 local SeedsConfig = require(Config.Seeds)
 local Dex = require(script.Parent.Dex)
 local Announce = require(script.Parent.Announce)
+local Launch = require(script.Parent.Launch)
 local WorldBuilder = require(script.Parent.WorldBuilder)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
 
@@ -297,6 +298,7 @@ local function harvest(player: Player, plot: PlotRuntime)
 	Leaderboards.report(player, "WeeklyBest", value)
 	Leaderboards.report(player, "Dex", found)
 	Announce.harvest(player, carrot, value)
+	Launch.onHarvest(player, roll.rarity)
 
 	clearPlot(plot)
 	-- Planting is the player's move. The Auto Harvest pass is the convenience upgrade: it harvests
