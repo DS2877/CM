@@ -3,7 +3,7 @@
 
 local Economy = {
 	-- DataStore name. CM_Dev_v1 during development, CM_Live_v1 at soft launch.
-	DataStoreName = "CM_Dev_v1",
+	DataStoreName = "CM_Dev_v2",
 	ProfileVersion = 5,
 
 	StartingCash = 20,
@@ -57,6 +57,11 @@ local Economy = {
 	OfflineMaxCarrots = 100,
 	OfflineMinSeconds = 5 * 60,
 	OfflineRate = 0.25,
+	-- A plot never makes an offline carrot faster than this, whatever its upgrades
+	OfflineMinCycle = 240,
+	-- Extra offline carrots per hour away (all plots), so 10 min ~ 6 carrots, 1 h ~ 30,
+	-- the 100 cap after ~3 h. A short break is a treat; a night away fills the basket.
+	OfflinePerHour = 30,
 
 	-- Global cap for combined boost multipliers in the value formula.
 	BoostCap = 6,

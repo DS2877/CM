@@ -4,9 +4,11 @@
 -- Only plots that were saved as growing take part: an empty plot never produces anything.
 -- * Away less than minSeconds: every plot comes back as it was, minus the time away
 --   (a finished one comes back ready to tap). Nothing is harvested for the player.
--- * Longer: the carrot already in the ground finishes as rolled ("saved"), then the plot replants
---   at `rate` of online speed until the time (capped at capSeconds) runs out. The total is capped
---   at maxCarrots; saved carrots always count, only the extra ones are trimmed.
+-- * Longer: the carrot already in the ground finishes as rolled ("saved"), then the plot keeps
+--   producing slowly: one carrot per max(growTime / rate, minCycle) seconds. The floor matters:
+--   without it, growth upgrades made offline as fast as playing (a full basket after 5 minutes).
+--   Extra carrots are capped twice: by perHour x hours away (a short break is a small treat,
+--   not a full basket) and by maxCarrots. Saved carrots always count; only extras are trimmed.
 
 export type SavedInput = {
 	index: number,
@@ -27,6 +29,8 @@ export type Config = {
 	capSeconds: number,
 	maxCarrots: number,
 	rate: number,
+	minCycle: number, -- slowest-allowed seconds per offline carrot per plot (floor on speed)
+	perHour: number, -- extra offline carrots per hour away, all plots together
 }
 
 export type Plan = {
@@ -68,7 +72,7 @@ function OfflinePlan.make(saved: { SavedInput }, away: number, cfg: Config): Pla
 				replant = false,
 			})
 		else
-			local cycle = s.growTime / math.max(cfg.rate, 1e-6)
+			local cycle = math.max(s.growTime / math.max(cfg.rate, 1e-6), cfg.minCycle)
 			local extra = if cycle > 0 then math.floor((seconds - s.remaining) / cycle) else 0
 			finished += 1
 			extraTotal += extra
@@ -83,7 +87,8 @@ function OfflinePlan.make(saved: { SavedInput }, away: number, cfg: Config): Pla
 	end
 
 	-- Cap: trim the extra harvests proportionally, never the saved carrots.
-	local room = math.max(0, cfg.maxCarrots - finished)
+	local byTime = math.floor(cfg.perHour * seconds / 3600)
+	local room = math.max(0, math.min(cfg.maxCarrots - finished, byTime))
 	if extraTotal > room then
 		local scale = if extraTotal > 0 then room / extraTotal else 0
 		local kept = 0

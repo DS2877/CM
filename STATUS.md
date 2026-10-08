@@ -68,7 +68,7 @@ ID:na läggs i `src/shared/Config/Products.luau` (`passId`, `productId`, `giftPr
 | Frön | Klar | SEEDS-rutan: Rare ($250, aldrig Common, 3× tur), Golden ($2,000, alltid Golden ×3), Mystery ($700, blir Rare 60 % / Golden 37 % / Secret 3 % – oddsen visas), Secret (bara från CarrotDex-belöningar, alltid Legendary+). Köp ×1/×10, USE väljer frö. Priser skalar med Value-uppgraderingen. Bara cash, aldrig Robux. Valt frö används för varje plantering (även auto-omplantering) tills det tar slut. |
 | CarrotDex, två lager | Klar | INDEX-rutan: 24 morotstyper (4 Common, 4 Uncommon, 4 Rare, 4 Epic, 3 Legendary, 3 Mythic, 2 Secret) i 3D. Ej hittade visas som siluett med "???", odds "1 in X" syns alltid. Lager 2: tre mutationsprickar per typ (72 stämplar). Röd "!" på Index när du hittat något nytt. Milstolpar ger frön automatiskt (4 hittade → 5 Rare, 8 → 3 Golden, 12 → 5 Mystery, 16/20/24 → Secret; stämplar 5/15/30/50/72). |
 | Synlig pity-mätare | Klar | 👑-baren uppe till vänster: "Legendary in 123" – garanterad Legendary inom 250 planteringar. |
-| Offline-tillväxt + korg | Klar (fixad 8 okt) | Det som växer när du går sparas, med sin redan slumpade morot. Tomma plots ger **ingenting** offline. Kort paus (< 5 min): plots kommer tillbaka som de var, färdiga är redo att skörda. Längre: sparade morötter blir klara exakt som slumpade, sedan växer just de plotsen vidare med Basic-frön i 25 % av onlinefart. Tak 8 h / 100 morötter (Big Basket: 16 h / 300). "While you were away…" avslöjar dem, bästa sist. Test: plantera alla plots, lämna 6 min, kom tillbaka. Lämna med tomma plots: inget avslöjande, bara ett tips. |
+| Offline-tillväxt + korg | Klar (fixad igen 8 okt) | Det som växer när du går sparas med sin redan slumpade morot. Tomma plots ger ingenting. Under 5 min borta: plots kommer tillbaka som de var. Längre: sparade morötter blir klara, sedan en långsam extra-ström: max 1 morot per plot var 4:e minut och max 30 extra per timme borta (oberoende av uppgraderingar). Ungefär: 10 min ≈ 10 morötter, 1 h ≈ 35, natt = tak 100 (Big Basket 300). Test: plantera, lämna 10 min, kom tillbaka – ett litet avslöjande, inte en full korg. |
 | tools/simulate.luau | Klar | `lune run tools/simulate` → `tools/simulation-report.md`. 24 körningar × 4 h. |
 
 ### Simulering (sammanfattning, se tools/simulation-report.md)
@@ -131,6 +131,11 @@ Första Legendary ~6 min, första Mythic ~19 min, Secret i ~40 % av körningarna
 Bra att veta vid test: du kan trycka på dina plots (eller etiketten ovanför) så länge de syns på skärmen. SELL och UPGRADES funkar överallt.
 
 ## Beslut tagna under bygget (regel 10)
+
+Offline, andra fixen 8 okt:
+- **Problemet:** offline gick i 25 % av spelarens växtfart. Med Growth-uppgraderingar (6 s) blev det 1 morot per plot var 24:e sekund, så 5–6 min borta fyllde korgen. Offline skalade med uppgraderingar, vilket var fel.
+- **Nu:** golv på 4 min per offline-morot och plot (`OfflineMinCycle`) och tak på 30 extra per timme borta (`OfflinePerHour`). Regressionstest i `tests/OfflinePlan.spec.luau` återskapar Philips fall.
+- **Ny dev-data:** `CM_Dev_v2`. Profiler i `CM_Dev_v1` var fulla av morötter från buggarna; alla testkonton börjar om rent. (Gamla datan finns kvar i v1 om vi skulle behöva den.)
 
 Design-pass 8 okt (HUD, marknad, värld):
 - **HUD-buggen:** HUD hade en egen kopia av skalfunktionen med den gamla formeln, så förra krympningen nådde aldrig HUD:en. Kopian är borta; allt skalar via `UI.screenScale` (telefon ~0,8).

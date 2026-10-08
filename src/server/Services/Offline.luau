@@ -102,6 +102,8 @@ function Offline.restore(player: Player)
 			then ProductsConfig.BigBasketOfflineCarrots
 			else EconomyConfig.OfflineMaxCarrots,
 		rate = EconomyConfig.OfflineRate,
+		minCycle = EconomyConfig.OfflineMinCycle,
+		perHour = EconomyConfig.OfflinePerHour,
 	})
 
 	local carrots: { Types.RevealedCarrot } = {}
