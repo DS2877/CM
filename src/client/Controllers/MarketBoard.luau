@@ -33,6 +33,8 @@ local nextLabel: TextLabel
 local dailyLabel: TextLabel
 local rows: { Row } = {}
 local arrow: TextLabel
+local pointer: Frame
+local pointerText: TextLabel
 local marketPos = Vector3.new(0, 4, 0)
 
 local function now(): number
@@ -141,23 +143,46 @@ local function build()
 		Parent = playerGui,
 	})
 	UI.autoScale(arrowGui)
-	arrow = UI.bigText({
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(0.5, 0, 0, 60),
-		Size = UDim2.fromOffset(64, 64),
-		Text = "⬆",
-		TextColor3 = Color3.fromRGB(255, 210, 40),
+	-- Compact pill just under the top bar: [rotating arrow] MARKET BOOM! 45m
+	-- Only the small arrow rotates; the text always stays upright.
+	pointer = UI.new("Frame", {
+		Name = "Pointer",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 6),
+		Size = UDim2.fromOffset(250, 44),
+		BackgroundColor3 = Color3.fromRGB(255, 160, 40),
 		Visible = false,
 		Parent = arrowGui,
-	}, Color3.fromRGB(120, 60, 0), 3.5)
-	UI.bigText({
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 1, -4),
-		Size = UDim2.fromOffset(170, 20),
+	}, {
+		UI.corner(22),
+		UI.stroke(Color3.fromRGB(130, 55, 0), 3),
+		UI.new("UIGradient", {
+			Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(215, 200, 190)),
+			Rotation = 90,
+		}),
+	})
+	local circle = UI.new("Frame", {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 4, 0.5, 0),
+		Size = UDim2.fromOffset(36, 36),
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		Parent = pointer,
+	}, { UI.corner(18), UI.stroke(Color3.fromRGB(130, 55, 0), 2.5) })
+	arrow = UI.bigText({
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromScale(0.8, 0.8),
+		Text = "▲",
+		TextColor3 = Color3.fromRGB(255, 140, 30),
+		Parent = circle,
+	}, Color3.fromRGB(130, 55, 0), 2)
+	pointerText = UI.bigText({
+		Position = UDim2.fromOffset(46, 7),
+		Size = UDim2.new(1, -56, 1, -14),
 		Text = "MARKET BOOM!",
-		TextColor3 = Color3.fromRGB(255, 120, 60),
-		Parent = arrow,
-	}, Color3.fromRGB(90, 20, 0), 2)
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = pointer,
+	}, Color3.fromRGB(130, 55, 0), 2.5)
 end
 
 local function update(state: EventSchedule.State)
@@ -192,19 +217,28 @@ local function updateArrow(state: EventSchedule.State)
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart")
 	if not state.boomActive or not camera or not root or not root:IsA("BasePart") then
-		arrow.Visible = false
+		pointer.Visible = false
 		return
 	end
 	local offset = marketPos - (root :: BasePart).Position
-	if Vector3.new(offset.X, 0, offset.Z).Magnitude <= Events.MarketRadius then
-		arrow.Visible = false
+	local flat = Vector3.new(offset.X, 0, offset.Z)
+	local distance = flat.Magnitude
+	if distance <= Events.MarketRadius then
+		pointer.Visible = false
 		return
 	end
 	-- Direction to the market relative to where the camera looks (0 = straight ahead = up).
-	local rel = camera.CFrame:VectorToObjectSpace(offset)
-	local angle = math.deg(math.atan2(rel.X, -rel.Z))
-	arrow.Rotation = angle
-	arrow.Visible = true
+	local look = camera.CFrame.LookVector
+	local forward = Vector3.new(look.X, 0, look.Z)
+	if forward.Magnitude < 1e-3 then
+		forward = Vector3.new(0, 0, -1)
+	end
+	forward = forward.Unit
+	local right = Vector3.new(-forward.Z, 0, forward.X)
+	local dir = flat.Unit
+	arrow.Rotation = math.deg(math.atan2(dir:Dot(right), dir:Dot(forward)))
+	pointerText.Text = string.format("MARKET BOOM! %dm", math.floor(distance - Events.MarketRadius + 0.5))
+	pointer.Visible = true
 end
 
 function MarketBoard.start()

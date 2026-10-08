@@ -10,7 +10,7 @@ Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 3 – marknad och socialt (byg
 | Boom bara vid marknaden | Klar | SELL var som helst = fullt baspris. Står du vid marknaden (inom 32 studs) under boom får du boompriset. SELL-rutan visar "$X at market!" under boom och "BOOM PRICE!" när du står där. |
 | Prisbräda | Klar | Stor tavla ovanför marknaden: dagens pris per rarity med ▲ när det är förhöjt, nedräkning "Next boom in 4:12" / "Carrot Craze! 2:31 left" och vilken boom som kommer. |
 | Lagerkorg | Klar | Korgen startar på 40 och uppgraderas med cash (Basket Size: 80 → 160 → 320 → 640 → 1 280). Full korg = siffran blir röd och nya skördar säljs direkt till baspris. |
-| Marknadsklocka + pil | Klar | När boomen startar: klockljud, banner "MARKET BOOM!" och en gul pil som pekar mot marknaden tills du är där. |
+| Marknadsklocka + pil | Klar (omgjord) | När boomen startar: klockljud och banner. En kompakt orange "MARKET BOOM! 45m"-pill under toppfältet där bara den lilla pilen i cirkeln roterar mot marknaden (texten står alltid rätt). Försvinner när du är framme. |
 | 8 farms, tilldelning | Klar | (sedan fas 1) |
 | Piedestal | Klar | Varje farm har en piedestal i främre hörnet där ägarens bästa morot någonsin svävar, stor och glödande, med namn och värde. |
 | Utrop i tre nivåer | Klar | Epic: toast till dig. Legendary: banner till hela servern. Mythic/Secret: hela servern + alla andra servrar via MessagingService ("🌍 Anna found a MYTHIC … in another server!"). Fungerar inte i Studio (MessagingService). |
@@ -119,6 +119,7 @@ Fas 2:
 - **Mystery Seed** är slumpad men köps bara med cash, och oddsen visas (§11).
 - **Offline använder bara Basic-frön** så att ingen förlorar köpta frön medan de är borta.
 - **Profilversion 2** med migrering från v1 (inga data förloras).
+- **UI-fix efter test 2:** boom-pilen var en roterande jättepil där texten följde med upp och ner; nu en liten pill med upprätt text och avstånd. Knapparna Upgrades/Seeds/Index ligger nu i en rad under valutorna så Index inte hamnar på tumspaken.
 - **UI-fix efter test:** målbaren centreras i toppfältet med säkerhetsmarginal mot Robloxs knappar, valutor uppe till vänster (tumspaken äger nere till vänster), toasts smalare, ljusare barnvänlig palett, partikel-aura på alla morötter som växer med rarity.
 
 Fas 1:

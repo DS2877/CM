@@ -296,18 +296,19 @@ local function build()
 	GuiService:GetPropertyChangedSignal("TopbarInset"):Connect(placeGoalBar)
 	topGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeGoalBar)
 
-	-- Left tile grid (2 columns, like the top simulators)
+	-- Tile row under the currency stack (the thumbstick owns the bottom-left corner)
 	local left = UI.new("Frame", {
 		Name = "Left",
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 12, 0.6, 0),
-		Size = UDim2.fromOffset(146, 146),
+		AnchorPoint = Vector2.new(0, 0),
+		Position = UDim2.new(0, 12, 0, 148),
+		Size = UDim2.fromOffset(212, 66),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
 		UI.new("UIGridLayout", {
-			CellSize = UDim2.fromOffset(68, 68),
-			CellPadding = UDim2.fromOffset(10, 12),
+			CellSize = UDim2.fromOffset(62, 62),
+			CellPadding = UDim2.fromOffset(9, 9),
+			FillDirection = Enum.FillDirection.Horizontal,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
 	})
