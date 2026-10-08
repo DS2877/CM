@@ -4,8 +4,10 @@
 -- countdowns). Prices never go below base: every multiplier is >= 1.
 --
 -- Each cycle of `CycleSeconds` ends with a boom of `BoomSeconds`. Which boom it is comes from a
--- deterministic hash of the cycle number, weighted by `weight`. The boom bonus is only paid
--- when selling AT the market (within MarketRadius); selling anywhere else is full base price.
+-- deterministic hash of the cycle number, weighted by `weight`. Selling anywhere (the SELL
+-- button) pays full base price, so the 30-second loop never needs a walk. Selling AT the market
+-- (within MarketRadius) always pays MarketBonus on top, and the boom multiplier during a boom:
+-- the market is a reward worth walking to, never a toll.
 -- The daily modifier picks one featured rarity per UTC day and applies everywhere.
 
 export type BoomDef = {
@@ -23,6 +25,7 @@ local Events = {
 	CycleSeconds = 600,
 	BoomSeconds = 180,
 	MarketRadius = 32, -- studs from the market center that count as "at the market"
+	MarketBonus = 1.2, -- always paid when selling at the market (booms multiply on top)
 
 	Booms = {
 		{

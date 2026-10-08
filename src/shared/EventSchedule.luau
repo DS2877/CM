@@ -20,6 +20,7 @@ export type EventsConfig = {
 	Booms: { BoomDef },
 	DailyMult: number,
 	DailyRarities: { string },
+	MarketBonus: number?,
 }
 
 export type State = {
@@ -32,6 +33,7 @@ export type State = {
 	day: number,
 	dailyRarity: string,
 	dailyMult: number,
+	marketBonus: number, -- always paid at the market
 }
 
 export type CarrotFacts = {
@@ -82,6 +84,7 @@ function EventSchedule.at(t: number, cfg: EventsConfig): State
 		day = day,
 		dailyRarity = dailyRarity,
 		dailyMult = cfg.DailyMult,
+		marketBonus = math.max(1, cfg.MarketBonus or 1),
 	}
 end
 
@@ -112,8 +115,11 @@ function EventSchedule.multiplier(state: State, carrot: CarrotFacts, atMarket: b
 	if carrot.rarity == state.dailyRarity then
 		m *= state.dailyMult
 	end
-	if state.boomActive and atMarket and EventSchedule.boomApplies(state.boom, carrot) then
-		m *= state.boom.mult
+	if atMarket then
+		m *= state.marketBonus
+		if state.boomActive and EventSchedule.boomApplies(state.boom, carrot) then
+			m *= state.boom.mult
+		end
 	end
 	return math.max(1, m)
 end

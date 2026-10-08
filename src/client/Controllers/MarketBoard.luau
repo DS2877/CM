@@ -215,7 +215,7 @@ local function update(state: EventSchedule.State)
 		timeLabel.Text = left
 		timeLabel.TextColor3 = HOT
 		boomLabel.Text = string.format("%s · %s", state.boom.name, state.boom.description)
-		hintLabel.Text = "Sell HERE for the boom price!"
+		hintLabel.Text = "Sell HERE: boom price + market bonus!"
 		timerText.Text = "BOOM! " .. left
 		timerText.TextColor3 = HOT
 		timerFrame.BackgroundColor3 = Color3.fromRGB(150, 60, 10)
@@ -226,7 +226,7 @@ local function update(state: EventSchedule.State)
 		timeLabel.Text = left
 		timeLabel.TextColor3 = CHALK
 		boomLabel.Text = string.format("%s · %s", state.boom.name, state.boom.description)
-		hintLabel.Text = "Save carrots in your basket, sell during the boom"
+		hintLabel.Text = "Sell here for +20% · even more in a boom!"
 		timerText.Text = "BOOM " .. left
 		timerText.TextColor3 = Color3.fromRGB(255, 255, 255)
 		timerFrame.BackgroundColor3 = Color3.fromRGB(30, 34, 48)

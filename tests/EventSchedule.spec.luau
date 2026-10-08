@@ -35,7 +35,7 @@ return function()
 		assert(seen[boom.id], "boom " .. boom.id .. " never happened in a day")
 	end
 
-	-- Multipliers never go below 1 and boom only pays at the market
+	-- Multipliers never go below 1; the market always pays MarketBonus, booms only at the market
 	local carrot = { rarity = "Rare", size = "Giant", mutations = { "Golden" } }
 	for t = t0, t0 + 3 * 86400, 37 do
 		local s = EventSchedule.at(t, cfg)
@@ -43,7 +43,10 @@ return function()
 		local market = EventSchedule.multiplier(s, carrot, true)
 		assert(here >= 1 and market >= here, "multiplier >= 1 and market >= anywhere")
 		if not s.boomActive then
-			assert(market == here, "no boom -> no market bonus")
+			assert(
+				math.abs(market - here * (Events.MarketBonus or 1)) < 1e-9,
+				"no boom -> the market pays exactly MarketBonus"
+			)
 		end
 	end
 

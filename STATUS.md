@@ -167,6 +167,10 @@ Bra att veta vid test: du kan trycka på dina plots (eller etiketten ovanför) s
 
 ## Beslut tagna under bygget (regel 10)
 
+Sälja och uppgraderingsbaren 8 okt:
+- **SELL-knappen stannar.** På mobil skulle en promenad per korg döda 30-sekundersloopen. Marknaden ska vara en belöning, inte en tull: sälj var som helst = baspris, vid marknaden alltid +20 % (`Events.MarketBonus`), plus boom-multiplikatorn under boom. SELL-rutan visar "MARKET PRICE!" när du står där. Tidigare gav marknaden bara något under boom, så den var meningslös 7 av 10 minuter.
+- **Uppgraderingsbaren:** mörkt glas som valutapillren. Ikonen och fyllningen får uppgraderingens egen färg och emoji (⏩ 🍀 💰 🌱 💪 🧺) med nivåmärke. Har du råd blir den grön med svepande glans, guppande ikon och "UPGRADE! $375". Köp ger blixt och studs.
+
 Ljuddesign 8 okt:
 - **Mixhierarki:** avslöjanden och fanfarer > skörd och sälj > UI > musik > ambience. Musiken duckar i stället för att tävla.
 - **Boom-musik** följer det globala schemat, så klockan och musikbytet säger "spring och sälj" till alla samtidigt.

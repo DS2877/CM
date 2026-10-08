@@ -60,6 +60,11 @@ local goalButton: TextButton
 local goalFill: Frame
 local goalName: TextLabel
 local goalAmount: TextLabel
+local goalIconHolder: Frame
+local goalEmoji: TextLabel
+local goalLevel: TextLabel
+local goalShine: Frame
+local goalStroke: UIStroke
 local sellTile: TextButton
 local sellBadge: Frame
 local sellBadgeText: TextLabel
@@ -172,18 +177,23 @@ local function tile(
 	return b
 end
 
+-- Next-upgrade bar. Dark glass like the currency pills; the icon and fill take the upgrade's own
+-- color and emoji so you see WHAT you're saving for. When affordable it turns green, a shine
+-- sweeps across and the icon bobs: one tap buys it.
 local function buildGoalBar(): TextButton
 	local b: TextButton = UI.new("TextButton", {
 		Name = "Goal",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Size = UDim2.fromOffset(340, 38),
-		BackgroundColor3 = Color3.fromRGB(255, 244, 220),
+		Size = UDim2.fromOffset(300, 32),
+		BackgroundColor3 = Color3.fromRGB(22, 26, 40),
+		BackgroundTransparency = 0.2,
 		AutoButtonColor = false,
 		Text = "",
 	}, {
-		UI.corner(12),
-		UI.stroke(C.goalDark, 3),
+		UI.corner(16),
 	})
+	goalStroke = UI.stroke(Color3.fromRGB(255, 255, 255), 1.5, 0.6)
+	goalStroke.Parent = b
 	local clip = UI.new("Frame", {
 		Name = "Clip",
 		Position = UDim2.fromOffset(3, 3),
@@ -191,51 +201,98 @@ local function buildGoalBar(): TextButton
 		BackgroundTransparency = 1,
 		ClipsDescendants = true,
 		Parent = b,
-	}, { UI.corner(8) })
+	}, { UI.corner(13) })
 	goalFill = UI.new("Frame", {
 		Name = "Fill",
 		Size = UDim2.fromScale(0, 1),
 		BackgroundColor3 = C.goal,
 		Parent = clip,
 	}, {
-		UI.corner(8),
+		UI.corner(13),
 		UI.new("UIGradient", {
-			Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(215, 190, 150)),
+			Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(185, 185, 185)),
 			Rotation = 90,
 		}),
 	})
-	-- Icon overlapping the left edge, like a level badge
-	local iconHolder: Frame = UI.new("Frame", {
+	-- Shine that sweeps across when the upgrade is affordable
+	goalShine = UI.new("Frame", {
+		Name = "Shine",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.fromScale(-0.3, 0),
+		Size = UDim2.new(0, 46, 1, 0),
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BackgroundTransparency = 0.55,
+		Rotation = 18,
+		Visible = false,
+		ZIndex = 2,
+		Parent = clip,
+	}, {
+		UI.new("UIGradient", {
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.5, 0),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+		}),
+	})
+	-- Track icon overlapping the left end, with a level badge
+	goalIconHolder = UI.new("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(0, 4, 0.5, 0),
-		Size = UDim2.fromOffset(44, 44),
+		Position = UDim2.new(0, 6, 0.5, 0),
+		Size = UDim2.fromOffset(42, 42),
 		BackgroundColor3 = C.upgrade,
-		ZIndex = 3,
+		ZIndex = 4,
 		Parent = b,
-	}, { UI.corner(22), UI.stroke(C.upgradeDark, 3) })
-	local icon = UI.icon("Upgrade", "⬆️")
-	icon.AnchorPoint = Vector2.new(0.5, 0.5)
-	icon.Position = UDim2.fromScale(0.5, 0.5)
-	icon.Size = UDim2.fromScale(0.7, 0.7)
-	icon.ZIndex = 4
-	icon.Parent = iconHolder
+	}, {
+		UI.corner(21),
+		UI.stroke(Color3.fromRGB(255, 255, 255), 2.5),
+		UI.new("UIGradient", {
+			Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(190, 190, 190)),
+			Rotation = 90,
+		}),
+	})
+	goalEmoji = UI.new("TextLabel", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromScale(0.68, 0.68),
+		BackgroundTransparency = 1,
+		Text = "⬆️",
+		TextScaled = true,
+		ZIndex = 5,
+		Parent = goalIconHolder,
+	})
+	local levelBadge: Frame = UI.new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(1, -4, 1, -4),
+		Size = UDim2.fromOffset(20, 18),
+		BackgroundColor3 = Color3.fromRGB(22, 26, 40),
+		ZIndex = 6,
+		Parent = goalIconHolder,
+	}, { UI.corner(9), UI.stroke(Color3.fromRGB(255, 255, 255), 1.5) })
+	goalLevel = bigText({
+		Size = UDim2.new(1, -4, 1, -4),
+		Position = UDim2.fromOffset(2, 2),
+		Text = "1",
+		ZIndex = 7,
+		Parent = levelBadge,
+	}, Color3.new(0, 0, 0), 1)
 	goalName = bigText({
-		Position = UDim2.fromOffset(32, 6),
-		Size = UDim2.new(0.58, -32, 1, -12),
+		Position = UDim2.fromOffset(34, 6),
+		Size = UDim2.new(0.52, -34, 1, -12),
 		Text = "",
 		TextXAlignment = Enum.TextXAlignment.Left,
-		ZIndex = 2,
+		ZIndex = 3,
 		Parent = b,
-	}, C.goalDark, 2.5)
+	}, Color3.fromRGB(10, 10, 20), 2)
 	goalAmount = bigText({
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -10, 0, 6),
-		Size = UDim2.new(0.42, -10, 1, -12),
+		Position = UDim2.new(1, -12, 0, 7),
+		Size = UDim2.new(0.44, -12, 1, -14),
 		Text = "",
 		TextXAlignment = Enum.TextXAlignment.Right,
-		ZIndex = 2,
+		ZIndex = 3,
 		Parent = b,
-	}, C.goalDark, 2.5)
+	}, Color3.fromRGB(10, 10, 20), 2)
 	return b
 end
 
@@ -596,20 +653,28 @@ local function refreshGoal()
 	if not track then
 		goalName.Text = "All maxed!"
 		goalAmount.Text = ""
+		goalLevel.Text = "★"
 		goalFill.Size = UDim2.fromScale(1, 1)
 		upgradesBadge.Visible = false
 		return
 	end
 	local progress = math.clamp(cash / cost, 0, 1)
-	UI.tween(goalFill, 0.25, { Size = UDim2.fromScale(progress, 1) })
-	goalName.Text = string.format("%s %d", track.name, level + 1)
+	local trackColor = UI.rgb(track.color)
+	UI.tween(goalFill, 0.25, { Size = UDim2.fromScale(if cash >= cost then 1 else progress, 1) })
+	goalName.Text = track.name
+	goalEmoji.Text = track.emoji
+	goalLevel.Text = tostring(level + 1)
+	goalIconHolder.BackgroundColor3 = trackColor
 	if cash >= cost then
-		goalAmount.Text = "TAP TO BUY!"
+		goalAmount.Text = "UPGRADE! " .. Format.cash(cost)
+		goalAmount.TextColor3 = Color3.new(1, 1, 1)
 		goalFill.BackgroundColor3 = C.good
 	else
 		goalAmount.Text = string.format("%s/%s", Format.cash(cash), Format.cash(cost))
-		goalFill.BackgroundColor3 = C.goal
+		goalAmount.TextColor3 = Color3.fromRGB(255, 236, 170)
+		goalFill.BackgroundColor3 = trackColor
 	end
+	goalShine.Visible = cash >= cost
 	upgradesBadge.Visible = cash >= cost
 	-- A small chime the moment the next upgrade becomes affordable ("go buy it!")
 	if cash >= cost and not goalWasReady then
@@ -660,13 +725,15 @@ local function refreshBoom()
 	local state = EventSchedule.at(workspace:GetServerTimeNow(), eventsCfg)
 	local value = attrNumber("BasketValue")
 	local marketValue = attrNumber("BasketMarketValue")
-	local boosted = state.boomActive and marketValue > value
-	if boosted and atMarket() then
+	local boosted = marketValue > value
+	local here = atMarket()
+	if boosted and here then
 		sellValue.Text = Format.cash(marketValue)
 		sellValue.TextColor3 = Color3.fromRGB(255, 170, 40)
-		boomTag.Text = "BOOM PRICE!"
+		boomTag.Text = if state.boomActive then "BOOM PRICE!" else "MARKET PRICE!"
 		boomTag.Visible = true
-	elseif boosted then
+	elseif boosted and state.boomActive then
+		-- During a boom, always advertise what the walk is worth
 		sellValue.Text = Format.cash(value)
 		sellValue.TextColor3 = C.cash
 		boomTag.Text = Format.cash(marketValue) .. " at market!"
@@ -854,7 +921,20 @@ function HUD.start()
 		if track and attrNumber("Cash") >= cost then
 			Remotes.get(Remotes.Names.BuyUpgrade):FireServer(track.id)
 			Sound.play("Upgrade")
-			UI.bump(goalButton, 0.1)
+			UI.bump(goalButton, 0.18)
+			UI.bump(goalIconHolder, 0.4)
+			-- Quick white flash over the bar = "it happened"
+			local flash: Frame = UI.new("Frame", {
+				Size = UDim2.fromScale(1, 1),
+				BackgroundColor3 = Color3.new(1, 1, 1),
+				BackgroundTransparency = 0.2,
+				ZIndex = 8,
+				Parent = goalButton,
+			}, { UI.corner(16) })
+			UI.tween(flash, 0.35, { BackgroundTransparency = 1 })
+			task.delay(0.4, function()
+				flash:Destroy()
+			end)
 		else
 			local handler = tileHandlers.Upgrades
 			if handler then
@@ -915,9 +995,19 @@ function HUD.start()
 		end
 		boomTag.Rotation = math.sin(t * 5) * 4
 		local pulse = 0.5 + 0.5 * math.sin(t * 6)
-		local goalStroke = goalButton:FindFirstChildOfClass("UIStroke")
-		if goalStroke then
-			goalStroke.Color = if affordableGoal() then C.outline:Lerp(C.good, pulse) else C.outline
+		-- Affordable upgrade: shine sweep every ~1.8 s, icon bob, glowing rim
+		if affordableGoal() then
+			local sweep = (t % 1.8) / 1.8
+			goalShine.Position = UDim2.fromScale(-0.3 + sweep * 1.6, 0)
+			goalIconHolder.Rotation = math.sin(t * 7) * 8
+			goalStroke.Color = Color3.fromRGB(255, 255, 255):Lerp(C.good, pulse)
+			goalStroke.Transparency = 0.1
+			goalStroke.Thickness = 2
+		else
+			goalIconHolder.Rotation = 0
+			goalStroke.Color = Color3.fromRGB(255, 255, 255)
+			goalStroke.Transparency = 0.6
+			goalStroke.Thickness = 1.5
 		end
 		if upgradesBadge.Visible then
 			upgradesBadge.Rotation = math.sin(t * 8) * 12
