@@ -79,14 +79,13 @@ local function floatText(position: Vector3, lines: { { text: string, color: Colo
 	})
 	local labels: { TextLabel } = {}
 	for i, line in lines do
-		local l = UI.label({
+		local l = UI.bigText({
 			Position = UDim2.fromScale(0, (i - 1) / #lines),
 			Size = UDim2.fromScale(1, 1 / #lines),
 			Text = line.text,
 			TextColor3 = line.color,
 			Parent = bb,
-		})
-		UI.textStroke(Color3.new(0, 0, 0), 3).Parent = l
+		}, Color3.new(0, 0, 0), 3)
 		table.insert(labels, l)
 	end
 	UI.bump(bb :: any, 0.4)
@@ -324,23 +323,55 @@ local function onSell(r: Types.SellResult)
 			HUD.bump("cash", 0.06)
 		end)
 	end
-	-- "+$1,234" under the wallet
+	-- Big center gain popup ("+$1,234" with a cash icon), then it shrinks into the wallet.
 	local root = HUD.fxRoot()
-	local l = UI.label({
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.fromOffset(to.X, to.Y + 30),
-		Size = UDim2.fromOffset(260, 40),
+	local s = HUD.scale()
+	local center = root.AbsoluteSize * Vector2.new(0.5, 0.42)
+	local height = math.floor(math.clamp(44 + math.log10(math.max(1, r.total)) * 4, 48, 80) * s)
+	local popup: Frame = UI.new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(center.X, center.Y),
+		Size = UDim2.fromOffset(height * 6, height),
+		BackgroundTransparency = 1,
+		Parent = root,
+	}, {
+		UI.new("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+			Padding = UDim.new(0, 6),
+		}),
+	})
+	local icon = UI.icon("Cash", "💵")
+	icon.Size = UDim2.fromOffset(height, height)
+	icon.LayoutOrder = 1
+	icon.Parent = popup
+	UI.bigText({
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromOffset(0, height),
+		TextScaled = false,
+		TextSize = height,
 		Text = "+" .. Format.cash(r.total),
 		TextColor3 = CASH_GREEN,
-		Parent = root,
-	})
-	UI.textStroke(Color3.fromRGB(10, 40, 10), 3).Parent = l
-	UI.bump(l, 0.4)
-	UI.tween(l, 1.4, { Position = UDim2.fromOffset(to.X, to.Y + 70) })
-	task.delay(1.1, function()
-		UI.tween(l, 0.4, { TextTransparency = 1 })
+		LayoutOrder = 2,
+		Parent = popup,
+	}, Color3.fromRGB(10, 50, 10), 4)
+	UI.bump(popup, 0.6)
+	task.delay(0.75, function()
+		UI.tween(
+			popup,
+			0.45,
+			{ Position = UDim2.fromOffset(to.X + height * 2, to.Y) },
+			Enum.EasingStyle.Back,
+			Enum.EasingDirection.In
+		)
+		local scale = popup:FindFirstChild("Bump") :: UIScale?
+		if scale then
+			UI.tween(scale, 0.45, { Scale = 0.3 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		end
 		task.wait(0.45)
-		l:Destroy()
+		HUD.bump("cash", 0.25)
+		popup:Destroy()
 	end)
 end
 

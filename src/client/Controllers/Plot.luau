@@ -150,12 +150,12 @@ local function ensureBillboard(view: View)
 	-- The label itself is a big tap target too.
 	local bg: TextButton = UI.new("TextButton", {
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Color3.fromRGB(25, 25, 30),
-		BackgroundTransparency = 0.25,
+		BackgroundColor3 = Color3.fromRGB(40, 35, 30),
+		BackgroundTransparency = 0.1,
 		AutoButtonColor = false,
 		Text = "",
 		Parent = bb,
-	}, { UI.corner(10), UI.stroke(Color3.fromRGB(10, 10, 10), 2) })
+	}, { UI.corner(10), UI.stroke(Color3.fromRGB(15, 15, 20), 3) })
 	bg.Activated:Connect(function()
 		actOn(view)
 	end)
@@ -166,13 +166,13 @@ local function ensureBillboard(view: View)
 		BackgroundTransparency = 0.15,
 		Parent = bg,
 	}, { UI.corner(10) })
-	local text = UI.label({
-		Size = UDim2.fromScale(1, 1),
+	local text = UI.bigText({
+		Position = UDim2.fromScale(0.04, 0.12),
+		Size = UDim2.fromScale(0.92, 0.76),
 		Text = "",
 		ZIndex = 2,
 		Parent = bg,
-	})
-	UI.textStroke(Color3.new(0, 0, 0), 2).Parent = text
+	}, Color3.new(0, 0, 0), 2.5)
 	view.billboard = bb
 	view.barFill = fill
 	view.barText = text

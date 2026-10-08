@@ -1,8 +1,13 @@
 --!strict
--- Mobile-first HUD: cash (with count-up), goal bar for the next purchase, big SELL button,
--- UPGRADES button, toasts and server banners. Everything is a large tap target; nothing needs
--- hover or a keyboard.
+-- Mobile-first HUD in the style of current top Roblox simulators:
+--   * goal bar in the free part of the Roblox top bar (yellow progress bar, tap to buy)
+--   * left stack of chunky tiles with red "!" badges (Upgrades)
+--   * right SELL tile with a count badge, basket value under it (thumb reach, above jump)
+--   * bottom-left currency stack with big stroked numbers
+--   * big stroked toasts above the bottom center, big center banners
+-- Every tap target is at least ~60 pt on a phone; nothing needs hover or a keyboard.
 
+local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -23,31 +28,40 @@ local player = Players.LocalPlayer
 local HUD = {}
 HUD.foundTypes = {} :: { [string]: boolean }
 
-local COLORS = {
-	panel = Color3.fromRGB(30, 30, 40),
-	cash = Color3.fromRGB(120, 235, 110),
-	sell = Color3.fromRGB(70, 200, 90),
-	sellDark = Color3.fromRGB(30, 120, 50),
-	upgrade = Color3.fromRGB(255, 170, 50),
-	upgradeDark = Color3.fromRGB(170, 90, 20),
-	goalFill = Color3.fromRGB(255, 200, 60),
-	good = Color3.fromRGB(120, 235, 110),
-	bad = Color3.fromRGB(255, 110, 110),
+local C = {
+	cash = Color3.fromRGB(110, 240, 90),
+	cashDark = Color3.fromRGB(20, 90, 20),
+	sell = Color3.fromRGB(80, 215, 90),
+	sellDark = Color3.fromRGB(20, 100, 35),
+	upgrade = Color3.fromRGB(255, 165, 40),
+	upgradeDark = Color3.fromRGB(150, 70, 0),
+	goal = Color3.fromRGB(255, 205, 40),
+	carrot = Color3.fromRGB(255, 150, 50),
+	badge = Color3.fromRGB(235, 40, 50),
+	good = Color3.fromRGB(120, 245, 100),
+	bad = Color3.fromRGB(255, 80, 80),
 	info = Color3.fromRGB(255, 255, 255),
+	outline = Color3.fromRGB(15, 15, 20),
 }
 
 local gui: ScreenGui
+local topGui: ScreenGui
 local fxGui: ScreenGui
 local fxRoot: Frame
+
 local cashLabel: TextLabel
-local cashPill: Frame
+local cashRow: Frame
+local basketLabel: TextLabel
 local goalButton: TextButton
 local goalFill: Frame
-local goalLabel: TextLabel
-local sellButton: TextButton
+local goalName: TextLabel
+local goalAmount: TextLabel
+local sellTile: TextButton
+local sellBadge: Frame
+local sellBadgeText: TextLabel
 local sellValue: TextLabel
-local sellCount: TextLabel
-local upgradesButton: TextButton
+local upgradesTile: TextButton
+local upgradesBadge: Frame
 local toastList: Frame
 local bannerLabel: TextLabel
 
@@ -79,72 +93,162 @@ function HUD.nextGoal(): (Upgrades.UpgradeDef?, number, number)
 	return best, bestCost, bestLevel
 end
 
-local function refreshGoal()
-	local track, cost, level = HUD.nextGoal()
-	local cash = attrNumber("Cash")
-	if not track then
-		goalLabel.Text = "All upgrades maxed!"
-		goalFill.Size = UDim2.fromScale(1, 1)
-		return
-	end
-	local progress = math.clamp(cash / cost, 0, 1)
-	UI.tween(goalFill, 0.25, { Size = UDim2.fromScale(progress, 1) })
-	local name = string.format("%s %d", track.name, level + 1)
-	if cash >= cost then
-		goalLabel.Text = name .. " – TAP TO BUY!"
-		goalFill.BackgroundColor3 = COLORS.good
-	else
-		local basket = attrNumber("BasketValue")
-		if cash + basket >= cost then
-			goalLabel.Text = name .. " – sell carrots to afford!"
-		else
-			goalLabel.Text = string.format("%s – %s left", name, Format.cash(cost - cash))
-		end
-		goalFill.BackgroundColor3 = COLORS.goalFill
-	end
+local function affordableGoal(): boolean
+	local track, cost = HUD.nextGoal()
+	return track ~= nil and attrNumber("Cash") >= cost
 end
 
-local function refreshSell()
-	local count = attrNumber("BasketCount")
-	local value = attrNumber("BasketValue")
-	local cap = attrNumber("BasketCapacity")
-	sellValue.Text = Format.cash(value)
-	sellCount.Text = if cap > 0 then string.format("%d / %d carrots", count, cap) else tostring(count)
-	local empty = count == 0
-	sellButton.BackgroundColor3 = if empty then Color3.fromRGB(90, 110, 95) else COLORS.sell
-	sellButton.AutoButtonColor = not empty
+local bigText = UI.bigText
+
+local function badge(parent: GuiObject, color: Color3, text: string): (Frame, TextLabel)
+	local b: Frame = UI.new("Frame", {
+		Name = "Badge",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(1, -6, 0, 6),
+		Size = UDim2.fromOffset(28, 28),
+		BackgroundColor3 = color,
+		ZIndex = 5,
+		Parent = parent,
+	}, { UI.corner(14), UI.stroke(Color3.new(1, 1, 1), 2.5) })
+	local l = bigText({
+		Size = UDim2.new(1, -6, 1, -6),
+		Position = UDim2.fromOffset(3, 3),
+		Text = text,
+		ZIndex = 6,
+		Parent = b,
+	}, Color3.fromRGB(60, 0, 0), 1.5)
+	return b, l
 end
 
-local function onCashChanged()
-	targetCash = attrNumber("Cash")
-	refreshGoal()
+-- Square tile button: gradient fill, dark outline, big icon, label overlapping the bottom edge.
+local function tile(
+	name: string,
+	size: number,
+	color: Color3,
+	dark: Color3,
+	iconName: string,
+	emoji: string,
+	text: string
+): TextButton
+	local b: TextButton = UI.new("TextButton", {
+		Name = name,
+		Size = UDim2.fromOffset(size, size),
+		BackgroundColor3 = color,
+		AutoButtonColor = true,
+		Text = "",
+	}, {
+		UI.corner(14),
+		UI.stroke(dark, 3),
+		UI.new("UIGradient", {
+			Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(190, 190, 190)),
+			Rotation = 90,
+		}),
+	})
+	local icon = UI.icon(iconName, emoji)
+	icon.AnchorPoint = Vector2.new(0.5, 0.5)
+	icon.Position = UDim2.fromScale(0.5, 0.42)
+	icon.Size = UDim2.fromScale(0.68, 0.68)
+	icon.Parent = b
+	bigText({
+		Name = "Label",
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, 4),
+		Size = UDim2.new(1, 6, 0, 22),
+		Text = text,
+		ZIndex = 3,
+		Parent = b,
+	}, dark, 2.5)
+	return b
 end
 
 local function screenScale(): number
 	local camera = workspace.CurrentCamera
 	local size = if camera then camera.ViewportSize else Vector2.new(844, 390)
-	return math.clamp(math.min(size.X / 900, size.Y / 420), 0.7, 1.35)
+	-- Phones in landscape are ~390 pt tall; scale up on tablets/PC, down on tiny screens.
+	return math.clamp(math.min(size.Y / 400, size.X / 760), 0.75, 1.6)
 end
 
-local function makeButton(props: { [string]: any }, color: Color3, dark: Color3): TextButton
-	local base: { [string]: any } = {
-		BackgroundColor3 = color,
-		AutoButtonColor = true,
+local function buildGoalBar(): TextButton
+	local b: TextButton = UI.new("TextButton", {
+		Name = "Goal",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Size = UDim2.fromOffset(340, 38),
+		BackgroundColor3 = Color3.fromRGB(40, 35, 30),
+		AutoButtonColor = false,
 		Text = "",
-		BorderSizePixel = 0,
-	}
-	for k, v in props do
-		base[k] = v
-	end
-	local b: TextButton = UI.new("TextButton", base, {
-		UI.corner(16),
-		UI.stroke(dark, 3),
+	}, {
+		UI.corner(10),
+		UI.stroke(C.outline, 3),
+	})
+	local clip = UI.new("Frame", {
+		Name = "Clip",
+		Position = UDim2.fromOffset(3, 3),
+		Size = UDim2.new(1, -6, 1, -6),
+		BackgroundTransparency = 1,
+		ClipsDescendants = true,
+		Parent = b,
+	}, { UI.corner(8) })
+	goalFill = UI.new("Frame", {
+		Name = "Fill",
+		Size = UDim2.fromScale(0, 1),
+		BackgroundColor3 = C.goal,
+		Parent = clip,
+	}, {
+		UI.corner(8),
 		UI.new("UIGradient", {
-			Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(205, 205, 205)),
+			Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(215, 190, 150)),
 			Rotation = 90,
 		}),
 	})
+	-- Icon overlapping the left edge, like a level badge
+	local iconHolder: Frame = UI.new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0, 4, 0.5, 0),
+		Size = UDim2.fromOffset(44, 44),
+		BackgroundColor3 = C.upgrade,
+		ZIndex = 3,
+		Parent = b,
+	}, { UI.corner(22), UI.stroke(C.upgradeDark, 3) })
+	local icon = UI.icon("Upgrade", "⬆️")
+	icon.AnchorPoint = Vector2.new(0.5, 0.5)
+	icon.Position = UDim2.fromScale(0.5, 0.5)
+	icon.Size = UDim2.fromScale(0.7, 0.7)
+	icon.ZIndex = 4
+	icon.Parent = iconHolder
+	goalName = bigText({
+		Position = UDim2.fromOffset(32, 6),
+		Size = UDim2.new(0.58, -32, 1, -12),
+		Text = "",
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 2,
+		Parent = b,
+	}, C.outline, 2)
+	goalAmount = bigText({
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -10, 0, 6),
+		Size = UDim2.new(0.42, -10, 1, -12),
+		Text = "",
+		TextXAlignment = Enum.TextXAlignment.Right,
+		ZIndex = 2,
+		Parent = b,
+	}, C.outline, 2)
 	return b
+end
+
+-- Put the goal bar in the free part of the Roblox top bar; fall back to just below it.
+local function placeGoalBar()
+	local inset = GuiService.TopbarInset
+	local width = inset.Max.X - inset.Min.X
+	if width >= 220 and inset.Height > 20 then
+		goalButton.Parent = topGui
+		local w = math.min(380, width - 40)
+		goalButton.Size = UDim2.fromOffset(w, math.min(40, inset.Height - 10))
+		goalButton.Position = UDim2.fromOffset(inset.Min.X + 24 + w / 2, inset.Min.Y + inset.Height / 2)
+	else
+		goalButton.Parent = gui
+		goalButton.Size = UDim2.fromOffset(320, 38)
+		goalButton.Position = UDim2.new(0.5, 0, 0, 26)
+	end
 end
 
 local function build()
@@ -165,177 +269,153 @@ local function build()
 		end)
 	end
 
-	-- Cash pill (top center)
-	cashPill = UI.new("Frame", {
-		Name = "Cash",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 4),
-		Size = UDim2.fromOffset(230, 50),
-		BackgroundColor3 = COLORS.panel,
-		BackgroundTransparency = 0.15,
-		Parent = gui,
-	}, {
-		UI.corner(25),
-		UI.stroke(Color3.fromRGB(15, 15, 20), 2),
+	-- Top bar layer (positions come from GuiService.TopbarInset, in raw screen points)
+	topGui = UI.new("ScreenGui", {
+		Name = "HUD_Top",
+		ResetOnSpawn = false,
+		IgnoreGuiInset = true,
+		ScreenInsets = Enum.ScreenInsets.None,
+		DisplayOrder = 2,
+		Parent = playerGui,
 	})
-	UI.new("Frame", {
-		Name = "Coin",
+	goalButton = buildGoalBar()
+	placeGoalBar()
+	GuiService:GetPropertyChangedSignal("TopbarInset"):Connect(placeGoalBar)
+
+	-- Left tile stack
+	local left = UI.new("Frame", {
+		Name = "Left",
 		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 6, 0.5, 0),
-		Size = UDim2.fromOffset(38, 38),
-		BackgroundColor3 = COLORS.cash,
-		Parent = cashPill,
-	}, {
-		UI.corner(19),
-		UI.stroke(Color3.fromRGB(30, 110, 30), 2),
-		UI.label({
-			Size = UDim2.fromScale(1, 1),
-			Text = "$",
-			TextColor3 = Color3.fromRGB(20, 80, 20),
-		}),
-	})
-	cashLabel = UI.label({
-		Name = "Amount",
-		Position = UDim2.fromOffset(50, 6),
-		Size = UDim2.new(1, -60, 1, -12),
-		Text = "$0",
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextColor3 = COLORS.cash,
-		Parent = cashPill,
-	})
-	UI.textStroke(Color3.fromRGB(10, 40, 10), 2).Parent = cashLabel
-
-	-- Goal bar (next purchase)
-	goalButton = UI.new("TextButton", {
-		Name = "Goal",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 60),
-		Size = UDim2.fromOffset(300, 34),
-		BackgroundColor3 = COLORS.panel,
-		BackgroundTransparency = 0.15,
-		AutoButtonColor = true,
-		Text = "",
-		Parent = gui,
-	}, {
-		UI.corner(17),
-		UI.stroke(Color3.fromRGB(15, 15, 20), 2),
-	})
-	local fillClip = UI.new("Frame", {
-		Name = "Clip",
-		Position = UDim2.fromOffset(4, 4),
-		Size = UDim2.new(1, -8, 1, -8),
-		BackgroundTransparency = 1,
-		ClipsDescendants = true,
-		Parent = goalButton,
-	}, { UI.corner(13) })
-	goalFill = UI.new("Frame", {
-		Name = "Fill",
-		Size = UDim2.fromScale(0, 1),
-		BackgroundColor3 = COLORS.goalFill,
-		BackgroundTransparency = 0.25,
-		Parent = fillClip,
-	}, { UI.corner(13) })
-	goalLabel = UI.label({
-		Name = "Text",
-		Position = UDim2.fromOffset(10, 6),
-		Size = UDim2.new(1, -20, 1, -12),
-		Text = "",
-		ZIndex = 2,
-		Parent = goalButton,
-	})
-	UI.textStroke(Color3.fromRGB(20, 20, 20), 1.5).Parent = goalLabel
-
-	-- Toasts under the goal bar
-	toastList = UI.new("Frame", {
-		Name = "Toasts",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 102),
-		Size = UDim2.fromOffset(420, 200),
+		Position = UDim2.new(0, 12, 0.46, 0),
+		Size = UDim2.fromOffset(80, 200),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
 		UI.new("UIListLayout", {
-			Padding = UDim.new(0, 6),
+			Padding = UDim.new(0, 14),
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+	upgradesTile = tile("Upgrades", 76, C.upgrade, C.upgradeDark, "Upgrade", "⬆️", "Upgrades")
+	upgradesTile.LayoutOrder = 1
+	upgradesTile.Parent = left
+	upgradesBadge = badge(upgradesTile, C.badge, "!")
+	upgradesBadge.Visible = false
+
+	-- Right SELL tile with count badge and value underneath
+	local right = UI.new("Frame", {
+		Name = "Right",
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -12, 0.42, 0),
+		Size = UDim2.fromOffset(120, 128),
+		BackgroundTransparency = 1,
+		Parent = gui,
+	})
+	sellTile = tile("Sell", 92, C.sell, C.sellDark, "Basket", "🧺", "SELL")
+	sellTile.AnchorPoint = Vector2.new(0.5, 0)
+	sellTile.Position = UDim2.new(0.5, 0, 0, 0)
+	sellTile.Parent = right
+	sellBadge, sellBadgeText = badge(sellTile, C.sell, "0")
+	sellBadge.Size = UDim2.fromOffset(34, 28)
+	sellValue = bigText({
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 100),
+		Size = UDim2.new(1, 20, 0, 26),
+		Text = "$0",
+		TextColor3 = C.cash,
+		Parent = right,
+	}, C.cashDark, 2.5)
+
+	-- Bottom-left currency stack
+	local currencies = UI.new("Frame", {
+		Name = "Currencies",
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 14, 1, -10),
+		Size = UDim2.fromOffset(260, 84),
+		BackgroundTransparency = 1,
+		Parent = gui,
+	}, {
+		UI.new("UIListLayout", {
+			Padding = UDim.new(0, 2),
+			VerticalAlignment = Enum.VerticalAlignment.Bottom,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+	local basketRow = UI.new("Frame", {
+		Name = "Basket",
+		Size = UDim2.fromOffset(260, 30),
+		BackgroundTransparency = 1,
+		LayoutOrder = 1,
+		Parent = currencies,
+	})
+	local carrotIcon = UI.icon("Carrot", "🥕")
+	carrotIcon.Size = UDim2.fromOffset(30, 30)
+	carrotIcon.Parent = basketRow
+	basketLabel = bigText({
+		Position = UDim2.fromOffset(38, 2),
+		Size = UDim2.new(1, -38, 1, -4),
+		Text = "0",
+		TextColor3 = C.carrot,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = basketRow,
+	}, Color3.fromRGB(90, 35, 0), 2.5)
+	cashRow = UI.new("Frame", {
+		Name = "Cash",
+		Size = UDim2.fromOffset(260, 46),
+		BackgroundTransparency = 1,
+		LayoutOrder = 2,
+		Parent = currencies,
+	})
+	local cashIcon = UI.icon("Cash", "💵")
+	cashIcon.Size = UDim2.fromOffset(44, 44)
+	cashIcon.Parent = cashRow
+	cashLabel = bigText({
+		Position = UDim2.fromOffset(50, 2),
+		Size = UDim2.new(1, -50, 1, -4),
+		Text = "$0",
+		TextColor3 = C.cash,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = cashRow,
+	}, C.cashDark, 3)
+
+	-- Toasts: big stroked text above the bottom center, newest at the bottom
+	toastList = UI.new("Frame", {
+		Name = "Toasts",
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -58),
+		Size = UDim2.fromOffset(520, 150),
+		BackgroundTransparency = 1,
+		Parent = gui,
+	}, {
+		UI.new("UIListLayout", {
+			Padding = UDim.new(0, 2),
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			VerticalAlignment = Enum.VerticalAlignment.Bottom,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
 	})
 
-	-- Server banner
-	bannerLabel = UI.label({
+	-- Big center banner
+	bannerLabel = bigText({
 		Name = "Banner",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.36),
-		Size = UDim2.fromOffset(640, 44),
+		Position = UDim2.fromScale(0.5, 0.27),
+		Size = UDim2.fromOffset(620, 48),
 		Text = "",
 		TextTransparency = 1,
 		Parent = gui,
-	})
-	local bannerStroke = UI.textStroke(Color3.new(0, 0, 0), 3)
+	}, Color3.new(0, 0, 0), 3.5)
+	local bannerStroke = bannerLabel:FindFirstChildOfClass("UIStroke") :: UIStroke
 	bannerStroke.Name = "Stroke"
 	bannerStroke.Transparency = 1
-	bannerStroke.Parent = bannerLabel
 
-	-- SELL button (right side, above the jump button)
-	sellButton = makeButton({
-		Name = "Sell",
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -14, 0.4, 0),
-		Size = UDim2.fromOffset(150, 84),
-		Parent = gui,
-	}, COLORS.sell, COLORS.sellDark)
-	local sellTitle = UI.label({
-		Size = UDim2.new(1, -12, 0, 30),
-		Position = UDim2.fromOffset(6, 4),
-		Text = "SELL",
-		Parent = sellButton,
-	})
-	UI.textStroke(COLORS.sellDark, 2.5).Parent = sellTitle
-	sellValue = UI.label({
-		Size = UDim2.new(1, -12, 0, 26),
-		Position = UDim2.fromOffset(6, 33),
-		Text = "$0",
-		TextColor3 = Color3.fromRGB(240, 255, 220),
-		Parent = sellButton,
-	})
-	UI.textStroke(COLORS.sellDark, 2).Parent = sellValue
-	sellCount = UI.label({
-		Size = UDim2.new(1, -12, 0, 16),
-		Position = UDim2.fromOffset(6, 61),
-		Text = "",
-		TextColor3 = Color3.fromRGB(225, 245, 215),
-		Parent = sellButton,
-	})
-	UI.textStroke(COLORS.sellDark, 1.5).Parent = sellCount
-
-	-- UPGRADES button (left side, above the thumbstick)
-	upgradesButton = makeButton({
-		Name = "Upgrades",
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 14, 0.4, 0),
-		Size = UDim2.fromOffset(120, 84),
-		Parent = gui,
-	}, COLORS.upgrade, COLORS.upgradeDark)
-	local upArrow = UI.label({
-		Size = UDim2.new(1, -12, 0, 36),
-		Position = UDim2.fromOffset(6, 6),
-		Text = "▲",
-		Parent = upgradesButton,
-	})
-	UI.textStroke(COLORS.upgradeDark, 2.5).Parent = upArrow
-	local upText = UI.label({
-		Size = UDim2.new(1, -12, 0, 30),
-		Position = UDim2.fromOffset(6, 46),
-		Text = "UPGRADES",
-		Parent = upgradesButton,
-	})
-	UI.textStroke(COLORS.upgradeDark, 2).Parent = upText
-
-	-- Effects layer: full viewport, used for flying icons
+	-- Effects layer: full viewport, used for flying icons and gain popups
 	fxGui = UI.new("ScreenGui", {
 		Name = "HUD_FX",
 		ResetOnSpawn = false,
 		IgnoreGuiInset = true,
+		ScreenInsets = Enum.ScreenInsets.None,
 		DisplayOrder = 5,
 		Parent = playerGui,
 	})
@@ -347,44 +427,72 @@ local function build()
 	})
 end
 
+local function refreshGoal()
+	local track, cost, level = HUD.nextGoal()
+	local cash = attrNumber("Cash")
+	if not track then
+		goalName.Text = "All maxed!"
+		goalAmount.Text = ""
+		goalFill.Size = UDim2.fromScale(1, 1)
+		upgradesBadge.Visible = false
+		return
+	end
+	local progress = math.clamp(cash / cost, 0, 1)
+	UI.tween(goalFill, 0.25, { Size = UDim2.fromScale(progress, 1) })
+	goalName.Text = string.format("%s %d", track.name, level + 1)
+	if cash >= cost then
+		goalAmount.Text = "TAP TO BUY!"
+		goalFill.BackgroundColor3 = C.good
+	else
+		goalAmount.Text = string.format("%s/%s", Format.cash(cash), Format.cash(cost))
+		goalFill.BackgroundColor3 = C.goal
+	end
+	upgradesBadge.Visible = cash >= cost
+end
+
+local function refreshBasket()
+	local count = attrNumber("BasketCount")
+	local value = attrNumber("BasketValue")
+	local cap = attrNumber("BasketCapacity")
+	sellValue.Text = Format.cash(value)
+	sellBadgeText.Text = Format.number(count)
+	sellBadge.Visible = count > 0
+	basketLabel.Text = if cap > 0
+		then string.format("%s/%s", Format.number(count), Format.number(cap))
+		else tostring(count)
+	sellTile.BackgroundColor3 = if count == 0 then Color3.fromRGB(110, 140, 115) else C.sell
+end
+
 function HUD.toast(text: string, color: Color3?, seconds: number?)
-	local holder = UI.new("Frame", {
-		Size = UDim2.fromOffset(420, 34),
-		BackgroundColor3 = COLORS.panel,
-		BackgroundTransparency = 0.2,
-		LayoutOrder = math.floor(os.clock() * 100),
-		Parent = toastList,
-	}, { UI.corner(12) })
-	local l = UI.label({
-		Position = UDim2.fromOffset(10, 5),
-		Size = UDim2.new(1, -20, 1, -10),
+	local l = bigText({
+		Size = UDim2.fromOffset(520, 30),
 		Text = text,
-		TextColor3 = color or COLORS.info,
-		Parent = holder,
-	})
-	UI.textStroke(Color3.new(0, 0, 0), 1.5).Parent = l
-	UI.bump(holder, 0.12)
-	local children = toastList:GetChildren()
-	local frames = 0
-	for _, c in children do
-		if c:IsA("Frame") then
-			frames += 1
+		TextColor3 = color or C.info,
+		LayoutOrder = math.floor(os.clock() * 1000),
+		Parent = toastList,
+	}, Color3.new(0, 0, 0), 2.5)
+	UI.bump(l, 0.2)
+	local labels = {}
+	for _, c in toastList:GetChildren() do
+		if c:IsA("TextLabel") then
+			table.insert(labels, c)
 		end
 	end
-	if frames > 4 then
-		for _, c in children do
-			if c:IsA("Frame") and c ~= holder then
-				c:Destroy()
-				break
-			end
-		end
+	if #labels > 4 then
+		table.sort(labels, function(a, b)
+			return a.LayoutOrder < b.LayoutOrder
+		end)
+		labels[1]:Destroy()
 	end
 	task.delay(seconds or 3, function()
-		if holder.Parent then
-			UI.tween(holder, 0.3, { BackgroundTransparency = 1 })
-			UI.tween(l, 0.3, { TextTransparency = 1 })
-			task.wait(0.3)
-			holder:Destroy()
+		if l.Parent then
+			UI.tween(l, 0.35, { TextTransparency = 1 })
+			local stroke = l:FindFirstChildOfClass("UIStroke")
+			if stroke then
+				UI.tween(stroke, 0.35, { Transparency = 1 })
+			end
+			task.wait(0.4)
+			l:Destroy()
 		end
 	end)
 end
@@ -398,7 +506,7 @@ function HUD.banner(text: string, color: Color3, seconds: number?)
 	bannerLabel.TextTransparency = 0
 	local stroke = bannerLabel:FindFirstChild("Stroke") :: UIStroke
 	stroke.Transparency = 0
-	UI.bump(bannerLabel, 0.3)
+	UI.bump(bannerLabel, 0.35)
 	task.delay(seconds or 4, function()
 		if token == bannerToken then
 			UI.tween(bannerLabel, 0.5, { TextTransparency = 1 })
@@ -408,7 +516,7 @@ function HUD.banner(text: string, color: Color3, seconds: number?)
 end
 
 function HUD.notice(n: Types.Notice)
-	local color = if n.kind == "good" then COLORS.good elseif n.kind == "bad" then COLORS.bad else COLORS.info
+	local color = if n.kind == "good" then C.good elseif n.kind == "bad" then C.bad else C.info
 	HUD.toast(n.text, color)
 end
 
@@ -416,21 +524,33 @@ function HUD.fxRoot(): Frame
 	return fxRoot
 end
 
+local function target(name: string): GuiObject
+	if name == "cash" then
+		return cashRow
+	elseif name == "sell" then
+		return sellTile
+	end
+	return upgradesTile
+end
+
 -- Center of a HUD element in fxRoot coordinates.
-function HUD.centerOf(target: string): Vector2
-	local g: GuiObject = if target == "cash"
-		then cashPill
-		elseif target == "sell" then sellButton
-		else upgradesButton
+function HUD.centerOf(name: string): Vector2
+	local g = target(name)
+	if name == "cash" then
+		-- Aim at the cash icon, not the middle of the row
+		local s = g.AbsoluteSize.Y / 46
+		return g.AbsolutePosition + Vector2.new(22, 22) * s - fxRoot.AbsolutePosition
+	end
 	return g.AbsolutePosition + g.AbsoluteSize / 2 - fxRoot.AbsolutePosition
 end
 
-function HUD.bump(target: string, amount: number?)
-	local g: GuiObject = if target == "cash"
-		then cashPill
-		elseif target == "sell" then sellButton
-		else upgradesButton
-	UI.bump(g, amount)
+function HUD.bump(name: string, amount: number?)
+	UI.bump(target(name), amount)
+end
+
+-- HUD scale factor, so effects can match the HUD size.
+function HUD.scale(): number
+	return screenScale()
 end
 
 function HUD.setShopOpener(fn: () -> ())
@@ -440,14 +560,14 @@ end
 function HUD.start()
 	build()
 
-	sellButton.Activated:Connect(function()
+	sellTile.Activated:Connect(function()
 		if attrNumber("BasketCount") > 0 then
 			Remotes.get(Remotes.Names.SellAll):FireServer()
 		else
 			HUD.toast("Your basket is empty – harvest some carrots first!")
 		end
 	end)
-	upgradesButton.Activated:Connect(function()
+	upgradesTile.Activated:Connect(function()
 		Sound.play("Click")
 		if openShop then
 			openShop()
@@ -458,16 +578,18 @@ function HUD.start()
 		if track and attrNumber("Cash") >= cost then
 			Remotes.get(Remotes.Names.BuyUpgrade):FireServer(track.id)
 			Sound.play("Purchase")
+			UI.bump(goalButton, 0.1)
 		elseif openShop then
 			openShop()
 		end
 	end)
 
-	player:GetAttributeChangedSignal("Cash"):Connect(onCashChanged)
 	player.AttributeChanged:Connect(function(name)
-		if name == "BasketCount" or name == "BasketValue" or name == "BasketCapacity" then
-			refreshSell()
+		if name == "Cash" then
+			targetCash = attrNumber("Cash")
 			refreshGoal()
+		elseif name == "BasketCount" or name == "BasketValue" or name == "BasketCapacity" then
+			refreshBasket()
 		elseif string.sub(name, 1, 4) == "Upg_" then
 			refreshGoal()
 		end
@@ -481,11 +603,11 @@ function HUD.start()
 	shownCash = attrNumber("Cash")
 	targetCash = shownCash
 	cashLabel.Text = Format.cash(shownCash)
-	refreshSell()
+	refreshBasket()
 	refreshGoal()
 
-	-- Cash count-up, pulsing hints
-	local pulseT = 0
+	-- Cash count-up and attention pulses
+	local t = 0
 	RunService.RenderStepped:Connect(function(dt: number)
 		if shownCash ~= targetCash then
 			local diff = targetCash - shownCash
@@ -497,28 +619,27 @@ function HUD.start()
 			end
 			cashLabel.Text = Format.cash(math.floor(shownCash + 0.5))
 		end
-		pulseT += dt
-		local pulse = 0.5 + 0.5 * math.sin(pulseT * 6)
-		local track, cost = HUD.nextGoal()
-		local affordable = track ~= nil and attrNumber("Cash") >= cost
+		t += dt
+		local pulse = 0.5 + 0.5 * math.sin(t * 6)
 		local goalStroke = goalButton:FindFirstChildOfClass("UIStroke")
 		if goalStroke then
-			goalStroke.Color = if affordable
-				then Color3.fromRGB(15, 15, 20):Lerp(COLORS.good, pulse)
-				else Color3.fromRGB(15, 15, 20)
+			goalStroke.Color = if affordableGoal() then C.outline:Lerp(C.good, pulse) else C.outline
 		end
-		local sellStroke = sellButton:FindFirstChildOfClass("UIStroke")
+		if upgradesBadge.Visible then
+			upgradesBadge.Rotation = math.sin(t * 8) * 12
+		end
+		local sellStroke = sellTile:FindFirstChildOfClass("UIStroke")
 		if sellStroke then
 			sellStroke.Color = if attrNumber("BasketCount") > 0
-				then COLORS.sellDark:Lerp(Color3.fromRGB(230, 255, 200), pulse * 0.8)
-				else COLORS.sellDark
+				then C.sellDark:Lerp(Color3.fromRGB(230, 255, 200), pulse * 0.8)
+				else C.sellDark
 		end
 	end)
 
 	-- First-time hint
 	task.delay(2, function()
 		if attrNumber("FoundCount") == 0 then
-			HUD.toast("Tap a dirt plot on your farm to plant a carrot!", COLORS.good, 6)
+			HUD.toast("Tap a dirt plot on your farm to plant a carrot!", C.good, 6)
 		end
 	end)
 end

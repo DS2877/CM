@@ -20,8 +20,12 @@ local Assets = {
 	Meshes = {
 		Carrot = "",
 	},
+	-- HUD icons. Empty = an emoji fallback is drawn instead (see client Util/UI.icon).
 	Images = {
 		Cash = "",
+		Carrot = "",
+		Basket = "",
+		Upgrade = "",
 		Icon = "",
 	},
 }

@@ -14,7 +14,18 @@ Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 1 – spelbar version (byggd, 
 | F1.6 Ekonomi | Klar | Skördade morötter hamnar i korgen. SELL-knappen (var som helst) eller "Sell All"-prompten vid marknaden säljer allt; pengar flyger till plånboken och räknas upp. Talformat 1,600 / 12.3K / 4.56M. |
 | F1.7 Första uppgraderingen + målbar | Klar | Startcash $20 + fyra skördar räcker till Growth Speed 1 ($50). Målbaren under cash visar "Growth Speed 1 – $X left", "sell carrots to afford!" eller "TAP TO BUY!". |
 | F1.8 Sparning | Klar | ProfileStore med session locking, versionsnummer och migreringar. Sparar cash, uppgraderingar, hittade typer, mutationsstämplar, korgen, pity och statistik. DataStore: `CM_Dev_v1`. |
-| F1.9 Mobil-HUD | Klar | Stora knappar (SELL höger, UPGRADES vänster, målbar överst), UIScale efter skärmstorlek, inget kräver hover/tangentbord. Plot-etiketterna ("TAP TO PLANT", nedräkning, "TAP TO HARVEST!") är också tryckbara. |
+| F1.9 Mobil-HUD | Klar (omgjord) | Stil från dagens toppspel (se nedan). UIScale efter skärmhöjd, inget kräver hover/tangentbord. Plot-etiketterna ("TAP TO PLANT", nedräkning, "TAP TO HARVEST!") är också tryckbara. |
+
+## HUD-layout (inspirerad av populära simulatorer, mobil först)
+
+- **Målbar i Robloxs toppfält** (via `GuiService.TopbarInset`): gul progress-bar med ⬆️-ikon, "Growth Speed 2 … $34/$58". Blir grön och pulserar med "TAP TO BUY!" – tryck köper direkt. Får den inte plats hamnar den strax under toppfältet.
+- **Vänster stapel:** chunkiga kvadratiska knappar med gradient, tjock kontur och etikett över nederkanten. Nu bara "Upgrades" (röd "!"-badge som vickar när du har råd). Index/Shop läggs här i fas 2/4.
+- **Höger:** stor grön SELL-ruta med korg-ikon och grön antal-badge, korgens värde i stor text under. Sitter ovanför hoppknappen, nära tummen.
+- **Nere till vänster:** valutastapel med stora konturerade siffror: 🥕 korg (12/200) och 💵 cash.
+- **Toasts:** stor konturerad text ovanför mitten nertill (som "Cannot use items in the safe zone!").
+- **Sälj:** stor "+$1,234"-popup mitt på skärmen som krymper in i plånboken medan pengar flyger dit.
+- **Typsnitt:** Luckiest Guy för siffror och rubriker, Fredoka One för småtext.
+- **Ikoner:** emoji-fallback (🥕 💵 🧺 ⬆️) tills riktiga ikoner laddas upp i `Config/Assets.Images` (Cash, Carrot, Basket, Upgrade).
 
 ## Grind för fas 1 – be Philip testa (på iPhone)
 
@@ -22,7 +33,7 @@ Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 1 – spelbar version (byggd, 
 2. Tryck på de fyra jordplättarna → de planteras. Etiketten visar nedräkning.
 3. Tryck när det står "TAP TO HARVEST!" → moroten poppar, värdet syns, moroten flyger till SELL.
 4. Tryck SELL → pengarna flyger upp till plånboken.
-5. Tryck på målbaren ("TAP TO BUY!") → Growth Speed 1 köps. Mål: inom 60 sekunder.
+5. Tryck på den gula målbaren uppe i toppfältet ("TAP TO BUY!") → Growth Speed 1 köps. Mål: inom 60 sekunder.
 6. Spela några minuter: du ska få din första mutation (Golden) senast vid plantering nr 18.
 7. Lämna och kom tillbaka: cash, uppgraderingar och korgen ska finnas kvar.
 8. Klart-kriterier i designplanen: minst fem personer testar och de flesta fortsätter spela utan att bli ombedda.
@@ -53,7 +64,8 @@ Bra att veta vid test: du kan trycka på dina plots (eller etiketten ovanför) s
 | Sounds.Shimmer / Pillar | Reveal steg 1 och 3 | Tyst |
 | Sounds.Discover / Click | Ny morot, knappar | Tyst |
 | Meshes.Carrot | Morotsmodell | Byggd av primitiva delar |
-| Images.Cash / Icon | Cash-ikon, spelikon | Ritad i UI ("$") |
+| Images.Cash / Carrot / Basket / Upgrade | HUD-ikoner | Emoji-fallback (💵 🥕 🧺 ⬆️) |
+| Images.Icon | Spelikon | Saknas |
 
 ## Kvar / kända begränsningar
 

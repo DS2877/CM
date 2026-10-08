@@ -80,8 +80,7 @@ local function build()
 	local camera = workspace.CurrentCamera
 	local scale: UIScale = UI.new("UIScale", { Parent = gui })
 	local function rescale()
-		local size = if camera then camera.ViewportSize else Vector2.new(844, 390)
-		scale.Scale = math.clamp(math.min(size.X / 900, size.Y / 420), 0.7, 1.35)
+		scale.Scale = HUD.scale()
 	end
 	rescale()
 	if camera then
@@ -112,42 +111,49 @@ local function build()
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.52),
 		Size = UDim2.fromOffset(460, 70 + #enabled * (rowH + 8) + 8),
-		BackgroundColor3 = Color3.fromRGB(40, 36, 50),
+		BackgroundColor3 = Color3.fromRGB(255, 200, 120),
 		Parent = gui,
 	}, {
 		UI.corner(20),
-		UI.stroke(Color3.fromRGB(255, 170, 50), 3),
+		UI.stroke(Color3.fromRGB(110, 50, 0), 4),
+		UI.new("UIGradient", {
+			Color = ColorSequence.new(Color3.fromRGB(255, 225, 160), Color3.fromRGB(255, 160, 60)),
+			Rotation = 90,
+		}),
 	})
-	local title = UI.label({
+	UI.bigText({
 		Position = UDim2.fromOffset(20, 10),
 		Size = UDim2.new(1, -100, 0, 44),
-		Text = "UPGRADES",
+		Text = "Upgrades",
 		TextXAlignment = Enum.TextXAlignment.Left,
-		TextColor3 = Color3.fromRGB(255, 190, 80),
 		Parent = panel,
-	})
-	UI.textStroke(Color3.fromRGB(80, 40, 0), 2).Parent = title
+	}, Color3.fromRGB(110, 50, 0), 3.5)
 
 	local close: TextButton = UI.new("TextButton", {
 		Name = "Close",
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -10, 0, 10),
 		Size = UDim2.fromOffset(48, 48),
-		BackgroundColor3 = Color3.fromRGB(230, 80, 80),
+		BackgroundColor3 = Color3.fromRGB(235, 60, 60),
 		Text = "",
 		Parent = panel,
-	}, { UI.corner(14), UI.stroke(Color3.fromRGB(120, 30, 30), 2) })
-	UI.label({ Size = UDim2.fromScale(1, 1), Text = "X", Parent = close })
+	}, { UI.corner(14), UI.stroke(Color3.fromRGB(110, 20, 20), 3) })
+	UI.bigText({
+		Position = UDim2.fromOffset(8, 8),
+		Size = UDim2.new(1, -16, 1, -16),
+		Text = "X",
+		Parent = close,
+	}, Color3.fromRGB(110, 20, 20), 2.5)
 
 	for i, track in enabled do
 		local y = 64 + (i - 1) * (rowH + 8)
 		local row = UI.new("Frame", {
 			Position = UDim2.fromOffset(12, y),
 			Size = UDim2.new(1, -24, 0, rowH),
-			BackgroundColor3 = Color3.fromRGB(60, 55, 75),
+			BackgroundColor3 = Color3.fromRGB(70, 50, 40),
 			Parent = panel,
-		}, { UI.corner(14) })
-		UI.label({
+		}, { UI.corner(14), UI.stroke(Color3.fromRGB(110, 50, 0), 3) })
+		UI.bigText({
 			Position = UDim2.fromOffset(14, 6),
 			Size = UDim2.new(1, -170, 0, 28),
 			Text = track.name,
@@ -177,14 +183,20 @@ local function build()
 			BackgroundColor3 = Color3.fromRGB(70, 200, 90),
 			Text = "",
 			Parent = row,
-		}, { UI.corner(14), UI.stroke(Color3.fromRGB(20, 60, 20), 2) })
-		local buyText = UI.label({
+		}, {
+			UI.corner(14),
+			UI.stroke(Color3.fromRGB(20, 60, 20), 3),
+			UI.new("UIGradient", {
+				Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(190, 190, 190)),
+				Rotation = 90,
+			}),
+		})
+		local buyText = UI.bigText({
 			Position = UDim2.fromOffset(8, 8),
 			Size = UDim2.new(1, -16, 1, -16),
 			Text = "",
 			Parent = buy,
-		})
-		UI.textStroke(Color3.fromRGB(20, 60, 20), 2).Parent = buyText
+		}, Color3.fromRGB(20, 60, 20), 2.5)
 		buy.Activated:Connect(function()
 			local lvl = attrNumber("Upg_" .. track.id)
 			if Progression.isMaxed(track, lvl) then

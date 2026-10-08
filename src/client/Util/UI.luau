@@ -1,7 +1,10 @@
 --!strict
 -- Tiny helpers for building UI and effects in code.
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+
+local Assets = require(ReplicatedStorage.Shared.Config.Assets)
 
 local UI = {}
 
@@ -71,6 +74,17 @@ function UI.label(props: { [string]: any }): TextLabel
 	return UI.new("TextLabel", base)
 end
 
+-- Big chunky simulator-style text: heavy font with a thick dark outline.
+function UI.bigText(props: { [string]: any }, strokeColor: Color3?, thickness: number?): TextLabel
+	local base: { [string]: any } = { Font = Enum.Font.LuckiestGuy }
+	for k, v in props do
+		base[k] = v
+	end
+	local l = UI.label(base)
+	UI.textStroke(strokeColor or Color3.fromRGB(15, 15, 20), thickness or 2.5).Parent = l
+	return l
+end
+
 function UI.tween(
 	inst: Instance,
 	seconds: number,
@@ -96,6 +110,27 @@ function UI.bump(gui: GuiObject, amount: number?)
 	assert(scale, "bump scale missing")
 	scale.Scale = 1 + (amount or 0.15)
 	UI.tween(scale, 0.25, { Scale = 1 }, Enum.EasingStyle.Back)
+end
+
+-- Icon by name: the uploaded image from Config/Assets.Images if set, otherwise an emoji.
+function UI.icon(name: string, emoji: string): GuiObject
+	local id = (Assets.Images :: any)[name] :: string?
+	if id and id ~= "" then
+		return UI.new("ImageLabel", {
+			Name = name .. "Icon",
+			BackgroundTransparency = 1,
+			Image = id,
+			ScaleType = Enum.ScaleType.Fit,
+		})
+	end
+	return UI.new("TextLabel", {
+		Name = name .. "Icon",
+		BackgroundTransparency = 1,
+		Text = emoji,
+		TextScaled = true,
+		Font = Enum.Font.GothamBold,
+		TextColor3 = Color3.new(1, 1, 1),
+	})
 end
 
 function UI.rgb(c: { number }): Color3
