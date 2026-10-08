@@ -280,7 +280,7 @@ function MarketBoard.start()
 		update(state)
 		-- Market bell when a boom starts (not on join mid-boom: lastBoomActive starts nil)
 		if lastBoomActive == false and state.boomActive and state.cycle ~= lastCycle then
-			Sound.play("Bell", { volume = 0.9 })
+			Sound.play("Bell")
 			HUD.banner(
 				string.format("🔔 MARKET BOOM! %s", state.boom.description),
 				Color3.fromRGB(255, 170, 40),
@@ -294,6 +294,7 @@ function MarketBoard.start()
 		end
 		if lastBoomActive == true and not state.boomActive then
 			HUD.toast("The boom is over – next one in " .. Format.duration(state.boomStart - now()), nil, 4)
+			Sound.play("BoomEnd")
 		end
 		lastBoomActive = state.boomActive
 		lastCycle = state.cycle

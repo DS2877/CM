@@ -244,17 +244,18 @@ local function onHarvest(r: Types.HarvestResult)
 
 	-- Sound and burst scale with value
 	if big then
-		Sound.play("Legendary", { volume = 0.9 })
+		Sound.play(if order >= 6 then "HarvestMythic" else "HarvestLegendary")
 		cameraPunch(18, 1.6)
 		flash(color)
 		burst(top, color, 140, 24)
 		burst(top + Vector3.new(0, 2, 0), Color3.new(1, 1, 1), 60, 30)
 	elseif order >= 3 or #r.mutations > 0 then
-		Sound.play("Harvest", { speed = 1.25, volume = 0.6 })
+		Sound.play(if order >= 4 then "HarvestEpic" else "HarvestRare")
 		local mut = r.mutations[1] and CarrotInfo.mutation(r.mutations[1])
 		burst(top, if mut then CarrotInfo.color(mut.color) else color, 30 + order * 12, 16)
 	else
-		Sound.play("Pop", { speed = 0.9 + math.random() * 0.3, volume = 0.35 })
+		-- Quick streaks through the farm climb in pitch
+		Sound.combo("Harvest")
 		burst(top, if order >= 2 then color else Color3.fromRGB(255, 220, 90), 16 + order * 6, 10)
 	end
 
@@ -308,6 +309,7 @@ local function onHarvest(r: Types.HarvestResult)
 				CarrotInfo.color(mut.color),
 				3.5
 			)
+			Sound.play("Mutation")
 		end
 	end
 end
@@ -323,11 +325,12 @@ local function onSell(r: Types.SellResult)
 			Color3.fromRGB(255, 170, 40),
 			3
 		)
-		Sound.play("Legendary", { volume = 0.6, speed = 1.2 })
+		Sound.play("SellBoom")
 	end
 	local from = HUD.centerOf("sell")
 	local to = HUD.centerOf("cash")
-	Sound.play("Sell", { speed = 1 + math.min(0.5, coins / 40), volume = 0.6 })
+	-- Bigger sales sound a touch brighter
+	Sound.play("Sell", { speed = 1 + math.min(0.25, coins / 80) })
 	HUD.bump("sell", 0.12)
 	for i = 1, coins do
 		local jitter = Vector2.new(math.random(-20, 20), math.random(-20, 20))
@@ -401,7 +404,7 @@ local function onAnnounce(a: Types.Announcement)
 			color,
 			6
 		)
-		Sound.play("Legendary", { volume = 0.4 })
+		Sound.play("Announce")
 		return
 	end
 	if a.scope <= 1 then
@@ -412,7 +415,7 @@ local function onAnnounce(a: Types.Announcement)
 		HUD.banner(string.format("%s! %s  %s", rarityName, name, Format.cash(a.value)), color, 5)
 	else
 		HUD.banner(string.format("%s found a %s %s!", a.playerName, rarityName, name), color, 5)
-		Sound.play("Legendary", { volume = 0.5 })
+		Sound.play("Announce")
 	end
 end
 

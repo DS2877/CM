@@ -193,7 +193,7 @@ function Farms.start()
 		for _, view in views do
 			if view.id == farmId then
 				splash(view)
-				Sound.play("Water", { parent = view.pedestal :: Instance?, volume = 0.6 })
+				Sound.play("Water", { parent = view.pedestal :: Instance? })
 			end
 		end
 	end)

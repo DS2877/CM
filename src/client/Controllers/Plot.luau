@@ -489,7 +489,7 @@ function actOn(view: View)
 	end
 	lastTap = clock
 	if view.state == "Empty" then
-		Sound.play("Plant", { volume = 0.4 })
+		Sound.play("Plant")
 		dirtPuff(view, 8)
 	end
 	if view.billboard then

@@ -2,6 +2,43 @@
 
 Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 4 – robust och monetiserat (byggd, väntar på produkt-ID:n och grind-test)**. Fas 1–3 publicerade.
 
+## Ljud – brief (ljuddesign 8 okt)
+
+**Identitet: "solig folk-pop på bondens marknad".** Akustiskt och varmt: ukulele, marimba, lätt handslagverk, visslingar. Musiken ligger *under* spelet. Stjärnorna är morots-avslöjandena, så musiken duckar (sänks) vid stora ögonblick. Mixen och beteendet finns i `src/shared/Config/Audio.luau`, ID:na i `src/shared/Config/Assets.luau`.
+
+**Vad som är byggt:**
+- **Bussar:** Music, Ambience, SFX och UI (SoundGroups) med egna nivåer. Musiken duckar till 25 % vid Legendary, Mythic, boom-försäljning och marknadsklockan.
+- **Musikregissör** (`Controllers/Music`): lugn farm-loop som standard. När en boom startar tonar den över (2,5 s) till ett upbeat boom-spår i alla servrar samtidigt, sedan tillbaka.
+- **Ambience:** äng (fåglar och vind) överallt, plus marknadssorl som hörs vid marknaden.
+- **Skörde-kombo:** snabba skördar i rad stiger en halvton per skörd, max 8 steg. Det känns som att plocka mynt.
+- **Avslöjandet hörs:** skimmer, gnistor och ljuspelare har egna 3D-ljud från ploten, så man *hör* en bra morot komma.
+- **Ljud per raritet:** Common, Rare, Epic, Legendary och Mythic/Secret har var sin skördeljud. Mutation har ett eget ljud.
+- **Övriga ljud:** "Denied" när du inte har råd, "GoalReady" när nästa uppgradering blir köpbar, "Open" för paneler, "BoomEnd" när boomen slutar och "Announce" för andras fynd.
+- **Variation:** slumpad tonhöjd på upprepade ljud, plus cooldowns så att inget smattrar.
+- **🎵-knapp** vid 🔍 slår av eller på musiken och sparas i profilen.
+- **Placeholders:** ljud utan ID lånar ett närliggande ljud i en annan tonhöjd, så spelet aldrig är tyst. Det är bara tillfälliga ljud från Roblox-klienten.
+
+**Philip: välj ljuden i Creator Store** (Creator Hub → Creator Store → Audio). Välj spår som Roblox själva laddat upp (licensierat bibliotek, fritt att använda). Kopiera ID:t till `Config/Assets.luau` och skicka dem till mig, så mixar jag nivåerna.
+
+| Slot | Vad den ska låta som | Sökord |
+|---|---|---|
+| Music.Farm | Lugn, glad akustisk loop, 90–105 bpm, ukulele/marimba, inga röster, 1–3 min | "ukulele happy", "acoustic farm", "cozy" |
+| Music.Boom | Upbeat, energisk, 125–140 bpm, banjo/fiol eller funky marknad | "bluegrass", "hoedown", "upbeat market" |
+| Ambience.Meadow | Fåglar och svag vind, loopbar | "birds ambience", "meadow" |
+| Ambience.Market | Svagt sorl av folk | "crowd chatter", "market ambience" |
+| Harvest | Kort, saftigt "plopp" (grönsak upp ur jord) | "pop", "pluck", "veggie" |
+| HarvestRare / Epic | Glad klinga, ljusare för Epic | "chime", "sparkle" |
+| HarvestLegendary | Kort fanfar 1–2 s | "fanfare short", "win" |
+| HarvestMythic | Större fanfar med kör/magi 2–3 s | "epic reveal", "magic" |
+| Shimmer / Sparks / Pillar | Magiskt skimmer, gnistor, kraftfullt "whoosh" uppåt | "shimmer", "sparkle", "magic rise" |
+| Sell / SellBoom | Mynt som rasslar, jackpot för boom | "coins", "cash register", "jackpot" |
+| Plant | Mjukt grävljud i jord | "dig", "dirt" |
+| Bell | Marknadsklocka/koskälla | "bell ring", "cowbell" |
+| Click / Open / Denied | Mjukt UI-klick, "pop" för panel, dovt "bonk" | "ui click", "pop", "error" |
+| Water | Plask/vattenkanna | "splash", "water pour" |
+
+Krav: musiken ska loopa utan hack. Ljudeffekter ska vara under 3 s och inte för höga (normaliserade).
+
 ## Fas 4 – robust och monetiserat
 
 | Del | Status | Hur det testas |
@@ -131,6 +168,11 @@ Första Legendary ~6 min, första Mythic ~19 min, Secret i ~40 % av körningarna
 Bra att veta vid test: du kan trycka på dina plots (eller etiketten ovanför) så länge de syns på skärmen. SELL och UPGRADES funkar överallt.
 
 ## Beslut tagna under bygget (regel 10)
+
+Ljuddesign 8 okt:
+- **Mixhierarki:** avslöjanden och fanfarer > skörd och sälj > UI > musik > ambience. Musiken duckar i stället för att tävla.
+- **Boom-musik** följer det globala schemat, så klockan och musikbytet säger "spring och sälj" till alla samtidigt.
+- **Musik av** sänker även ambience till 40 %, så att "av" faktiskt är tyst.
 
 Offline, andra fixen 8 okt:
 - **Problemet:** offline gick i 25 % av spelarens växtfart. Med Growth-uppgraderingar (6 s) blev det 1 morot per plot var 24:e sekund, så 5–6 min borta fyllde korgen. Offline skalade med uppgraderingar, vilket var fel.

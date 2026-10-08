@@ -114,7 +114,7 @@ local function setPillar(h: Handle, on: boolean)
 		light.Parent = h.plot
 		h.pillar = p
 		h.light = light
-		Sound.play("Pillar", { parent = h.plot :: Instance, volume = 0.8 })
+		Sound.play("Pillar", { parent = h.plot :: Instance })
 	elseif not on and h.pillar then
 		h.pillar:Destroy()
 		h.pillar = nil
@@ -130,8 +130,12 @@ function RevealFX.set(h: Handle, level: number)
 	if level == h.level then
 		return
 	end
+	-- Each honest reveal step has its own sound, so you can HEAR a good one coming.
 	if level >= 1 and h.level < 1 then
-		Sound.play("Shimmer", { parent = h.plot :: Instance, volume = 0.4 })
+		Sound.play("Shimmer", { parent = h.plot :: Instance })
+	end
+	if level >= 2 and h.level < 2 then
+		Sound.play("Sparks", { parent = h.plot :: Instance })
 	end
 	h.level = level
 	setShimmer(h, level >= 1)

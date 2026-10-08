@@ -156,7 +156,8 @@ local function show(result: Types.OfflineResult)
 			counter.Text = string.format("%d/%d", i, n)
 			totalLabel.Text = Format.cash(running)
 			UI.bump(card, if order >= 4 then 0.35 else 0.12)
-			Sound.play("Pop", { speed = 0.8 + math.min(0.8, i / n), volume = 0.35 })
+			-- Rising ladder as the reveal speeds up: anticipation for the best ones (shown last)
+			Sound.play("RevealTick", { speed = 0.85 + math.min(0.6, i / n * 0.6) })
 			if c.isNewType then
 				HUD.toast("NEW CARROT! " .. (CarrotInfo.type(c.type) or { name = c.type }).name, color, 3)
 			end
@@ -167,7 +168,7 @@ local function show(result: Types.OfflineResult)
 				delay = 0.6
 			end
 			if order >= 5 then
-				Sound.play("Legendary", { volume = 0.7 })
+				Sound.play(if order >= 6 then "HarvestMythic" else "HarvestLegendary")
 				HUD.banner(string.upper(rarity and rarity.name or "") .. "!", color, 2.5)
 				delay = 1.4
 			elseif order >= 4 then

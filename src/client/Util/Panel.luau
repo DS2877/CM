@@ -150,7 +150,7 @@ function Panel.new(name: string, title: string, color: Color3, dark: Color3, siz
 			end
 			gui.Enabled = open
 			if open then
-				Sound.play("Click")
+				Sound.play("Open")
 				UI.bump(frame, 0.1)
 				if panel.onOpen then
 					panel.onOpen()

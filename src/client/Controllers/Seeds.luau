@@ -225,6 +225,7 @@ local function build()
 					Sound.play("Purchase")
 					UI.bump(button, 0.15)
 				else
+					Sound.play("Denied")
 					HUD.toast("Not enough cash yet – sell some carrots!")
 				end
 			end

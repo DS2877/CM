@@ -25,6 +25,7 @@ local EventSchedule = require(Shared.EventSchedule)
 
 local UI = require(script.Parent.Parent.Util.UI)
 local Sound = require(script.Parent.Parent.Util.Sound)
+local Music = require(script.Parent.Music)
 
 local player = Players.LocalPlayer
 
@@ -504,6 +505,30 @@ local function build()
 			oddsHandler()
 		end
 	end)
+	-- 🎵 music on/off (saved in the profile)
+	local musicButton: TextButton = UI.new("TextButton", {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(1, 42, 0.5, 0),
+		Size = UDim2.fromOffset(28, 28),
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		Text = "",
+		Parent = pityRow,
+	}, { UI.corner(14), UI.stroke(Color3.fromRGB(60, 60, 80), 2) })
+	local musicIcon = bigText({
+		Position = UDim2.fromOffset(4, 4),
+		Size = UDim2.new(1, -8, 1, -8),
+		Text = "🎵",
+		Parent = musicButton,
+	}, Color3.new(0, 0, 0), 0)
+	local function refreshMusicIcon()
+		musicIcon.Text = if player:GetAttribute("MusicOff") == true then "🔇" else "🎵"
+	end
+	refreshMusicIcon()
+	player:GetAttributeChangedSignal("MusicOff"):Connect(refreshMusicIcon)
+	musicButton.Activated:Connect(function()
+		Sound.play("Click")
+		Music.toggle()
+	end)
 
 	-- Active buffs: friend bonus, watered
 	buffLabel = bigText({
@@ -563,6 +588,8 @@ local function build()
 	})
 end
 
+local goalWasReady = true -- no chime for what you could already afford when you joined
+
 local function refreshGoal()
 	local track, cost, level = HUD.nextGoal()
 	local cash = attrNumber("Cash")
@@ -584,6 +611,11 @@ local function refreshGoal()
 		goalFill.BackgroundColor3 = C.goal
 	end
 	upgradesBadge.Visible = cash >= cost
+	-- A small chime the moment the next upgrade becomes affordable ("go buy it!")
+	if cash >= cost and not goalWasReady then
+		Sound.play("GoalReady")
+	end
+	goalWasReady = cash >= cost
 end
 
 local function refreshPity()
@@ -821,7 +853,7 @@ function HUD.start()
 		local track, cost = HUD.nextGoal()
 		if track and attrNumber("Cash") >= cost then
 			Remotes.get(Remotes.Names.BuyUpgrade):FireServer(track.id)
-			Sound.play("Purchase")
+			Sound.play("Upgrade")
 			UI.bump(goalButton, 0.1)
 		else
 			local handler = tileHandlers.Upgrades

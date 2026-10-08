@@ -17,6 +17,7 @@ Remotes.Names = {
 	WaterFarm = "WaterFarm", -- (farmId: number)
 	SetGiftTarget = "SetGiftTarget", -- (targetUserId: number, passId: string)
 	Track = "Track", -- (event: string, detail: string) whitelisted analytics from UI
+	SetMusic = "SetMusic", -- (enabled: boolean) saved setting
 	-- server -> client
 	HarvestResult = "HarvestResult", -- (Types.HarvestResult)
 	SellResult = "SellResult", -- (Types.SellResult)

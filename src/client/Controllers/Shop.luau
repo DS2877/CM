@@ -206,9 +206,10 @@ local function build()
 			end
 			if attrNumber("Cash") >= Progression.cost(track, lvl) then
 				Remotes.get(Remotes.Names.BuyUpgrade):FireServer(track.id)
-				Sound.play("Purchase")
+				Sound.play("Upgrade")
 				UI.bump(buy, 0.15)
 			else
+				Sound.play("Denied")
 				HUD.toast("Not enough cash yet – sell some carrots!")
 			end
 		end)

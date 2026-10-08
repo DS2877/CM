@@ -42,11 +42,27 @@ end)
 Product.start()
 Farm.onRareHarvest(Product.onRareHarvest)
 
+-- Saved 🎵 setting (purely cosmetic, but persistent so it's remembered next session)
+do
+	local RateLimit = require(script.Util.RateLimit)
+	local EconomyConfig = require(ReplicatedStorage.Shared.Config.Economy)
+	local limit = EconomyConfig.RateLimits.SetMusic
+	local allow = RateLimit.new(limit.rate, limit.burst)
+	Remotes.get(Remotes.Names.SetMusic).OnServerEvent:Connect(function(player, raw: unknown)
+		local data = Data.get(player)
+		if data and allow(player) and typeof(raw) == "boolean" then
+			data.MusicOff = not raw
+			player:SetAttribute("MusicOff", data.MusicOff)
+		end
+	end)
+end
+
 local function onPlayerAdded(player: Player)
 	local data = Data.load(player)
 	if not data then
 		return
 	end
+	player:SetAttribute("MusicOff", data.MusicOff == true)
 	Telemetry.funnel(player, "Join")
 	Product.onPlayerReady(player)
 	Economy.sync(player)

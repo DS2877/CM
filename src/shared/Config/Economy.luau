@@ -76,6 +76,7 @@ local Economy = {
 		WaterFarm = { rate = 3, burst = 4 },
 		SetGiftTarget = { rate = 2, burst = 4 },
 		Track = { rate = 4, burst = 8 },
+		SetMusic = { rate = 2, burst = 4 },
 	},
 }
 
