@@ -353,8 +353,8 @@ local function build()
 	local left = UI.new("Frame", {
 		Name = "Left",
 		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 14, 0.46, 0),
-		Size = UDim2.fromOffset(136, 136),
+		Position = UDim2.new(0, 14, 0.5, 0),
+		Size = UDim2.fromOffset(136, 208),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
@@ -367,6 +367,13 @@ local function build()
 	})
 	type TileDef = { name: string, color: Color3, dark: Color3, icon: string, emoji: string }
 	local tileDefs: { TileDef } = {
+		{
+			name = "Daily",
+			color = Color3.fromRGB(255, 205, 60),
+			dark = Color3.fromRGB(140, 85, 0),
+			icon = "Daily",
+			emoji = "📅",
+		},
 		{ name = "Upgrades", color = C.upgrade, dark = C.upgradeDark, icon = "Upgrade", emoji = "⬆️" },
 		{
 			name = "Seeds",
@@ -875,6 +882,19 @@ function HUD.centerOf(name: string): Vector2
 		return g.AbsolutePosition + Vector2.new(22, 22) * s - fxRoot.AbsolutePosition
 	end
 	return g.AbsolutePosition + g.AbsoluteSize / 2 - fxRoot.AbsolutePosition
+end
+
+-- A HUD element by name, for things that attach to it (tutorial arrows): "sell", "goal",
+-- "cash", or a tile name ("Daily", "Upgrades", "Seeds", "Index", "Shop").
+function HUD.element(name: string): GuiObject?
+	if name == "goal" then
+		return goalButton
+	elseif name == "sell" then
+		return sellTile
+	elseif name == "cash" then
+		return cashRow
+	end
+	return tiles[name]
 end
 
 function HUD.bump(name: string, amount: number?)

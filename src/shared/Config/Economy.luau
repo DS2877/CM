@@ -87,6 +87,8 @@ local Economy = {
 		Track = { rate = 4, burst = 8 },
 		SetMusic = { rate = 2, burst = 4 },
 		RedeemCode = { rate = 0.5, burst = 3 },
+		DailyClaim = { rate = 2, burst = 4 },
+		TutorialDone = { rate = 0.2, burst = 1 },
 	},
 }
 

@@ -2,6 +2,16 @@
 
 Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 5 – soft launch (förberedd, väntar på Philips steg nedan)**. Fas 1–4 publicerade.
 
+## Helhetsgenomgång 8 okt – retention, FTUE, status, liv
+
+| Del | Status | Hur det testas |
+|---|---|---|
+| Daglig belöning (7 dagar) | Klar | Ny 📅 Daily-ruta (först i menyn, "!" när något väntar). Öppnas av sig själv när dagens belöning väntar. Dag 1: 3 Rare Seeds, 2: 2 Golden, 3: Luck ×2 15 min, 4: 3 Mystery, 5: Value ×2 15 min, 6: 5 Golden, 7: Secret Seed + 3 Golden, sedan loop. **Streaken pausas, nollställs aldrig.** UTC-dagar. |
+| Dagliga uppdrag | Klar | Tre om dagen, samma för alla (t.ex. "Harvest 60 carrots", "Find 5 Rare-or-better", "Sell during a market boom"). Belöning i frön + bonus (3 Golden + 2 Mystery) när alla tre är klara. Alla går att klara solo. Toast när ett uppdrag blir klart. |
+| Guidad första minut | Klar | Bara för helt nya spelare: studsande pil över ploten ("TAP!"), sedan "HARVEST!", pil på SELL, pil på uppgraderingsbaren, firande. Reagerar på vad spelaren gör, aldrig på timers. Visas aldrig igen. Test: nytt konto eller ny DataStore. |
+| Titlar över huvudet | Klar | Rarast hittade morot ger titel i raritetens färg: Sprout, Gardener, Farmer, Harvester, Legendary Farmer, Mythic Hunter, Cosmic Grower, Keeper of Secrets, Divine Farmer (regnbåge). Syns för alla inom 80 studs. |
+| Fjärilar | Klar | 10 fjärilar som fladdrar runt kameran. Bara klient, kostar nästan inget. |
+
 ## Fas 5 – soft launch
 
 | Del | Status | Hur det testas |

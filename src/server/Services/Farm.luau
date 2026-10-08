@@ -32,6 +32,7 @@ local SeedsConfig = require(Config.Seeds)
 local Dex = require(script.Parent.Dex)
 local Announce = require(script.Parent.Announce)
 local Launch = require(script.Parent.Launch)
+local Daily = require(script.Parent.Daily)
 local WorldBuilder = require(script.Parent.WorldBuilder)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
 
@@ -231,6 +232,7 @@ local function plant(player: Player, plot: PlotRuntime)
 	local growTime = math.max(EconomyConfig.MinGrowTime, Farm.growTimeFor(player, plot.index) * jitter)
 	setGrowing(plot, maybeRoll, growTime, now(), seedId)
 	Telemetry.funnel(player, "FirstPlant")
+	Daily.progress(player, "plant")
 end
 
 local function makeReady(plot: PlotRuntime)
@@ -299,6 +301,13 @@ local function harvest(player: Player, plot: PlotRuntime)
 	Leaderboards.report(player, "Dex", found)
 	Announce.harvest(player, carrot, value)
 	Launch.onHarvest(player, roll.rarity)
+	Daily.progress(player, "harvest")
+	if CarrotInfo.rarityOrder(roll.rarity) >= 3 then
+		Daily.progress(player, "rare")
+	end
+	if #roll.mutations > 0 then
+		Daily.progress(player, "mutation")
+	end
 
 	clearPlot(plot)
 	-- Planting is the player's move. The Auto Harvest pass is the convenience upgrade: it harvests
@@ -448,6 +457,7 @@ local function onWater(player: Player, farmId: number)
 		kind = "good",
 	})
 	Remotes.get(Remotes.Names.Watered):FireAllClients(farm.build.id, player.DisplayName)
+	Daily.progress(player, "water")
 end
 
 local function applyUnlocked(farm: FarmRuntime, count: number)

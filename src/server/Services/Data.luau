@@ -27,6 +27,16 @@ export type SavedPlot = {
 	Seed: string,
 }
 
+-- Daily calendar + quests (Server/Daily)
+export type DailyData = {
+	LastClaim: number, -- UTC day of the last calendar claim (0 = never)
+	Claims: number, -- calendar claims so far (the streak; it pauses, never resets)
+	QuestDay: number,
+	Progress: { number },
+	Claimed: { boolean },
+	AllClaimed: boolean,
+}
+
 -- Best carrot ever (shown on the farm pedestal).
 export type BestCarrot = { Type: string, Size: string, Mutations: string, Value: number }
 
@@ -60,6 +70,8 @@ export type PlayerData = {
 	Codes: { [string]: boolean }, -- promo codes already redeemed
 	GroupRewarded: boolean,
 	FavoritePrompted: boolean,
+	Daily: DailyData,
+	TutorialDone: boolean,
 	Stats: Stats,
 }
 
@@ -92,6 +104,8 @@ local TEMPLATE: PlayerData = {
 	Codes = {},
 	GroupRewarded = false,
 	FavoritePrompted = false,
+	Daily = { LastClaim = 0, Claims = 0, QuestDay = 0, Progress = {}, Claimed = {}, AllClaimed = false },
+	TutorialDone = false,
 	Stats = {
 		Plantings = 0,
 		Harvests = 0,

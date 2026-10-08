@@ -19,6 +19,9 @@ Remotes.Names = {
 	Track = "Track", -- (event: string, detail: string) whitelisted analytics from UI
 	SetMusic = "SetMusic", -- (enabled: boolean) saved setting
 	RedeemCode = "RedeemCode", -- (code: string)
+	ClaimDaily = "ClaimDaily", -- () claim today's calendar reward
+	ClaimQuest = "ClaimQuest", -- (index: number)
+	TutorialDone = "TutorialDone", -- () the guided first minute finished
 	-- server -> client
 	HarvestResult = "HarvestResult", -- (Types.HarvestResult)
 	SellResult = "SellResult", -- (Types.SellResult)
@@ -28,6 +31,7 @@ Remotes.Names = {
 	Watered = "Watered", -- (farmId: number, byName: string)
 	Offer = "Offer", -- (productId: string) show a contextual offer once
 	PromptFavorite = "PromptFavorite", -- () ask the client to show the favorite prompt (once)
+	DailySync = "DailySync", -- (Daily.DailyState)
 }
 
 local FOLDER_NAME = "Remotes"

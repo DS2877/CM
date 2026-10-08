@@ -41,6 +41,16 @@ function Dex.sync(player: Player)
 	player:SetAttribute("FoundCount", foundCount(data))
 	player:SetAttribute("TotalTypes", CarrotInfo.TotalTypes)
 	player:SetAttribute("StampCount", stampCount(data))
+	-- Best rarity ever found: drives the title over the player's head (visible status)
+	local best, bestOrder = "", 0
+	for typeId in data.FoundTypes do
+		local def = CarrotInfo.type(typeId)
+		local order = if def then CarrotInfo.rarityOrder(def.rarity) else 0
+		if order > bestOrder then
+			best, bestOrder = if def then def.rarity else "", order
+		end
+	end
+	player:SetAttribute("BestRarity", best)
 	player:SetAttribute("TotalStamps", CarrotInfo.TotalStamps)
 	local state: Types.DexState = { types = data.FoundTypes, stamps = data.FoundStamps }
 	Remotes.get(Remotes.Names.DexSync):FireClient(player, state)

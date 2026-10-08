@@ -33,7 +33,8 @@ for _, t in Upgrades do
 	trackById[t.id] = t
 end
 
-local saleCallbacks: { (player: Player, total: number, count: number) -> () } = {}
+local saleCallbacks: { (player: Player, total: number, count: number, atMarket: boolean, boom: boolean) -> () } =
+	{}
 local bestCallbacks: { (player: Player) -> () } = {}
 
 -- Upgrade effects read straight from data (avoids a require cycle with the Upgrade service).
@@ -139,7 +140,13 @@ function Economy.spend(player: Player, amount: number, sink: string): boolean
 	return true
 end
 
-function Economy.onSale(callback: (player: Player, total: number, count: number) -> ())
+function Economy.onSale(callback: (
+	player: Player,
+	total: number,
+	count: number,
+	atMarket: boolean,
+	boom: boolean
+) -> ())
 	table.insert(saleCallbacks, callback)
 end
 
@@ -207,7 +214,7 @@ function Economy.sellAll(player: Player): (number, number)
 	}
 	Remotes.get(Remotes.Names.SellResult):FireClient(player, result)
 	for _, cb in saleCallbacks do
-		task.spawn(cb, player, total, count)
+		task.spawn(cb, player, total, count, atMarket, atMarket and Economy.eventState().boomActive)
 	end
 	Telemetry.funnel(player, "FirstSell")
 	return total, count
