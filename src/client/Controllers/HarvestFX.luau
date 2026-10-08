@@ -228,7 +228,7 @@ local function onHarvest(r: Types.HarvestResult)
 
 	local rarity = CarrotInfo.rarity(r.rarity)
 	local order = if rarity then rarity.order else 1
-	local color = if rarity then CarrotInfo.color(rarity.color) else Color3.new(1, 1, 1)
+	local color = if rarity then CarrotInfo.rarityColor(rarity, os.clock()) else Color3.new(1, 1, 1)
 	local sizeDef = CarrotInfo.size(r.size)
 	local scale = if sizeDef then sizeDef.scale else 1
 	local big = order >= 5
@@ -392,7 +392,7 @@ end
 
 local function onAnnounce(a: Types.Announcement)
 	local rarity = CarrotInfo.rarity(a.rarity)
-	local color = if rarity then CarrotInfo.color(rarity.color) else Color3.new(1, 1, 1)
+	local color = if rarity then CarrotInfo.rarityColor(rarity, os.clock()) else Color3.new(1, 1, 1)
 	local rarityName = if rarity then string.upper(rarity.name) else a.rarity
 	local carrot: Types.Carrot = { type = a.type, size = a.size, mutations = a.mutations }
 	local name = CarrotInfo.displayName(carrot)

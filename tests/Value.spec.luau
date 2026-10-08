@@ -58,6 +58,16 @@ return function()
 	end
 	eq(math.floor(mutSum * 1e9 + 0.5) / 1e9, 0.08)
 
-	-- Biggest possible single carrot: Secret Giant Rainbow
-	eq(Value.compute({ base = 2000000, size = 5, mutation = 10 }), 100000000)
+	-- Biggest possible single carrot: Divine Giant Rainbow (fits comfortably in a double)
+	eq(Value.compute({ base = 20000000, size = 5, mutation = 10 }), 1000000000)
+	-- Tiers: chances sum to 1, every step rarer and more valuable than the last
+	local sum = 0
+	for i, r in Rarity do
+		sum += r.chance
+		if i > 1 then
+			assert(r.chance < Rarity[i - 1].chance, r.id .. " must be rarer than " .. Rarity[i - 1].id)
+			assert(r.baseValue > Rarity[i - 1].baseValue, r.id .. " must be worth more")
+		end
+	end
+	eq(math.floor(sum * 1e9 + 0.5) / 1e9, 1)
 end

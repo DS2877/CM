@@ -95,7 +95,7 @@ local function refreshPedestal(view: FarmView)
 		Position = UDim2.fromScale(0, 0.5),
 		Size = UDim2.fromScale(1, 0.5),
 		Text = string.format("%s · %s", name, Format.cash(num(view.model, "BestValue"))),
-		TextColor3 = CarrotInfo.color(rarity.color),
+		TextColor3 = CarrotInfo.rarityColor(rarity, os.clock()),
 		Parent = bb,
 	}, Color3.new(0, 0, 0), 2)
 	view.label = bb

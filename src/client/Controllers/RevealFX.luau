@@ -147,7 +147,7 @@ end
 function RevealFX.colorFor(h: Handle, rarityId: string)
 	local r = CarrotInfo.rarity(rarityId)
 	if r and h.pillar then
-		local c = CarrotInfo.color(r.color)
+		local c = CarrotInfo.rarityColor(r, os.clock(), true)
 		h.pillar.Color = c
 		if h.light then
 			h.light.Color = c

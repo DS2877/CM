@@ -153,4 +153,43 @@ function CarrotInfo.color(rgb: { number }): Color3
 	return Color3.fromRGB(rgb[1], rgb[2], rgb[3])
 end
 
+-- A rarity's color at time `t` (os.clock()). Divine ("rainbow") cycles every hue; Secret
+-- ("mono") pulses between near-black and white when `animatedMono` is set (world labels), and is
+-- plain white on UI text (which has dark outlines). Everything else is its static color.
+function CarrotInfo.rarityColor(def: RarityDef, t: number?, animatedMono: boolean?): Color3
+	local now = t or 0
+	if def.style == "rainbow" then
+		return Color3.fromHSV((now * 0.35) % 1, 0.72, 1)
+	elseif def.style == "mono" then
+		if animatedMono then
+			local k = 0.5 + 0.5 * math.sin(now * 5)
+			return Color3.fromRGB(15, 15, 18):Lerp(Color3.fromRGB(250, 250, 250), k)
+		end
+		return Color3.fromRGB(250, 250, 250)
+	end
+	return CarrotInfo.color(def.color)
+end
+
+-- Particle colors for a rarity: rainbow for Divine, black-and-white for Secret, otherwise the
+-- rarity color fading to white.
+function CarrotInfo.raritySequence(def: RarityDef): ColorSequence
+	if def.style == "rainbow" then
+		return ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 80)),
+			ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255, 200, 60)),
+			ColorSequenceKeypoint.new(0.4, Color3.fromRGB(90, 255, 120)),
+			ColorSequenceKeypoint.new(0.6, Color3.fromRGB(60, 200, 255)),
+			ColorSequenceKeypoint.new(0.8, Color3.fromRGB(150, 90, 255)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 100, 220)),
+		})
+	elseif def.style == "mono" then
+		return ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 10, 12)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 12)),
+		})
+	end
+	return ColorSequence.new(CarrotInfo.color(def.color), Color3.new(1, 1, 1))
+end
+
 return CarrotInfo

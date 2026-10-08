@@ -5,8 +5,8 @@
 --
 --   lune run tools/simulate          -> prints a summary and writes tools/simulation-report.md
 --
--- Player model: harvests each plot ~REACTION seconds after it is ready (auto-replant with Basic
--- seeds), sells right away, and buys the cheapest available upgrade whenever it can afford it
+-- Player model: harvests each plot ~REACTION seconds after it is ready, then taps to plant it
+-- again (PLANT_TAP seconds, Basic seeds; planting is manual), sells right away, and buys the cheapest available upgrade whenever it can afford it
 -- (that is what the goal bar points at). No seeds, no boosts, no events, no Robux.
 
 local fs = require("@lune/fs")
@@ -25,6 +25,7 @@ local Economy = require("../src/shared/Config/Economy")
 local RUNS = 24
 local DURATION = 4 * 3600
 local REACTION = 0.8
+local PLANT_TAP = 0.6 -- harvest no longer auto-replants: one more tap per plot
 
 type Purchase = { t: number, track: string, level: number, cost: number }
 type RunResult = {
@@ -188,7 +189,7 @@ local function simulate(seed: number): RunResult
 		local minute = math.floor(t / 60) + 1
 		incomeByMinute[minute] = (incomeByMinute[minute] or 0) + value
 
-		readyAt[plot] = t + growTime(plot)
+		readyAt[plot] = t + PLANT_TAP + growTime(plot)
 		buyAll(t)
 	end
 

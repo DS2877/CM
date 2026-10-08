@@ -12,6 +12,7 @@ local Dex = {
 		{ count = 16, seed = "Secret", amount = 1 },
 		{ count = 20, seed = "Secret", amount = 2 },
 		{ count = 24, seed = "Secret", amount = 5 },
+		{ count = 28, seed = "Secret", amount = 10 }, -- the whole Dex, Divine included
 	} :: { Milestone },
 	StampMilestones = {
 		{ count = 5, seed = "Golden", amount = 3 },
@@ -19,6 +20,7 @@ local Dex = {
 		{ count = 30, seed = "Secret", amount = 2 },
 		{ count = 50, seed = "Secret", amount = 3 },
 		{ count = 72, seed = "Secret", amount = 5 },
+		{ count = 84, seed = "Secret", amount = 10 }, -- every type x every mutation
 	} :: { Milestone },
 }
 

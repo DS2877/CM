@@ -408,7 +408,7 @@ local function update()
 				local color = COLORS.ready
 				local text = "HARVEST!"
 				if rarity and rarity.order >= 2 then
-					color = CarrotInfo.color(rarity.color)
+					color = CarrotInfo.rarityColor(rarity, clock, true)
 					text = string.upper(rarity.name) .. "!"
 				end
 				setBar(view, 1, text, color:Lerp(Color3.new(1, 1, 1), pulse * 0.35))

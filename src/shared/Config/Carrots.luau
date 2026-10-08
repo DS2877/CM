@@ -21,6 +21,7 @@ export type CarrotDef = {
 	fire: boolean?,
 	glow: boolean?,
 	stars: boolean?,
+	rainbow: boolean?, -- body cycles every hue (Divine)
 }
 
 local Carrots: { CarrotDef } = {
@@ -273,11 +274,11 @@ local Carrots: { CarrotDef } = {
 		material = "Neon",
 		stars = true,
 	},
-	-- Secret
+	-- Cosmic (cyan / electric blue)
 	{
 		id = "Cosmic",
 		name = "Cosmic Carrot",
-		rarity = "Secret",
+		rarity = "Cosmic",
 		weight = 1,
 		valueMult = 1,
 		bodyColor = { 70, 30, 170 },
@@ -286,9 +287,49 @@ local Carrots: { CarrotDef } = {
 		stars = true,
 	},
 	{
+		id = "Comet",
+		name = "Comet Carrot",
+		rarity = "Cosmic",
+		weight = 1,
+		valueMult = 1,
+		bodyColor = { 40, 210, 255 },
+		leafColor = { 200, 250, 255 },
+		material = "Neon",
+		stripeColor = { 230, 252, 255 },
+		glow = true,
+		stars = true,
+	},
+	-- Secret (black + white)
+	{
+		id = "Shadow",
+		name = "Shadow Carrot",
+		rarity = "Secret",
+		weight = 1,
+		valueMult = 1,
+		bodyColor = { 20, 20, 24 },
+		leafColor = { 240, 240, 240 },
+		material = "SmoothPlastic",
+		stripeColor = { 245, 245, 245 },
+		stars = true,
+	},
+	{
+		id = "YinYang",
+		name = "Yin-Yang Carrot",
+		rarity = "Secret",
+		weight = 1,
+		valueMult = 1,
+		bodyColor = { 248, 248, 248 },
+		leafColor = { 25, 25, 30 },
+		material = "SmoothPlastic",
+		stripeColor = { 18, 18, 22 },
+		twisted = true,
+		glow = true,
+	},
+	-- Divine (rainbow)
+	{
 		id = "King",
 		name = "Carrot King",
-		rarity = "Secret",
+		rarity = "Divine",
 		weight = 1,
 		valueMult = 1,
 		bodyColor = { 255, 200, 40 },
@@ -297,6 +338,19 @@ local Carrots: { CarrotDef } = {
 		crown = true,
 		stars = true,
 		fatness = 1.3,
+	},
+	{
+		id = "Prism",
+		name = "Prism Carrot",
+		rarity = "Divine",
+		weight = 1,
+		valueMult = 1,
+		bodyColor = { 255, 255, 255 },
+		leafColor = { 255, 255, 255 },
+		material = "Neon",
+		rainbow = true,
+		glow = true,
+		stars = true,
 	},
 }
 

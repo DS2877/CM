@@ -407,16 +407,15 @@ function CarrotModel.build(typeId: string, mutations: { string }, scale: number,
 	-- Rarity aura: every carrot sparkles a little, better ones a lot (Config/Rarity aura).
 	local rarity = CarrotInfo.rarityOfType(typeId)
 	local aura = rarity.aura
-	local auraColor = CarrotInfo.color(rarity.color)
-	local auraSeq = if rarity.id == "Secret"
-		then ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 90, 90)),
-			ColorSequenceKeypoint.new(0.25, Color3.fromRGB(255, 230, 80)),
-			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(90, 255, 140)),
-			ColorSequenceKeypoint.new(0.75, Color3.fromRGB(80, 200, 255)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(230, 110, 255)),
-		})
-		else ColorSequence.new(auraColor, Color3.new(1, 1, 1))
+	local auraColor = CarrotInfo.rarityColor(rarity)
+	local auraSeq = CarrotInfo.raritySequence(rarity)
+	-- Divine carrots (and Prism) shimmer through every color
+	if (def and def.rainbow) or rarity.style == "rainbow" then
+		for i, p in body do
+			rainbowParts[p] = i * 0.06
+		end
+		ensureRainbowLoop()
+	end
 	if aura.rate > 0 then
 		emitter(body[2], {
 			Name = "Aura",

@@ -167,6 +167,12 @@ Bra att veta vid test: du kan trycka på dina plots (eller etiketten ovanför) s
 
 ## Beslut tagna under bygget (regel 10)
 
+Nio rariteter 8 okt (Philips lista):
+- **Common** grön, **Uncommon** ljusgrön, **Rare** blå, **Epic** lila, **Legendary** guld, **Mythic** röd, **Cosmic** cyan/elektrisk blå (ny), **Secret** svart + vit (pulserar), **Divine** regnbåge (ny, cyklar alla färger).
+- **Odds (1 på X, före tur):** 1,4 / 5 / 14 / 40 / 222 / 2 500 / 11 111 / 111 111 / 1 000 000. **Basvärde:** $10 / $30 / $120 / $600 / $5K / $60K / $400K / $2,5M / $20M. Varje steg är sällsyntare och värt mer (testat).
+- **Nya morötter:** Comet (Cosmic), Shadow och Yin-Yang (Secret, svart/vita), Prism (Divine, regnbågskropp). Cosmic Carrot flyttad till Cosmic och Carrot King till Divine. Totalt 28 typer och 84 stämplar, med nya Dex-milstolpar (28 typer, 84 stämplar → 10 Secret Seeds).
+- **Ekonomin omsimulerad** med manuell plantering (0,6 s per plantering), 36-plots-banan och nya rariteter: tid till nästa köp 27 s / 1:12 / 2:54 / 5:20 (inom målen). Första Legendary ~7 min, Mythic ~25 min, Cosmic ~1 h, Secret ~3 h (4 av 10 spelare), Divine 0 av 24 på 4 h (avsiktligt: en nyhet över alla servrar).
+
 Plantering, offline, stora farmer och HD-morötter 8 okt:
 - **Ingen auto-omplantering.** Skörd lämnar ploten tom och du trycker för att plantera, så valt frö spelar roll på varje plot. Auto Harvest-passet skördar och planterar om (bara när du är i spelet), vilket gör passet värt något.
 - **Offline: "du kan inte skörda mer än du planterade".** Det sparade växer klart i realtid och står redo i plots när du kommer tillbaka. Ingen popup, inga extra morötter, ingen korg fylls. All gammal offline-belöningskod (avslöjandet, takt, tak, Big Basket-offline) är borttagen. Big Basket = 3× korg.

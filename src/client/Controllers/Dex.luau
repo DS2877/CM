@@ -108,7 +108,7 @@ local function refresh()
 		local rarity = CarrotInfo.rarityOfType(card.def.id)
 		card.icon.ImageColor3 = if isFound then Color3.new(1, 1, 1) else Color3.fromRGB(40, 30, 60)
 		card.name.Text = if isFound then card.def.name else "???"
-		local color = CarrotInfo.color(rarity.color)
+		local color = CarrotInfo.rarityColor(rarity, os.clock())
 		card.frame.BackgroundColor3 = if isFound
 			then color:Lerp(Color3.new(1, 1, 1), 0.65)
 			else Color3.fromRGB(225, 225, 235)
@@ -178,7 +178,7 @@ local function build()
 
 	for i, def in ordered do
 		local rarity = CarrotInfo.rarityOfType(def.id)
-		local color = CarrotInfo.color(rarity.color)
+		local color = CarrotInfo.rarityColor(rarity, os.clock())
 		local dark = color:Lerp(Color3.new(0, 0, 0), 0.5)
 		local frame: Frame = UI.new("Frame", {
 			BackgroundColor3 = Color3.fromRGB(225, 225, 235),

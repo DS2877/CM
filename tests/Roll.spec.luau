@@ -88,10 +88,13 @@ return function()
 	-- Pity: minimum rarity is always respected
 	for _ = 1, 2000 do
 		local r = Roller.roll(configs, { minRarityOrder = 5 }, nextNumber)
-		assert(
-			r.rarity == "Legendary" or r.rarity == "Mythic" or r.rarity == "Secret",
-			"pity broke: " .. r.rarity
-		)
+		local order = 0
+		for _, def in Rarity do
+			if def.id == r.rarity then
+				order = def.order
+			end
+		end
+		assert(order >= 5, "pity broke: " .. r.rarity)
 	end
 	-- Forced mutation
 	local forced = Roller.roll(configs, { forceMutation = "Golden" }, nextNumber)

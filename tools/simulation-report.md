@@ -6,27 +6,27 @@
 
 | Window | Median gap | Purchase moments/run | Target |
 |---|---|---|---|
-| 0-10 min | 26s | 17.5 | 30-90 s |
-| 10-30 min | 1:11 | 14.2 | ~1-2 min |
-| 30-60 min | 2:41 | 9.5 | 2-3 min |
-| 1-2 h | 5:04 | 10.5 | 3-5 min |
-| 2-4 h | 11:53 | 9.8 | soft wall (prestige later) |
+| 0-10 min | 27s | 16.9 | 30-90 s |
+| 10-30 min | 1:12 | 13.9 | ~1-2 min |
+| 30-60 min | 2:54 | 8.6 | 2-3 min |
+| 1-2 h | 5:20 | 9.6 | 3-5 min |
+| 2-4 h | 11:56 | 9.3 | soft wall (prestige later) |
 
 ## Income per minute (median)
 
 | Minute | Income/min |
 |---|---|
-| 1 | $1,365 |
-| 3 | $2,230 |
-| 5 | $2,827 |
-| 10 | $8,738 |
-| 20 | $18.5K |
-| 30 | $28.8K |
-| 60 | $51.5K |
-| 90 | $66.6K |
-| 120 | $80.8K |
-| 180 | $106K |
-| 240 | $125K |
+| 1 | $1,347 |
+| 3 | $2,180 |
+| 5 | $2,741 |
+| 10 | $6,858 |
+| 20 | $14.1K |
+| 30 | $22.6K |
+| 60 | $42.3K |
+| 90 | $70K |
+| 120 | $67.9K |
+| 180 | $88K |
+| 240 | $116K |
 
 ## First time each rarity appears (median, runs where it appeared)
 
@@ -34,30 +34,32 @@
 |---|---|---|
 | Common | 12s | 24/24 |
 | Uncommon | 18s | 24/24 |
-| Rare | 39s | 24/24 |
-| Epic | 1:19 | 24/24 |
-| Legendary | 6:25 | 24/24 |
-| Mythic | 20:52 | 24/24 |
-| Secret | 2:47:49 | 9/24 |
+| Rare | 40s | 24/24 |
+| Epic | 1:22 | 24/24 |
+| Legendary | 6:45 | 24/24 |
+| Mythic | 24:52 | 24/24 |
+| Cosmic | 1:04:53 | 22/24 |
+| Secret | 2:56:49 | 10/24 |
+| Divine | - | 0/24 |
 
 ## Upgrade levels after 4 h (median)
 
 | Track | Level | Max |
 |---|---|---|
-| Growth Speed | 22 | 25 |
+| Growth Speed | 23 | 25 |
 | Luck | 18 | 40 |
-| Value | 23 | 100 |
+| Value | 24 | 100 |
 | Farm Size | 4 | 8 |
 | Harvest Power | 18 | 40 |
 | Basket Size | 4 | 5 |
 
 ## Farm Size purchases (median time)
 
-- 6 plots: 5:45 (24/24 runs)
-- 9 plots: 17:39 (24/24 runs)
-- 12 plots: 57:20 (24/24 runs)
-- 16 plots: 2:55:36 (23/24 runs)
-- 20 plots: not reached (0/24 runs)
+- 6 plots: 6:05 (24/24 runs)
+- 9 plots: 18:55 (24/24 runs)
+- 12 plots: 1:00:27 (24/24 runs)
+- 16 plots: 2:29:40 (23/24 runs)
+- 20 plots: 3:06:10 (3/24 runs)
 - 25 plots: not reached (0/24 runs)
 - 30 plots: not reached (0/24 runs)
 - 36 plots: not reached (0/24 runs)
