@@ -36,6 +36,7 @@ local C = {
 	upgrade = Color3.fromRGB(255, 165, 40),
 	upgradeDark = Color3.fromRGB(150, 70, 0),
 	goal = Color3.fromRGB(255, 205, 40),
+	goalDark = Color3.fromRGB(120, 70, 10),
 	carrot = Color3.fromRGB(255, 150, 50),
 	badge = Color3.fromRGB(235, 40, 50),
 	good = Color3.fromRGB(120, 245, 100),
@@ -173,12 +174,12 @@ local function buildGoalBar(): TextButton
 		Name = "Goal",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Size = UDim2.fromOffset(340, 38),
-		BackgroundColor3 = Color3.fromRGB(40, 35, 30),
+		BackgroundColor3 = Color3.fromRGB(255, 244, 220),
 		AutoButtonColor = false,
 		Text = "",
 	}, {
-		UI.corner(10),
-		UI.stroke(C.outline, 3),
+		UI.corner(12),
+		UI.stroke(C.goalDark, 3),
 	})
 	local clip = UI.new("Frame", {
 		Name = "Clip",
@@ -222,7 +223,7 @@ local function buildGoalBar(): TextButton
 		TextXAlignment = Enum.TextXAlignment.Left,
 		ZIndex = 2,
 		Parent = b,
-	}, C.outline, 2)
+	}, C.goalDark, 2.5)
 	goalAmount = bigText({
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -10, 0, 6),
@@ -231,23 +232,28 @@ local function buildGoalBar(): TextButton
 		TextXAlignment = Enum.TextXAlignment.Right,
 		ZIndex = 2,
 		Parent = b,
-	}, C.outline, 2)
+	}, C.goalDark, 2.5)
 	return b
 end
 
--- Put the goal bar in the free part of the Roblox top bar; fall back to just below it.
+-- Put the goal bar centered in the Roblox top bar row, keeping well clear of the Roblox
+-- buttons on the left (TopbarInset can lag behind the chat/voice buttons, so add a margin).
+-- If there isn't room, it goes just below the top bar instead.
+local TOPBAR_SAFETY = 90
 local function placeGoalBar()
 	local inset = GuiService.TopbarInset
-	local width = inset.Max.X - inset.Min.X
-	if width >= 220 and inset.Height > 20 then
+	local screenW = topGui.AbsoluteSize.X
+	local center = screenW / 2
+	local half = math.min(center - (inset.Min.X + TOPBAR_SAFETY), inset.Max.X - 12 - center)
+	local w = math.min(360, half * 2)
+	if w >= 240 and inset.Height > 20 then
 		goalButton.Parent = topGui
-		local w = math.min(380, width - 40)
 		goalButton.Size = UDim2.fromOffset(w, math.min(40, inset.Height - 10))
-		goalButton.Position = UDim2.fromOffset(inset.Min.X + 24 + w / 2, inset.Min.Y + inset.Height / 2)
+		goalButton.Position = UDim2.fromOffset(center, inset.Min.Y + inset.Height / 2)
 	else
 		goalButton.Parent = gui
 		goalButton.Size = UDim2.fromOffset(320, 38)
-		goalButton.Position = UDim2.new(0.5, 0, 0, 26)
+		goalButton.Position = UDim2.new(0.5, 0, 0, 24)
 	end
 end
 
@@ -281,12 +287,13 @@ local function build()
 	goalButton = buildGoalBar()
 	placeGoalBar()
 	GuiService:GetPropertyChangedSignal("TopbarInset"):Connect(placeGoalBar)
+	topGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeGoalBar)
 
 	-- Left tile stack
 	local left = UI.new("Frame", {
 		Name = "Left",
 		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 12, 0.46, 0),
+		Position = UDim2.new(0, 12, 0.56, 0),
 		Size = UDim2.fromOffset(80, 200),
 		BackgroundTransparency = 1,
 		Parent = gui,
@@ -307,7 +314,7 @@ local function build()
 	local right = UI.new("Frame", {
 		Name = "Right",
 		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -12, 0.42, 0),
+		Position = UDim2.new(1, -12, 0.46, 0),
 		Size = UDim2.fromOffset(120, 128),
 		BackgroundTransparency = 1,
 		Parent = gui,
@@ -327,18 +334,18 @@ local function build()
 		Parent = right,
 	}, C.cashDark, 2.5)
 
-	-- Bottom-left currency stack
+	-- Currency stack, top-left under the Roblox buttons (the thumbstick owns the bottom-left)
 	local currencies = UI.new("Frame", {
 		Name = "Currencies",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 14, 1, -10),
+		AnchorPoint = Vector2.new(0, 0),
+		Position = UDim2.new(0, 14, 0, 6),
 		Size = UDim2.fromOffset(260, 84),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
 		UI.new("UIListLayout", {
 			Padding = UDim.new(0, 2),
-			VerticalAlignment = Enum.VerticalAlignment.Bottom,
+			VerticalAlignment = Enum.VerticalAlignment.Top,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
 	})
@@ -346,7 +353,7 @@ local function build()
 		Name = "Basket",
 		Size = UDim2.fromOffset(260, 30),
 		BackgroundTransparency = 1,
-		LayoutOrder = 1,
+		LayoutOrder = 2,
 		Parent = currencies,
 	})
 	local carrotIcon = UI.icon("Carrot", "🥕")
@@ -364,7 +371,7 @@ local function build()
 		Name = "Cash",
 		Size = UDim2.fromOffset(260, 46),
 		BackgroundTransparency = 1,
-		LayoutOrder = 2,
+		LayoutOrder = 1,
 		Parent = currencies,
 	})
 	local cashIcon = UI.icon("Cash", "💵")
@@ -379,12 +386,12 @@ local function build()
 		Parent = cashRow,
 	}, C.cashDark, 3)
 
-	-- Toasts: big stroked text above the bottom center, newest at the bottom
+	-- Toasts: big stroked text at the bottom center, between thumbstick and jump button
 	toastList = UI.new("Frame", {
 		Name = "Toasts",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -58),
-		Size = UDim2.fromOffset(520, 150),
+		Position = UDim2.new(0.5, 0, 1, -24),
+		Size = UDim2.fromOffset(430, 150),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
@@ -460,12 +467,11 @@ local function refreshBasket()
 	basketLabel.Text = if cap > 0
 		then string.format("%s/%s", Format.number(count), Format.number(cap))
 		else tostring(count)
-	sellTile.BackgroundColor3 = if count == 0 then Color3.fromRGB(110, 140, 115) else C.sell
 end
 
 function HUD.toast(text: string, color: Color3?, seconds: number?)
 	local l = bigText({
-		Size = UDim2.fromOffset(520, 30),
+		Size = UDim2.fromOffset(430, 26),
 		Text = text,
 		TextColor3 = color or C.info,
 		LayoutOrder = math.floor(os.clock() * 1000),

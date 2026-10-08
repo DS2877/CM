@@ -27,21 +27,32 @@ export type WorldBuild = {
 
 local WorldBuilder = {}
 
+-- Bright, saturated, child-friendly palette.
 local COLORS = {
-	grass = Color3.fromRGB(96, 168, 74),
-	farmGrass = Color3.fromRGB(110, 180, 80),
-	soil = Color3.fromRGB(102, 70, 46),
-	soilEdge = Color3.fromRGB(80, 54, 36),
-	path = Color3.fromRGB(222, 196, 150),
-	plaza = Color3.fromRGB(205, 200, 190),
-	wood = Color3.fromRGB(150, 105, 65),
-	darkWood = Color3.fromRGB(105, 72, 45),
-	fence = Color3.fromRGB(235, 225, 205),
-	orange = Color3.fromRGB(245, 130, 30),
-	white = Color3.fromRGB(250, 248, 240),
-	leaf = Color3.fromRGB(70, 160, 60),
-	trunk = Color3.fromRGB(110, 78, 50),
-	rock = Color3.fromRGB(140, 140, 135),
+	grass = Color3.fromRGB(110, 205, 75),
+	farmGrass = Color3.fromRGB(140, 222, 95),
+	soil = Color3.fromRGB(176, 112, 62),
+	soilFurrow = Color3.fromRGB(150, 92, 50),
+	soilEdge = Color3.fromRGB(125, 78, 42),
+	path = Color3.fromRGB(250, 222, 160),
+	plaza = Color3.fromRGB(240, 232, 215),
+	wood = Color3.fromRGB(205, 140, 80),
+	darkWood = Color3.fromRGB(160, 100, 55),
+	fence = Color3.fromRGB(255, 255, 250),
+	orange = Color3.fromRGB(255, 140, 30),
+	white = Color3.fromRGB(255, 255, 250),
+	leaf = Color3.fromRGB(85, 200, 70),
+	leafLight = Color3.fromRGB(150, 230, 85),
+	trunk = Color3.fromRGB(150, 100, 60),
+	rock = Color3.fromRGB(185, 185, 195),
+	flowers = {
+		Color3.fromRGB(255, 110, 170),
+		Color3.fromRGB(255, 225, 60),
+		Color3.fromRGB(175, 120, 255),
+		Color3.fromRGB(100, 200, 255),
+		Color3.fromRGB(255, 255, 255),
+		Color3.fromRGB(255, 140, 80),
+	},
 }
 
 local function part(props: { [string]: any }, parent: Instance?): Part
@@ -122,11 +133,11 @@ local function label(parent: Instance, props: { [string]: any }): TextLabel
 end
 
 local function buildLighting()
-	Lighting.ClockTime = 14.5
+	Lighting.ClockTime = 13.5
 	Lighting.GeographicLatitude = 35
-	Lighting.Brightness = 2.4
-	Lighting.Ambient = Color3.fromRGB(80, 80, 90)
-	Lighting.OutdoorAmbient = Color3.fromRGB(150, 150, 160)
+	Lighting.Brightness = 3
+	Lighting.Ambient = Color3.fromRGB(110, 105, 100)
+	Lighting.OutdoorAmbient = Color3.fromRGB(170, 165, 160)
 	Lighting.EnvironmentDiffuseScale = 0.6
 	Lighting.EnvironmentSpecularScale = 0.6
 	Lighting.GlobalShadows = true
@@ -143,12 +154,12 @@ local function buildLighting()
 	sky.Parent = Lighting
 
 	local atmosphere = Instance.new("Atmosphere")
-	atmosphere.Density = 0.27
-	atmosphere.Offset = 0.15
-	atmosphere.Color = Color3.fromRGB(205, 225, 245)
-	atmosphere.Decay = Color3.fromRGB(120, 150, 190)
+	atmosphere.Density = 0.22
+	atmosphere.Offset = 0.1
+	atmosphere.Color = Color3.fromRGB(200, 230, 255)
+	atmosphere.Decay = Color3.fromRGB(140, 190, 255)
 	atmosphere.Glare = 0.1
-	atmosphere.Haze = 1
+	atmosphere.Haze = 0.6
 	atmosphere.Parent = Lighting
 
 	local bloom = Instance.new("BloomEffect")
@@ -158,9 +169,10 @@ local function buildLighting()
 	bloom.Parent = Lighting
 
 	local cc = Instance.new("ColorCorrectionEffect")
-	cc.Saturation = 0.15
-	cc.Contrast = 0.05
-	cc.Brightness = 0.02
+	cc.Saturation = 0.28
+	cc.Contrast = 0.06
+	cc.Brightness = 0.04
+	cc.TintColor = Color3.fromRGB(255, 252, 245)
 	cc.Parent = Lighting
 
 	local rays = Instance.new("SunRaysEffect")
@@ -373,13 +385,13 @@ local function buildTree(parent: Instance, pos: Vector3, scale: number, rng: Ran
 		Material = Enum.Material.Wood,
 		Color = COLORS.trunk,
 	}, tree)
-	local leafColor = COLORS.leaf:Lerp(Color3.fromRGB(120, 190, 70), rng:NextNumber())
+	local leafColor = COLORS.leaf:Lerp(COLORS.leafLight, rng:NextNumber())
 	part({
 		Name = "Leaves",
 		Shape = Enum.PartType.Ball,
 		Size = Vector3.one * 9 * scale,
 		CFrame = CFrame.new(pos + Vector3.new(0, trunkH + 2.5 * scale, 0)),
-		Material = Enum.Material.Grass,
+		Material = Enum.Material.SmoothPlastic,
 		Color = leafColor,
 	}, tree)
 	part({
@@ -387,8 +399,8 @@ local function buildTree(parent: Instance, pos: Vector3, scale: number, rng: Ran
 		Shape = Enum.PartType.Ball,
 		Size = Vector3.one * 6 * scale,
 		CFrame = CFrame.new(pos + Vector3.new(1.5 * scale, trunkH + 5.5 * scale, -1 * scale)),
-		Material = Enum.Material.Grass,
-		Color = leafColor:Lerp(Color3.new(1, 1, 1), 0.08),
+		Material = Enum.Material.SmoothPlastic,
+		Color = leafColor:Lerp(Color3.new(1, 1, 1), 0.12),
 	}, tree)
 	tree.Parent = parent
 end
@@ -421,7 +433,31 @@ local function buildDecor(world: Folder)
 		end
 	end
 
-	-- Rocks and flower patches
+	-- Flower patches: little colorful dots everywhere (cheap: one ball per flower)
+	for _ = 1, 90 do
+		local a = rng:NextNumber() * 2 * math.pi
+		local r = 36 + rng:NextNumber() * 270
+		local angleToFarm = (a % angleStep) / angleStep
+		local onFarm = r > 62 and r < 138 and (angleToFarm < 0.32 or angleToFarm > 0.68)
+		if not onFarm then
+			local center = Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
+			local color = COLORS.flowers[rng:NextInteger(1, #COLORS.flowers)]
+			for _ = 1, 3 do
+				local offset = Vector3.new(rng:NextNumber() * 3 - 1.5, 0, rng:NextNumber() * 3 - 1.5)
+				part({
+					Name = "Flower",
+					Shape = Enum.PartType.Ball,
+					Size = Vector3.one * (0.7 + rng:NextNumber() * 0.4),
+					CFrame = CFrame.new(center + offset + Vector3.new(0, 0.35, 0)),
+					Color = color,
+					CanCollide = false,
+					CastShadow = false,
+				}, decor)
+			end
+		end
+	end
+
+	-- Rocks
 	for _ = 1, 24 do
 		local a = rng:NextNumber() * 2 * math.pi
 		local r = 40 + rng:NextNumber() * 250
@@ -513,16 +549,28 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 			Name = "Plot_" .. index,
 			Size = Vector3.new(World.PlotSize, 0.8, World.PlotSize),
 			CFrame = center * CFrame.new(localPos + Vector3.new(0, 0.4, 0)),
-			Material = Enum.Material.Ground,
+			Material = Enum.Material.SmoothPlastic,
 			Color = COLORS.soil,
 			CastShadow = false,
 		}, plotsFolder)
+		-- Three soft furrows on top
+		for f = -1, 1 do
+			part({
+				Name = "Furrow",
+				Size = Vector3.new(0.9, 0.2, World.PlotSize - 1.2),
+				CFrame = center * CFrame.new(localPos + Vector3.new(f * 2.1, 0.85, 0)),
+				Material = Enum.Material.SmoothPlastic,
+				Color = COLORS.soilFurrow,
+				CastShadow = false,
+				CanCollide = false,
+			}, plot)
+		end
 		-- Darker rim so plots read clearly from above on small screens
 		part({
 			Name = "Rim",
 			Size = Vector3.new(World.PlotSize + 0.8, 0.5, World.PlotSize + 0.8),
 			CFrame = center * CFrame.new(localPos + Vector3.new(0, 0.25, 0)),
-			Material = Enum.Material.Ground,
+			Material = Enum.Material.WoodPlanks,
 			Color = COLORS.soilEdge,
 			CastShadow = false,
 			CanQuery = false,

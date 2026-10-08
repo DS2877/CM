@@ -54,9 +54,11 @@ local fxFolder: Folder
 local farmsFolder: Folder
 
 local COLORS = {
-	bar = Color3.fromRGB(120, 220, 90),
-	ready = Color3.fromRGB(255, 230, 90),
-	plant = Color3.fromRGB(255, 255, 255),
+	bar = Color3.fromRGB(110, 225, 80),
+	ready = Color3.fromRGB(255, 210, 50),
+	plant = Color3.fromRGB(80, 205, 255),
+	plantPulse = Color3.fromRGB(140, 230, 255),
+	outline = Color3.fromRGB(90, 50, 15),
 }
 
 local function now(): number
@@ -139,7 +141,7 @@ local function ensureBillboard(view: View)
 	local bb: BillboardGui = UI.new("BillboardGui", {
 		Name = "PlotStatus",
 		Adornee = view.part,
-		Size = UDim2.new(4.6, 0, 1.15, 0),
+		Size = UDim2.new(5.4, 0, 1.35, 0),
 		StudsOffsetWorldSpace = Vector3.new(0, 3.3, 0),
 		AlwaysOnTop = true,
 		MaxDistance = 90,
@@ -150,12 +152,11 @@ local function ensureBillboard(view: View)
 	-- The label itself is a big tap target too.
 	local bg: TextButton = UI.new("TextButton", {
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Color3.fromRGB(40, 35, 30),
-		BackgroundTransparency = 0.1,
+		BackgroundColor3 = Color3.fromRGB(255, 250, 235),
 		AutoButtonColor = false,
 		Text = "",
 		Parent = bb,
-	}, { UI.corner(10), UI.stroke(Color3.fromRGB(15, 15, 20), 3) })
+	}, { UI.corner(12), UI.stroke(COLORS.outline, 3) })
 	bg.Activated:Connect(function()
 		actOn(view)
 	end)
@@ -163,16 +164,15 @@ local function ensureBillboard(view: View)
 		Name = "Fill",
 		Size = UDim2.fromScale(0, 1),
 		BackgroundColor3 = COLORS.bar,
-		BackgroundTransparency = 0.15,
 		Parent = bg,
-	}, { UI.corner(10) })
+	}, { UI.corner(12) })
 	local text = UI.bigText({
 		Position = UDim2.fromScale(0.04, 0.12),
 		Size = UDim2.fromScale(0.92, 0.76),
 		Text = "",
 		ZIndex = 2,
 		Parent = bg,
-	}, Color3.new(0, 0, 0), 2.5)
+	}, COLORS.outline, 2.5)
 	view.billboard = bb
 	view.barFill = fill
 	view.barText = text
@@ -402,12 +402,19 @@ local function update()
 			RevealFX.animate(view.reveal, clock)
 			if view.billboard then
 				local pulse = 0.5 + 0.5 * math.sin(clock * 6)
-				setBar(view, 1, "TAP TO HARVEST!", COLORS.ready:Lerp(Color3.new(1, 1, 1), pulse * 0.4))
+				local rarity = CarrotInfo.rarity(str(view.part, "Rarity"))
+				local color = COLORS.ready
+				local text = "TAP TO HARVEST!"
+				if rarity and rarity.order >= 2 then
+					color = CarrotInfo.color(rarity.color)
+					text = string.upper(rarity.name) .. "! TAP!"
+				end
+				setBar(view, 1, text, color:Lerp(Color3.new(1, 1, 1), pulse * 0.35))
 			end
 		else
 			if view.billboard then
 				local pulse = 0.5 + 0.5 * math.sin(clock * 4 + view.index)
-				setBar(view, 0, "TAP TO PLANT", COLORS.plant:Lerp(COLORS.bar, pulse))
+				setBar(view, 1, "TAP TO PLANT", COLORS.plant:Lerp(COLORS.plantPulse, pulse))
 			end
 		end
 	end

@@ -247,14 +247,15 @@ local function onHarvest(r: Types.HarvestResult)
 		Sound.play("Legendary", { volume = 0.9 })
 		cameraPunch(18, 1.6)
 		flash(color)
-		burst(top, color, 80, 22)
+		burst(top, color, 140, 24)
+		burst(top + Vector3.new(0, 2, 0), Color3.new(1, 1, 1), 60, 30)
 	elseif order >= 3 or #r.mutations > 0 then
 		Sound.play("Harvest", { speed = 1.25, volume = 0.6 })
 		local mut = r.mutations[1] and CarrotInfo.mutation(r.mutations[1])
-		burst(top, if mut then CarrotInfo.color(mut.color) else color, 18 + order * 6, 14)
+		burst(top, if mut then CarrotInfo.color(mut.color) else color, 30 + order * 12, 16)
 	else
 		Sound.play("Pop", { speed = 0.9 + math.random() * 0.3, volume = 0.35 })
-		burst(top, Color3.fromRGB(255, 200, 120), 6, 8)
+		burst(top, if order >= 2 then color else Color3.fromRGB(255, 220, 90), 16 + order * 6, 10)
 	end
 
 	-- Value text

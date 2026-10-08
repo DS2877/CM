@@ -271,6 +271,61 @@ function CarrotModel.build(typeId: string, mutations: { string }, scale: number)
 		})
 	end
 
+	-- Rarity aura: every carrot sparkles a little, better ones a lot (Config/Rarity aura).
+	local rarity = CarrotInfo.rarityOfType(typeId)
+	local aura = rarity.aura
+	local auraColor = CarrotInfo.color(rarity.color)
+	local auraSeq = if rarity.id == "Secret"
+		then ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 90, 90)),
+			ColorSequenceKeypoint.new(0.25, Color3.fromRGB(255, 230, 80)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(90, 255, 140)),
+			ColorSequenceKeypoint.new(0.75, Color3.fromRGB(80, 200, 255)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(230, 110, 255)),
+		})
+		else ColorSequence.new(auraColor, Color3.new(1, 1, 1))
+	if aura.rate > 0 then
+		emitter(body[2], {
+			Name = "Aura",
+			Rate = aura.rate,
+			Lifetime = NumberRange.new(0.6, 1.3),
+			Speed = NumberRange.new(aura.speed * 0.5, aura.speed),
+			SpreadAngle = Vector2.new(180, 180),
+			Size = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0),
+				NumberSequenceKeypoint.new(0.25, aura.size),
+				NumberSequenceKeypoint.new(1, 0),
+			}),
+			Rotation = NumberRange.new(0, 360),
+			RotSpeed = NumberRange.new(-90, 90),
+			Color = auraSeq,
+		})
+	end
+	if aura.rising > 0 then
+		emitter(body[1], {
+			Name = "Rising",
+			Rate = aura.rising,
+			Lifetime = NumberRange.new(1, 1.8),
+			Speed = NumberRange.new(2, 4),
+			Acceleration = Vector3.new(0, 2, 0),
+			SpreadAngle = Vector2.new(25, 25),
+			EmissionDirection = Enum.NormalId.Top,
+			Size = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, aura.size * 0.8),
+				NumberSequenceKeypoint.new(1, 0),
+			}),
+			Color = auraSeq,
+		})
+	end
+	if aura.light > 0 then
+		local light = Instance.new("PointLight")
+		light.Name = "AuraLight"
+		light.Color = auraColor
+		light.Range = aura.light
+		light.Brightness = 1.6
+		light.Parent = body[2]
+	end
+
 	weldAll(model, root)
 	model:SetAttribute("Length", length)
 	if scale ~= 1 then

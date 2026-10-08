@@ -67,7 +67,10 @@ local function setVisible(plot: BasePart, visible: boolean)
 	for _, child in plot:GetChildren() do
 		if child:IsA("BasePart") then
 			child.Transparency = t
-			child.CanCollide = visible
+			child.CanQuery = visible
+			if child.Name == "Rim" then
+				child.CanCollide = visible
+			end
 		end
 	end
 end
