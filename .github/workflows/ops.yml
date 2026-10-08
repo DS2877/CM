@@ -1,0 +1,34 @@
+name: ops
+
+# Creator Hub setup through Open Cloud (game passes, developer products, Max Players).
+# Runs when a branch named ops/* is pushed (or by hand). The key is only read from the secret.
+on:
+  push:
+    branches: ["ops/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ops
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create passes and products, set Max Players
+        env:
+          ROBLOX_KEY: ${{ secrets.CM_PUBLISHING_KEY }}
+        run: python3 tools/ops/roblox_setup.py
+
+      - name: Commit IDs and log back to this branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/shared/Config/Products.luau tools/ops/ops-log.md
+          git commit -m "ops: Roblox IDs from Creator Hub setup" || echo "nothing to commit"
+          git push
