@@ -5,44 +5,71 @@
 
 local Assets = {
 	-- Sound cues (behavior and mix in Config/Audio). A string or a list of variations.
-	-- rbxasset:// entries ship with the Roblox client and are placeholders; cues with no ID borrow
-	-- another cue's sound at a different pitch (Audio.Cues[x].fallback). The full brief for the
-	-- real sounds is in STATUS.md ("Ljud – brief").
+	-- All IDs are from Roblox's licensed Creator Store partners (APMOfficial production music,
+	-- ProSoundEffects, DistroKid/TooLost official), usable in any experience. Names in comments so
+	-- anyone can find and audition them. Cues with "" borrow another cue (Audio fallback).
 	Sounds = {
-		Click = "rbxasset://sounds/clickfast.wav",
-		Open = "",
-		Purchase = "rbxasset://sounds/electronicpingshort.wav",
+		-- UI: soft bubble "bloops" pitched up, so UI feels like part of the same world
+		Click = "rbxassetid://9112872070", -- Small Bubbles Water Surface Float Up Pop 4 (SFX)
+		Open = "rbxassetid://9112872058", -- Small Bubbles ... Pop 3 (SFX)
+		Purchase = "rbxassetid://9117244567", -- Pay Phone Dropping Dimes Into Coin Slot 5 (SFX)
 		Denied = "",
 		GoalReady = "",
-		Plant = "rbxasset://sounds/action_jump_land.mp3",
-		Harvest = "rbxasset://sounds/snap.wav",
-		HarvestRare = "",
-		HarvestEpic = "",
-		HarvestLegendary = "rbxasset://sounds/victory.wav",
-		HarvestMythic = "",
-		Mutation = "",
-		Discover = "rbxasset://sounds/electronicpingshort.wav",
-		Shimmer = "rbxasset://sounds/swoosh.wav",
+		-- Farm
+		Plant = {
+			"rbxassetid://9114083260", -- Dirt Dig Dirt Throws From Shovel 1 (SFX)
+			"rbxassetid://9114083746", -- Dirt Dig Dirt Throws From Shovel 12 (SFX)
+		},
+		Harvest = { -- juicy little plops, five takes so streaks never repeat exactly
+			"rbxassetid://9112872239", -- Small Bubbles ... Pop 5 (SFX)
+			"rbxassetid://9112872244", -- Small Bubbles ... Pop 6 (SFX)
+			"rbxassetid://9112872235", -- Small Bubbles ... Pop 7 (SFX)
+			"rbxassetid://9112872058", -- Small Bubbles ... Pop 3 (SFX)
+			"rbxassetid://9112872070", -- Small Bubbles ... Pop 4 (SFX)
+		},
+		HarvestRare = "rbxassetid://1841572433", -- Straw Hat Boy Sting c (APM, 3 s)
+		HarvestEpic = "rbxassetid://9038578394", -- Good Good Times (sting a) (APM, 4 s)
+		HarvestLegendary = "rbxassetid://1836860398", -- Winning Spirit (APM, 6 s)
+		HarvestMythic = "rbxassetid://1841173427", -- Magical (c) (APM, 6 s)
+		Mutation = "rbxassetid://9114369623", -- Fairy Dust 1 (SFX)
+		Discover = "rbxassetid://1841185885", -- Whistle Along (APM / KPM, 6 s)
+		Shimmer = "rbxassetid://9114369623", -- Fairy Dust 1 (SFX), quiet + positional
 		Sparks = "",
-		Pillar = "rbxasset://sounds/victory.wav",
-		Water = "rbxasset://sounds/impact_water.mp3",
-		Sell = "rbxasset://sounds/electronicpingshort.wav",
-		SellBoom = "",
-		Upgrade = "",
-		Bell = "rbxasset://sounds/electronicpingshort.wav",
-		BoomEnd = "",
-		Announce = "",
+		Pillar = "rbxassetid://1841324037", -- Summer Town Sting (b) (APM, 6 s)
+		Water = {
+			"rbxassetid://9117947034", -- Puddle Stomps Small Water Splashes 9 (SFX)
+			"rbxassetid://9117946658", -- Puddle Stomps Small Water Splashes 2 (SFX)
+		},
+		-- Economy
+		Sell = {
+			"rbxassetid://9125444889", -- Coins Drop 3 Inch Medallions Metal Hits (SFX)
+			"rbxassetid://9125445531", -- Coins Drop 3 Inch Medallions Metal Hits (SFX)
+		},
+		SellBoom = "rbxassetid://1843090702", -- The Joyous Return - Hook (APM, 3 s)
+		Upgrade = "rbxassetid://9040476898", -- Early Bird - Hit1 (APM, 2 s)
+		-- Market & social
+		Bell = "rbxassetid://9125935023", -- Shop Door Bell Ceramic Mug Cowbell Hits Ring (SFX)
+		BoomEnd = "rbxassetid://1841186475", -- Goodnight Mr Uke (APM / KPM, 5 s)
+		Announce = "rbxassetid://1841390412", -- Bouncy Bouncy Sting 1 (APM, 6 s)
 		RevealTick = "",
 	},
-	-- Looping music per state (Controllers/Music). Empty = no music for that state yet.
+	-- Music playlists per state (Controllers/Music). Tracks play in order, then wrap.
 	Music = {
-		Farm = "", -- calm folk-pop loop, 90-105 bpm (see STATUS.md brief)
-		Boom = "", -- upbeat market/bluegrass loop, 125-140 bpm
+		Farm = {
+			"rbxassetid://9047156510", -- Cheery Ukulele A (APM, John Epping, 1:57)
+			"rbxassetid://78804894697787", -- Ukulele Sunshine (Happy Vlog Music) (DistroKid, 2:55)
+			"rbxassetid://9047156515", -- Cheery Ukulele C (APM, John Epping, 1:33)
+			"rbxassetid://101647477431808", -- Hawaiian Breeze Peaceful Chords (DistroKid, 2:44)
+		},
+		Boom = {
+			"rbxassetid://1838909565", -- Lively Country (APM, Lionel Wendling, 2:51)
+			"rbxassetid://1838909209", -- Energetic Folk (APM, Lionel Wendling, 2:10)
+		},
 	},
 	-- Looping ambience beds
 	Ambience = {
-		Meadow = "", -- birds + soft wind, under everything
-		Market = "", -- light crowd chatter, positional at the market
+		Meadow = "rbxassetid://131156639937742", -- Birds Concert, Pt. 31 (TooLost official)
+		Market = "rbxassetid://9112841064", -- Outdoor Walla 2 (SFX), positional at the market
 	},
 	Meshes = {
 		Carrot = "",

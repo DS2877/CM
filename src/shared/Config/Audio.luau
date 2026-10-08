@@ -48,23 +48,17 @@ local Audio = {
 	ComboMaxSteps = 8,
 
 	Cues = {
-		-- UI ---------------------------------------------------------------------------------
-		Click = { group = "UI", volume = 0.5, pitch = { 0.96, 1.04 }, cooldown = 0.05 },
-		Open = {
-			group = "UI",
-			volume = 0.45,
-			pitch = { 1.0, 1.05 },
-			fallback = "Click",
-			fallbackPitch = 1.15,
-		},
-		Purchase = { group = "UI", volume = 0.7, pitch = { 1, 1 } },
+		-- UI: bubble bloops pitched up (same family as the harvest plop)
+		Click = { group = "UI", volume = 0.45, pitch = { 1.35, 1.45 }, cooldown = 0.05 },
+		Open = { group = "UI", volume = 0.45, pitch = { 1.2, 1.25 } },
+		Purchase = { group = "UI", volume = 0.6, pitch = { 1, 1.05 } },
 		Denied = {
 			group = "UI",
-			volume = 0.45,
+			volume = 0.5,
 			pitch = { 1, 1 },
 			cooldown = 0.3,
 			fallback = "Click",
-			fallbackPitch = 0.6,
+			fallbackPitch = 0.45,
 		},
 		GoalReady = {
 			group = "UI",
@@ -72,87 +66,42 @@ local Audio = {
 			pitch = { 1, 1 },
 			cooldown = 3,
 			fallback = "Purchase",
-			fallbackPitch = 1.35,
-		},
-
-		-- Farm -------------------------------------------------------------------------------
-		Plant = { group = "SFX", volume = 0.45, pitch = { 0.9, 1.1 }, cooldown = 0.04 },
-		Harvest = { group = "SFX", volume = 0.6, pitch = { 0.97, 1.03 } }, -- combo pitch on top
-		HarvestRare = {
-			group = "SFX",
-			volume = 0.7,
-			pitch = { 1, 1 },
-			fallback = "Harvest",
 			fallbackPitch = 1.3,
 		},
-		HarvestEpic = {
-			group = "SFX",
-			volume = 0.8,
-			pitch = { 1, 1 },
-			fallback = "Discover",
-			fallbackPitch = 1.1,
-		},
-		HarvestLegendary = { group = "SFX", volume = 0.95, pitch = { 1, 1 }, duck = 3 },
-		HarvestMythic = {
-			group = "SFX",
-			volume = 1,
-			pitch = { 1, 1 },
-			duck = 4.5,
-			fallback = "HarvestLegendary",
-			fallbackPitch = 0.85,
-		},
-		Mutation = {
-			group = "SFX",
-			volume = 0.6,
-			pitch = { 1, 1.05 },
-			fallback = "Discover",
-			fallbackPitch = 1.4,
-		},
-		Discover = { group = "SFX", volume = 0.75, pitch = { 1, 1 }, duck = 1.5 },
-		Shimmer = { group = "SFX", volume = 0.35, pitch = { 0.95, 1.05 }, positional = true, cooldown = 0.2 },
+
+		-- Farm
+		Plant = { group = "SFX", volume = 0.35, pitch = { 1.05, 1.25 }, cooldown = 0.04 },
+		Harvest = { group = "SFX", volume = 0.7, pitch = { 0.95, 1.08 } }, -- + combo climb
+		HarvestRare = { group = "SFX", volume = 0.45, pitch = { 1, 1 }, duck = 2.5 },
+		HarvestEpic = { group = "SFX", volume = 0.5, pitch = { 1, 1 }, duck = 3.5 },
+		HarvestLegendary = { group = "SFX", volume = 0.6, pitch = { 1, 1 }, duck = 6 },
+		HarvestMythic = { group = "SFX", volume = 0.7, pitch = { 1, 1 }, duck = 6.5 },
+		Mutation = { group = "SFX", volume = 0.45, pitch = { 1, 1.05 } },
+		Discover = { group = "SFX", volume = 0.5, pitch = { 1, 1 }, duck = 5.5, cooldown = 3 },
+		Shimmer = { group = "SFX", volume = 0.25, pitch = { 1.1, 1.2 }, positional = true, cooldown = 0.3 },
 		Sparks = {
 			group = "SFX",
-			volume = 0.5,
-			pitch = { 1, 1.05 },
+			volume = 0.35,
+			pitch = { 1, 1 },
 			positional = true,
 			fallback = "Shimmer",
-			fallbackPitch = 1.25,
-		},
-		Pillar = { group = "SFX", volume = 0.8, pitch = { 1, 1 }, positional = true, duck = 2 },
-		Water = { group = "SFX", volume = 0.55, pitch = { 0.95, 1.05 }, positional = true },
-
-		-- Economy ----------------------------------------------------------------------------
-		Sell = { group = "SFX", volume = 0.65, pitch = { 1, 1 } },
-		SellBoom = {
-			group = "SFX",
-			volume = 0.9,
-			pitch = { 1, 1 },
-			duck = 2.5,
-			fallback = "HarvestLegendary",
-			fallbackPitch = 1.15,
-		},
-		Upgrade = {
-			group = "SFX",
-			volume = 0.65,
-			pitch = { 1, 1 },
-			fallback = "Purchase",
-			fallbackPitch = 1.2,
-		},
-
-		-- Market & social ----------------------------------------------------------------------
-		Bell = { group = "SFX", volume = 0.85, pitch = { 1, 1 }, duck = 2 },
-		BoomEnd = { group = "SFX", volume = 0.45, pitch = { 1, 1 }, fallback = "Bell", fallbackPitch = 0.8 },
-		Announce = {
-			group = "SFX",
-			volume = 0.5,
-			pitch = { 1, 1 },
-			cooldown = 2,
-			fallback = "HarvestLegendary",
 			fallbackPitch = 1.3,
 		},
+		Pillar = { group = "SFX", volume = 0.5, pitch = { 1, 1 }, positional = true, duck = 5 },
+		Water = { group = "SFX", volume = 0.55, pitch = { 0.95, 1.1 }, positional = true },
 
-		-- Offline reveal -------------------------------------------------------------------------
-		RevealTick = { group = "SFX", volume = 0.4, pitch = { 1, 1 }, fallback = "Harvest" },
+		-- Economy
+		Sell = { group = "SFX", volume = 0.6, pitch = { 0.95, 1.05 }, cooldown = 0.1 },
+		SellBoom = { group = "SFX", volume = 0.55, pitch = { 1, 1 }, duck = 3 },
+		Upgrade = { group = "SFX", volume = 0.45, pitch = { 1, 1 }, cooldown = 0.4, duck = 1.5 },
+
+		-- Market & social
+		Bell = { group = "SFX", volume = 0.7, pitch = { 1, 1 }, duck = 3 },
+		BoomEnd = { group = "SFX", volume = 0.45, pitch = { 1, 1 }, duck = 4.5 },
+		Announce = { group = "SFX", volume = 0.35, pitch = { 1, 1 }, cooldown = 6, duck = 5 },
+
+		-- Offline reveal: the harvest plop on a rising ladder
+		RevealTick = { group = "SFX", volume = 0.45, pitch = { 1, 1 }, fallback = "Harvest" },
 	} :: { [string]: Cue },
 }
 

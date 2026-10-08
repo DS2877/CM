@@ -18,26 +18,24 @@ Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 4 – robust och monetiserat (
 - **🎵-knapp** vid 🔍 slår av eller på musiken och sparas i profilen.
 - **Placeholders:** ljud utan ID lånar ett närliggande ljud i en annan tonhöjd, så spelet aldrig är tyst. Det är bara tillfälliga ljud från Roblox-klienten.
 
-**Philip: välj ljuden i Creator Store** (Creator Hub → Creator Store → Audio). Välj spår som Roblox själva laddat upp (licensierat bibliotek, fritt att använda). Kopiera ID:t till `Config/Assets.luau` och skicka dem till mig, så mixar jag nivåerna.
+**Ljud och musik är valda (8 okt, andra versionen).** Alla ID:n kommer från Robloxs licensierade partner i Creator Store (APMOfficial, ProSoundEffects, DistroKid/TooLost official) och är gratis att använda i vilken upplevelse som helst. Namnen står som kommentarer i `Config/Assets.luau`, så att man kan provlyssna i Creator Store.
 
-| Slot | Vad den ska låta som | Sökord |
-|---|---|---|
-| Music.Farm | Lugn, glad akustisk loop, 90–105 bpm, ukulele/marimba, inga röster, 1–3 min | "ukulele happy", "acoustic farm", "cozy" |
-| Music.Boom | Upbeat, energisk, 125–140 bpm, banjo/fiol eller funky marknad | "bluegrass", "hoedown", "upbeat market" |
-| Ambience.Meadow | Fåglar och svag vind, loopbar | "birds ambience", "meadow" |
-| Ambience.Market | Svagt sorl av folk | "crowd chatter", "market ambience" |
-| Harvest | Kort, saftigt "plopp" (grönsak upp ur jord) | "pop", "pluck", "veggie" |
-| HarvestRare / Epic | Glad klinga, ljusare för Epic | "chime", "sparkle" |
-| HarvestLegendary | Kort fanfar 1–2 s | "fanfare short", "win" |
-| HarvestMythic | Större fanfar med kör/magi 2–3 s | "epic reveal", "magic" |
-| Shimmer / Sparks / Pillar | Magiskt skimmer, gnistor, kraftfullt "whoosh" uppåt | "shimmer", "sparkle", "magic rise" |
-| Sell / SellBoom | Mynt som rasslar, jackpot för boom | "coins", "cash register", "jackpot" |
-| Plant | Mjukt grävljud i jord | "dig", "dirt" |
-| Bell | Marknadsklocka/koskälla | "bell ring", "cowbell" |
-| Click / Open / Denied | Mjukt UI-klick, "pop" för panel, dovt "bonk" | "ui click", "pop", "error" |
-| Water | Plask/vattenkanna | "splash", "water pour" |
+| Roll | Ljud |
+|---|---|
+| Farm-musik (spellista) | Cheery Ukulele A + C (APM, John Epping), Ukulele Sunshine, Hawaiian Breeze Peaceful Chords |
+| Boom-musik (spellista) | Lively Country + Energetic Folk (APM, Lionel Wendling) |
+| Skörd | Fem varianter av ett litet bubbel-"plopp", stiger i ton vid snabba serier |
+| Plantera | Spade i jord |
+| Sälja | Riktiga mynt som faller |
+| Raritet-stings | Korta APM-folk-stings: Straw Hat Boy (Rare), Good Good Times (Epic), Winning Spirit (Legendary), Magical (Mythic) |
+| Ny morot / mutation | Whistle Along / Fairy Dust |
+| Marknadsklocka | Butiksdörrklocka (koskälla) |
+| Boom slut | Goodnight Mr Uke |
+| Ambience | Fågelsång (äng) + utomhussorl vid marknaden |
 
-Krav: musiken ska loopa utan hack. Ljudeffekter ska vara under 3 s och inte för höga (normaliserade).
+Musiken spelar spellistorna i tur och ordning. Under boom tonar den över till boom-listan, sedan fortsätter farm-musiken där den slutade. Stings duckar musiken så att tonarterna inte krockar.
+
+**Philip, lyssna och säg till:** jag har valt ljuden från namn och metadata och har inte kunnat höra dem. Om något låter fel säger du bara vilken roll ("Legendary-ljudet"), så byter jag.
 
 ## Fas 4 – robust och monetiserat
 
