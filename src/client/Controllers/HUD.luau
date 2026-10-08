@@ -253,14 +253,14 @@ local function placeGoalBar()
 	local screenW = topGui.AbsoluteSize.X
 	local center = screenW / 2
 	local half = math.min(center - (inset.Min.X + TOPBAR_SAFETY), inset.Max.X - 12 - center)
-	local w = math.min(360, half * 2)
-	if w >= 240 and inset.Height > 20 then
+	local w = math.min(300, half * 2)
+	if w >= 220 and inset.Height > 20 then
 		goalButton.Parent = topGui
-		goalButton.Size = UDim2.fromOffset(w, math.min(40, inset.Height - 10))
+		goalButton.Size = UDim2.fromOffset(w, math.min(32, inset.Height - 12))
 		goalButton.Position = UDim2.fromOffset(center, inset.Min.Y + inset.Height / 2)
 	else
 		goalButton.Parent = gui
-		goalButton.Size = UDim2.fromOffset(320, 38)
+		goalButton.Size = UDim2.fromOffset(280, 32)
 		goalButton.Position = UDim2.new(0.5, 0, 0, 24)
 	end
 end
@@ -529,7 +529,7 @@ local function build()
 		Name = "Banner",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.27),
-		Size = UDim2.fromOffset(620, 48),
+		Size = UDim2.fromOffset(480, 36),
 		Text = "",
 		TextTransparency = 1,
 		Parent = gui,

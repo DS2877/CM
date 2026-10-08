@@ -61,9 +61,10 @@ local function build()
 	local bb: BillboardGui = UI.new("BillboardGui", {
 		Name = "PriceBoard",
 		Adornee = anchor,
-		Size = UDim2.new(22, 0, 15, 0),
+		-- Sized to read from the plaza without blotting out the sky over half the map.
+		Size = UDim2.new(12, 0, 8.2, 0),
 		LightInfluence = 0,
-		MaxDistance = 260,
+		MaxDistance = 140,
 		ResetOnSpawn = false,
 		Parent = playerGui,
 	})
@@ -149,7 +150,7 @@ local function build()
 		Name = "Pointer",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 6),
-		Size = UDim2.fromOffset(250, 44),
+		Size = UDim2.fromOffset(210, 36),
 		BackgroundColor3 = Color3.fromRGB(255, 160, 40),
 		Visible = false,
 		Parent = arrowGui,
@@ -164,10 +165,10 @@ local function build()
 	local circle = UI.new("Frame", {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 4, 0.5, 0),
-		Size = UDim2.fromOffset(36, 36),
+		Size = UDim2.fromOffset(28, 28),
 		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		Parent = pointer,
-	}, { UI.corner(18), UI.stroke(Color3.fromRGB(130, 55, 0), 2.5) })
+	}, { UI.corner(14), UI.stroke(Color3.fromRGB(130, 55, 0), 2.5) })
 	arrow = UI.bigText({
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
@@ -177,8 +178,8 @@ local function build()
 		Parent = circle,
 	}, Color3.fromRGB(130, 55, 0), 2)
 	pointerText = UI.bigText({
-		Position = UDim2.fromOffset(46, 7),
-		Size = UDim2.new(1, -56, 1, -14),
+		Position = UDim2.fromOffset(38, 6),
+		Size = UDim2.new(1, -46, 1, -12),
 		Text = "MARKET BOOM!",
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = pointer,

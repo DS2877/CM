@@ -137,7 +137,9 @@ end
 function UI.screenScale(): number
 	local camera = workspace.CurrentCamera
 	local size = if camera then camera.ViewportSize else Vector2.new(844, 390)
-	return math.clamp(math.min(size.Y / 400, size.X / 760), 0.75, 1.6)
+	-- Tuned so a landscape phone (~390–460 pt tall) lands around 0.8: chunky but not covering the
+	-- farm. Tablets and desktop grow up to 1.25.
+	return math.clamp(math.min(size.Y / 520, size.X / 980), 0.65, 1.25)
 end
 
 -- Adds a UIScale to a ScreenGui that follows UI.screenScale().

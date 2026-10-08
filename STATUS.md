@@ -132,6 +132,12 @@ Bra att veta vid test: du kan trycka på dina plots (eller etiketten ovanför) s
 
 ## Beslut tagna under bygget (regel 10)
 
+UI-storlek 8 okt (efter Philips iPhone-skärmdump):
+- **HUD-skalan** räknas nu mot 520 pt höjd (var 400): en liggande telefon hamnar runt 0,8 i stället för ~1,15. Surfplatta/dator max 1,25.
+- **Målbaren** i toppfältet max 300 pt bred och 32 pt hög. Bannern mindre.
+- **Plot-etiketterna** är små piller (3,2 × 0,8 studs, syns inom 60 studs) med kort text: PLANT, nedräkning, HARVEST! eller raritetens namn ("RARE!").
+- **Prisbrädan** över marknaden är 12 × 8 studs (var 22 × 15) och syns inom 140 studs (var 260). Boom-pillret under toppfältet är mindre.
+
 Buggfix 8 okt (offline):
 - **Buggen:** offline-koden räknade skördar för alla upplåsta plots oavsett om något var planterat, så en inloggning utan att spela gav en full korg gratis. Den gjorde också att man kunde lämna och gå med igen för gratis morötter, och växande morötter (även en glödande Legendary) försvann när man lämnade.
 - **Fixen:** plots sparas när du lämnar (och var 30:e sekund), med morot och återstående tid. Offline färdigställer bara det som sparades. Logiken ligger i `src/shared/OfflinePlan.luau` med Lune-tester.

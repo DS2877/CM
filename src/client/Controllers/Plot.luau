@@ -141,10 +141,11 @@ local function ensureBillboard(view: View)
 	local bb: BillboardGui = UI.new("BillboardGui", {
 		Name = "PlotStatus",
 		Adornee = view.part,
-		Size = UDim2.new(5.4, 0, 1.35, 0),
-		StudsOffsetWorldSpace = Vector3.new(0, 3.3, 0),
+		-- Small pill: readable at farm distance without covering the plots next to it.
+		Size = UDim2.new(3.2, 0, 0.8, 0),
+		StudsOffsetWorldSpace = Vector3.new(0, 2.8, 0),
 		AlwaysOnTop = true,
-		MaxDistance = 90,
+		MaxDistance = 60,
 		LightInfluence = 0,
 		ResetOnSpawn = false,
 		Parent = player:WaitForChild("PlayerGui"),
@@ -216,7 +217,7 @@ local function buildReadyCarrot(view: View)
 	view.carrot = model
 	view.popStart = os.clock()
 	if view.billboard then
-		view.billboard.StudsOffsetWorldSpace = Vector3.new(0, 2.6 + length * 0.42 + 1.6 * scale, 0)
+		view.billboard.StudsOffsetWorldSpace = Vector3.new(0, 2.2 + length * 0.42 + 1.3 * scale, 0)
 	end
 	RevealFX.colorFor(view.reveal, str(view.part, "Rarity"))
 end
@@ -404,17 +405,17 @@ local function update()
 				local pulse = 0.5 + 0.5 * math.sin(clock * 6)
 				local rarity = CarrotInfo.rarity(str(view.part, "Rarity"))
 				local color = COLORS.ready
-				local text = "TAP TO HARVEST!"
+				local text = "HARVEST!"
 				if rarity and rarity.order >= 2 then
 					color = CarrotInfo.color(rarity.color)
-					text = string.upper(rarity.name) .. "! TAP!"
+					text = string.upper(rarity.name) .. "!"
 				end
 				setBar(view, 1, text, color:Lerp(Color3.new(1, 1, 1), pulse * 0.35))
 			end
 		else
 			if view.billboard then
 				local pulse = 0.5 + 0.5 * math.sin(clock * 4 + view.index)
-				setBar(view, 1, "TAP TO PLANT", COLORS.plant:Lerp(COLORS.plantPulse, pulse))
+				setBar(view, 1, "PLANT", COLORS.plant:Lerp(COLORS.plantPulse, pulse))
 			end
 		end
 	end
