@@ -61,8 +61,9 @@ local Economy = {
 	StartingPlots = 4,
 	MaxPlots = 36,
 
-	-- Basket (harvested carrots waiting to be sold). If full, harvests auto-sell at base price.
-	-- Starting capacity; the Basket Size upgrade raises it (Config/Upgrades).
+	-- Basket (harvested carrots waiting to be sold at the market). When it's full, ready carrots
+	-- wait on their plots (nothing is lost) until you've sold. Starting capacity; the Basket Size
+	-- upgrade and the Big Basket pass raise it.
 	BasketCapacity = 40,
 
 	-- Bad-luck protection: guaranteed Legendary or better after this many plantings without one.
@@ -78,7 +79,6 @@ local Economy = {
 	-- Remote rate limits (tokens per second, burst)
 	RateLimits = {
 		PlotAction = { rate = 12, burst = 20 },
-		SellAll = { rate = 3, burst = 4 },
 		BuyUpgrade = { rate = 6, burst = 8 },
 		BuySeed = { rate = 6, burst = 8 },
 		SelectSeed = { rate = 4, burst = 6 },

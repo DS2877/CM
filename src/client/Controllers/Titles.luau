@@ -1,7 +1,9 @@
 --!strict
 -- Visible status: a title over every player's head from the rarest carrot they've ever found
 -- ("BestRarity", set by the server from the CarrotDex), in that rarity's color (Divine cycles the
--- rainbow, Secret pulses black/white). Social proof and envy: "how is he a Cosmic Grower?!"
+-- rainbow, Secret pulses black/white), plus a small ⭐ VIP line for Market VIP owners.
+-- Sized in STUDS, not screen pixels: it stays in proportion to the avatar at every zoom level
+-- (a pixel-sized tag looks huge when the camera is far away).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -43,29 +45,40 @@ local function attach(player: Player)
 			labels[player] = nil
 			return
 		end
+		local vip = player:GetAttribute("Pass_MarketVIP") == true
 		local bb: BillboardGui = UI.new("BillboardGui", {
 			Name = "CarrotTitle",
 			Adornee = head,
-			Size = UDim2.fromOffset(200, 26),
-			StudsOffset = Vector3.new(0, 3.7, 0),
-			MaxDistance = 80,
+			Size = UDim2.new(4.6, 0, if vip then 1.25 else 0.8, 0),
+			StudsOffset = Vector3.new(0, if vip then 2.9 else 2.6, 0),
+			MaxDistance = 60,
 			LightInfluence = 0,
 			Parent = head,
 		})
 		local label = UI.bigText({
-			Size = UDim2.fromScale(1, 1),
-			Text = "🥕 " .. (TITLE_BY_RARITY[def.id] or def.name),
+			Size = UDim2.fromScale(1, if vip then 0.62 else 1),
+			Text = TITLE_BY_RARITY[def.id] or def.name,
 			TextColor3 = CarrotInfo.rarityColor(def, os.clock()),
 			Parent = bb,
-		}, Color3.fromRGB(15, 12, 20), 2)
+		}, Color3.fromRGB(15, 12, 20), 1.5)
+		if vip then
+			UI.bigText({
+				Position = UDim2.fromScale(0, 0.64),
+				Size = UDim2.fromScale(1, 0.36),
+				Text = "⭐ VIP",
+				TextColor3 = Color3.fromRGB(255, 210, 60),
+				Parent = bb,
+			}, Color3.fromRGB(110, 60, 0), 1.2)
+		end
 		labels[player] = { label = label, rarity = def }
 	end
 	player.CharacterAdded:Connect(function(character)
 		character:WaitForChild("Head", 5)
-		task.wait(0.6) -- after Roblox's own nametag and the VIP tag
+		task.wait(0.6) -- after the character has loaded
 		build()
 	end)
 	player:GetAttributeChangedSignal("BestRarity"):Connect(build)
+	player:GetAttributeChangedSignal("Pass_MarketVIP"):Connect(build)
 	task.spawn(build)
 end
 

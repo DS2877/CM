@@ -68,30 +68,7 @@ local function today(): number
 	return math.floor(os.time() / 86400)
 end
 
-local function vipTag(player: Player)
-	local character = player.Character
-	local head = character and character:FindFirstChild("Head")
-	if not head or head:FindFirstChild("VipTag") then
-		return
-	end
-	local bb = Instance.new("BillboardGui")
-	bb.Name = "VipTag"
-	bb.Size = UDim2.new(4, 0, 1, 0)
-	bb.StudsOffsetWorldSpace = Vector3.new(0, 2.6, 0)
-	bb.MaxDistance = 80
-	bb.LightInfluence = 0
-	local l = Instance.new("TextLabel")
-	l.Size = UDim2.fromScale(1, 1)
-	l.BackgroundTransparency = 1
-	l.Font = Enum.Font.LuckiestGuy
-	l.TextScaled = true
-	l.Text = "⭐ VIP"
-	l.TextColor3 = Color3.fromRGB(255, 210, 60)
-	l.TextStrokeTransparency = 0
-	l.TextStrokeColor3 = Color3.fromRGB(110, 60, 0)
-	l.Parent = bb
-	bb.Parent = head
-end
+-- (The ⭐ VIP tag over the head is drawn by the client Titles controller from Pass_MarketVIP.)
 
 local function vipDaily(player: Player)
 	local data = Data.get(player)
@@ -109,7 +86,6 @@ local function setPass(player: Player, passId: string)
 	player:SetAttribute("Pass_" .. passId, true)
 	Economy.sync(player) -- Big Basket changes capacity
 	if passId == "MarketVIP" then
-		vipTag(player)
 		vipDaily(player)
 	end
 end
@@ -337,9 +313,6 @@ function Product.onPlayerReady(player: Player)
 	syncBoosts(player)
 	player.CharacterAdded:Connect(function()
 		task.wait(0.5)
-		if player:GetAttribute("Pass_MarketVIP") == true then
-			vipTag(player)
-		end
 		syncBoosts(player)
 	end)
 end

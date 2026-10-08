@@ -1,7 +1,7 @@
 --!strict
 -- Cash, basket and selling. The only place cash changes.
--- Market prices (design doc §5): the daily modifier applies everywhere; a boom only pays when
--- the player sells AT the market. Prices never go below base.
+-- Selling happens in one fixed place: walk onto the green circle around the market and the whole
+-- basket sells (no HUD button). Market prices (design doc §5) never go below base.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,6 +11,7 @@ local Shared = ReplicatedStorage.Shared
 local Config = Shared.Config
 local EconomyConfig = require(Config.Economy)
 local Events = require(Config.Events)
+local World = require(Config.World)
 local Upgrades = require(Config.Upgrades)
 local Progression = require(Shared.Progression)
 local EventSchedule = require(Shared.EventSchedule)
@@ -18,7 +19,6 @@ local CarrotInfo = require(Shared.CarrotInfo)
 local Remotes = require(Shared.Remotes)
 local Types = require(Shared.Types)
 local Data = require(script.Parent.Data)
-local RateLimit = require(script.Parent.Parent.Util.RateLimit)
 local Telemetry = require(script.Parent.Telemetry)
 local Perks = require(script.Parent.Perks)
 local ProductsConfig = require(Config.Products)
@@ -154,8 +154,36 @@ function Economy.onNewBest(callback: (player: Player) -> ())
 	table.insert(bestCallbacks, callback)
 end
 
--- Puts a harvested carrot in the basket. If the basket is full it is sold on the spot (base
--- price). Returns (value, autoSold).
+function Economy.basketCount(player: Player): number
+	local data = Data.get(player)
+	if not data then
+		return 0
+	end
+	local n = 0
+	for _, c in data.Basket do
+		n += c
+	end
+	return n
+end
+
+function Economy.basketFull(player: Player): boolean
+	return Economy.basketCount(player) >= Economy.basketCapacity(player)
+end
+
+-- Inside the green sell circle?
+function Economy.inSellZone(player: Player, slack: number?): boolean
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return false
+	end
+	local offset = (root :: BasePart).Position - marketPosition
+	return Vector3.new(offset.X, 0, offset.Z).Magnitude <= World.SellRadius + (slack or 0)
+end
+
+-- Puts a harvested carrot in the basket. Farm checks basketFull() first (a full basket leaves
+-- carrots waiting on their plots); offline restores may overfill, which is fine.
+-- Returns (value, autoSold) - autoSold is always false now (kept for the result type).
 function Economy.addCarrot(player: Player, carrot: Types.Carrot): (number, boolean)
 	local data = Data.get(player)
 	if not data then
@@ -178,12 +206,6 @@ function Economy.addCarrot(player: Player, carrot: Types.Carrot): (number, boole
 			task.spawn(cb, player)
 		end
 	end
-	local count = basketTotals(player, data)
-	if count >= Economy.basketCapacity(player) then
-		data.Stats.Sold += 1
-		Economy.addCash(player, value, "harvest_autosell")
-		return value, true
-	end
 	local key = CarrotInfo.key(carrot)
 	data.Basket[key] = (data.Basket[key] or 0) + 1
 	Economy.sync(player)
@@ -195,7 +217,10 @@ function Economy.sellAll(player: Player): (number, number)
 	if not data then
 		return 0, 0
 	end
-	local atMarket = Economy.atMarket(player)
+	if not Economy.inSellZone(player, 4) then
+		return 0, 0
+	end
+	local atMarket = true
 	local count, baseTotal, marketTotal = basketTotals(player, data)
 	if count == 0 then
 		return 0, 0
@@ -211,6 +236,7 @@ function Economy.sellAll(player: Player): (number, number)
 		total = total,
 		count = count,
 		bonus = if atMarket and baseTotal > 0 then total / baseTotal else 1,
+		boom = Economy.eventState().boomActive,
 	}
 	Remotes.get(Remotes.Names.SellResult):FireClient(player, result)
 	for _, cb in saleCallbacks do
@@ -220,19 +246,29 @@ function Economy.sellAll(player: Player): (number, number)
 	return total, count
 end
 
-function Economy.start(sellPrompt: ProximityPrompt, market: Vector3)
+function Economy.start(market: Vector3)
 	marketPosition = market
-	local limit = EconomyConfig.RateLimits.SellAll
-	local allow = RateLimit.new(limit.rate, limit.burst)
-	Remotes.get(Remotes.Names.SellAll).OnServerEvent:Connect(function(player)
-		if allow(player) then
-			Economy.sellAll(player)
+
+	-- The sell circle: standing in it with carrots sells them (checked 5x a second).
+	local lastSale: { [Player]: number } = {}
+	task.spawn(function()
+		while true do
+			task.wait(0.2)
+			local t = os.clock()
+			for _, player in Players:GetPlayers() do
+				if
+					Economy.inSellZone(player)
+					and Economy.basketCount(player) > 0
+					and t - (lastSale[player] or 0) > 0.8
+				then
+					lastSale[player] = t
+					Economy.sellAll(player)
+				end
+			end
 		end
 	end)
-	sellPrompt.Triggered:Connect(function(player)
-		if allow(player) then
-			Economy.sellAll(player)
-		end
+	Players.PlayerRemoving:Connect(function(player)
+		lastSale[player] = nil
 	end)
 
 	-- Basket values change when a boom or day starts/ends: resync everyone then.

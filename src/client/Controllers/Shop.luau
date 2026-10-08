@@ -1,14 +1,18 @@
 --!strict
 -- Upgrades panel: every enabled track with level, what the next level does and a big BUY button.
--- The server re-checks everything; this only previews with the shared Progression math.
+-- It opens when you step onto an Upgrade Shop's pad on the plaza and closes when you walk away
+-- (upgrades are bought in the world, not from a HUD button). The server re-checks everything,
+-- including that you're at the shop; this only previews with the shared Progression math.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage.Shared
 local Config = Shared.Config
 local Upgrades = require(Config.Upgrades)
 local EconomyConfig = require(Config.Economy)
+local World = require(Config.World)
 local Format = require(Shared.Format)
 local Progression = require(Shared.Progression)
 local Remotes = require(Shared.Remotes)
@@ -217,11 +221,49 @@ local function build()
 	end
 
 	panel.onOpen = refresh
-	HUD.setTileHandler("Upgrades", panel.toggle)
+end
+
+-- Is the local player standing on an Upgrade Shop pad? (extra = hysteresis when leaving)
+local pads = World.upgradePads()
+function Shop.atShop(extra: number?): boolean
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return false
+	end
+	local p = (root :: BasePart).Position
+	for _, pad in pads do
+		if Vector3.new(p.X - pad.X, 0, p.Z - pad.Z).Magnitude <= World.UpgradePadRadius + (extra or 0) then
+			return true
+		end
+	end
+	return false
 end
 
 function Shop.start()
 	build()
+	-- Open on the pad, close when walking away. Closing it by hand on the pad keeps it closed
+	-- until you step off and on again.
+	local inside = false
+	local acc = 0
+	RunService.Heartbeat:Connect(function(dt)
+		acc += dt
+		if acc < 0.15 then
+			return
+		end
+		acc = 0
+		if not inside and Shop.atShop(0) then
+			inside = true
+			if not panel.isOpen() then
+				panel.setOpen(true)
+			end
+		elseif inside and not Shop.atShop(2.5) then
+			inside = false
+			if panel.isOpen() then
+				panel.setOpen(false)
+			end
+		end
+	end)
 	player.AttributeChanged:Connect(function(name)
 		if panel.isOpen() and (name == "Cash" or string.sub(name, 1, 4) == "Upg_") then
 			refresh()

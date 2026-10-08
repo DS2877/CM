@@ -1,5 +1,5 @@
 --!strict
--- Social layer on every farm (design doc §6): the owner's best carrot floats on the pedestal,
+-- Social layer on every farm (design doc §6): the owner's best carrot floats on the pedestal (with a plaque),
 -- big and glowing, for everyone walking past; other players' farms show "Tap to water!" when
 -- you're close; and watering makes a splash.
 
@@ -27,7 +27,7 @@ type FarmView = {
 	pedestal: BasePart?,
 	carrot: Model?,
 	carrotKey: string,
-	label: BillboardGui?,
+	label: Instance?,
 	waterHint: BillboardGui?,
 	center: Vector3,
 }
@@ -78,26 +78,59 @@ local function refreshPedestal(view: FarmView)
 
 	local rarity = CarrotInfo.rarityOfType(typeId)
 	local name = CarrotInfo.displayName({ type = typeId, size = sizeId, mutations = mutations })
-	local bb: BillboardGui = UI.new("BillboardGui", {
-		Adornee = pedestal,
-		Size = UDim2.new(9, 0, 2.4, 0),
-		StudsOffsetWorldSpace = Vector3.new(0, CarrotModel.length(model) + 3.5, 0),
-		MaxDistance = 90,
-		LightInfluence = 0,
-		Parent = fxFolder,
+	-- A tilted plaque in front of the pedestal, facing the plaza (a physical sign, not a label
+	-- floating in the sky).
+	local base = Vector3.new(pedestal.Position.X, 0, pedestal.Position.Z)
+	local toMarket = if base.Magnitude > 0.1 then -base.Unit else Vector3.new(0, 0, -1)
+	local plaquePos = base + toMarket * 5.2 + Vector3.new(0, 1.7, 0)
+	local plaque = Instance.new("Part")
+	plaque.Name = "TrophyPlaque"
+	plaque.Anchored = true
+	plaque.CanCollide = false
+	plaque.CanQuery = false
+	plaque.Size = Vector3.new(6.4, 2.4, 0.3)
+	plaque.Material = Enum.Material.Wood
+	plaque.Color = Color3.fromRGB(120, 78, 46)
+	plaque.CFrame = CFrame.lookAt(plaquePos, plaquePos + toMarket) * CFrame.Angles(math.rad(28), 0, 0)
+	plaque.Parent = fxFolder
+	local leg = Instance.new("Part")
+	leg.Name = "PlaqueLeg"
+	leg.Anchored = true
+	leg.CanCollide = false
+	leg.CanQuery = false
+	leg.Size = Vector3.new(0.4, 1.4, 0.4)
+	leg.Material = Enum.Material.Wood
+	leg.Color = Color3.fromRGB(120, 78, 46)
+	leg.CFrame = CFrame.new(plaquePos - Vector3.new(0, 1.1, 0) - toMarket * 0.3)
+	leg.Parent = plaque
+	local surface: SurfaceGui = UI.new("SurfaceGui", {
+		Face = Enum.NormalId.Front,
+		CanvasSize = Vector2.new(320, 120),
+		LightInfluence = 0.2,
+		MaxDistance = 120,
+		Parent = plaque,
 	})
+	UI.new("Frame", {
+		Position = UDim2.fromOffset(8, 8),
+		Size = UDim2.new(1, -16, 1, -16),
+		BackgroundColor3 = Color3.fromRGB(255, 244, 222),
+		Parent = surface,
+	}, { UI.corner(10) })
 	UI.bigText({
-		Size = UDim2.fromScale(1, 0.5),
+		Position = UDim2.fromOffset(16, 14),
+		Size = UDim2.new(1, -32, 0, 40),
 		Text = string.format("%s's best", str(view.model, "OwnerName")),
-		Parent = bb,
-	}, Color3.new(0, 0, 0), 2)
+		TextColor3 = Color3.fromRGB(120, 78, 46),
+		Parent = surface,
+	}, Color3.fromRGB(255, 255, 255), 0)
 	UI.bigText({
-		Position = UDim2.fromScale(0, 0.5),
-		Size = UDim2.fromScale(1, 0.5),
+		Position = UDim2.fromOffset(16, 58),
+		Size = UDim2.new(1, -32, 0, 46),
 		Text = string.format("%s · %s", name, Format.cash(num(view.model, "BestValue"))),
 		TextColor3 = CarrotInfo.rarityColor(rarity, os.clock()),
-		Parent = bb,
-	}, Color3.new(0, 0, 0), 2)
+		Parent = surface,
+	}, Color3.fromRGB(30, 20, 10), 2)
+	local bb = plaque
 	view.label = bb
 end
 

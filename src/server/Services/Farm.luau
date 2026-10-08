@@ -257,9 +257,24 @@ function Farm.onRareHarvest(callback: (player: Player) -> ())
 	table.insert(rareCallbacks, callback)
 end
 
+local fullNoticeAt: { [Player]: number } = {}
+
 local function harvest(player: Player, plot: PlotRuntime)
 	local maybeData, maybeRoll = Data.get(player), plot.roll
 	if not maybeData or not maybeRoll then
+		return
+	end
+	-- Full basket: the carrot stays ready on its plot (nothing is lost) until you've sold at the
+	-- market. That trip is the loop: farm -> market -> upgrade -> farm.
+	if Economy.basketFull(player) then
+		local t = os.clock()
+		if t - (fullNoticeAt[player] or 0) > 3 then
+			fullNoticeAt[player] = t
+			Remotes.get(Remotes.Names.Notice):FireClient(player, {
+				text = "Basket full! Walk to the market to sell 🧺",
+				kind = "bad",
+			})
+		end
 		return
 	end
 	local data: Data.PlayerData, roll: Roller.RollResult = maybeData, maybeRoll
@@ -599,6 +614,7 @@ function Farm.replant(player: Player, index: number)
 end
 
 function Farm.release(player: Player)
+	fullNoticeAt[player] = nil
 	local farm = farmOf[player]
 	if not farm then
 		return

@@ -1,12 +1,12 @@
 --!strict
 -- The guided first minute for brand-new players (server sets the "Tutorial" attribute). It reacts
--- to what the player actually does, never to timers, and points at the real thing to tap:
---   1. a bouncing arrow over an empty plot: "Tap to plant!" (until all starting plots grow)
+-- to what the player actually does, never to timers, and points at the real thing:
+--   1. a bouncing arrow over an empty plot: "Tap to plant!"
 --   2. "Wait for it to grow…" then an arrow over the ready carrot: "Tap to harvest!"
---   3. an arrow on SELL: "Sell your carrots!"
---   4. an arrow on the upgrade bar: "Buy your first upgrade!"
+--   3. the guide line to the market: "Walk onto the green circle to sell!"
+--   4. the guide line to the Upgrade Shop: "Buy your first upgrade!"
 -- Then a celebration, and the server is told it's done (never shown again). Target: the whole
--- core loop understood inside 60 seconds (design doc §2, Roblox FTUE guidance).
+-- core loop (farm -> market -> shop) understood inside a couple of minutes.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -17,6 +17,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local UI = require(script.Parent.Parent.Util.UI)
 local Sound = require(script.Parent.Parent.Util.Sound)
 local HUD = require(script.Parent.HUD)
+local Guide = require(script.Parent.Guide)
 
 local player = Players.LocalPlayer
 
@@ -87,8 +88,11 @@ local function pointAtHud(name: string?)
 	end
 end
 
+local soldOnce = false
+
 local function finish()
 	step = 99
+	Guide.setOverride(nil)
 	worldArrow:Destroy()
 	screenArrow:Destroy()
 	say("You're a real farmer now! Find the rarest carrots! 🥕✨")
@@ -178,27 +182,40 @@ local function update()
 	local ready = firstWithState("Ready")
 	local basket = player:GetAttribute("BasketCount")
 	local hasBasket = typeof(basket) == "number" and basket > 0
-	local upg = player:GetAttribute("Upg_GrowthSpeed")
-	local upgraded = typeof(upg) == "number" and upg >= 1
+	local upgraded = false
+	for name, v in player:GetAttributes() do
+		if string.sub(name, 1, 4) == "Upg_" and typeof(v) == "number" and v >= 1 then
+			upgraded = true
+		end
+	end
 
 	if upgraded then
 		finish()
+	elseif soldOnce then
+		-- 4. Upgrade: walk to the shop once it's affordable
+		step = 4
+		pointAtHud(nil)
+		if HUD.goalAffordable() then
+			Guide.setOverride("shop")
+			say("Follow the line to the Upgrade Shop and buy an upgrade! ⬆")
+			pointAtPlot(nil, "")
+		else
+			Guide.setOverride(nil)
+			say("Grow and sell a few more carrots for your first upgrade!")
+			pointAtPlot(ready or empty, if ready then "HARVEST!" else "PLANT")
+		end
+	elseif hasBasket and (step == 3 or (not ready and not empty)) then
+		-- 3. Sell: everything planted, carrots in the basket -> to the market
+		step = 3
+		Guide.setOverride("market")
+		say("Follow the line to the market and step on the green circle to sell!")
+		pointAtPlot(nil, "")
+		pointAtHud(nil)
 	elseif ready then
 		step = 2
 		say("It's ready! Tap it to harvest!")
 		pointAtPlot(ready, "HARVEST!")
 		pointAtHud(nil)
-	elseif hasBasket then
-		step = 3
-		say("Tap SELL to turn your carrots into cash!")
-		pointAtPlot(nil, "")
-		pointAtHud("sell")
-	elseif step >= 3 then
-		-- Sold at least once: point at the upgrade
-		step = 4
-		say("Tap the upgrade bar to grow faster!")
-		pointAtPlot(empty, "PLANT")
-		pointAtHud("goal")
 	elseif empty then
 		step = 1
 		say("Tap a dirt plot to plant a carrot!")
@@ -217,6 +234,15 @@ function Tutorial.start()
 		return
 	end
 	build()
+	local lastBasket = 0
+	player:GetAttributeChangedSignal("BasketCount"):Connect(function()
+		local n = player:GetAttribute("BasketCount")
+		local count = if typeof(n) == "number" then n else 0
+		if lastBasket > 0 and count == 0 then
+			soldOnce = true
+		end
+		lastBasket = count
+	end)
 	local conn: RBXScriptConnection? = nil
 	conn = RunService.Heartbeat:Connect(function()
 		if step >= 99 and not (hintGui and hintGui.Parent) then

@@ -4,10 +4,9 @@
 -- countdowns). Prices never go below base: every multiplier is >= 1.
 --
 -- Each cycle of `CycleSeconds` ends with a boom of `BoomSeconds`. Which boom it is comes from a
--- deterministic hash of the cycle number, weighted by `weight`. Selling anywhere (the SELL
--- button) pays full base price, so the 30-second loop never needs a walk. Selling AT the market
--- (within MarketRadius) always pays MarketBonus on top, and the boom multiplier during a boom:
--- the market is a reward worth walking to, never a toll.
+-- deterministic hash of the cycle number, weighted by `weight`. All selling happens at the
+-- market (the green sell circle, Config/World.SellRadius) and always pays MarketBonus, plus the
+-- boom multiplier during a boom: holding your basket for a boom is the decision.
 -- The daily modifier picks one featured rarity per UTC day and applies everywhere.
 
 export type BoomDef = {

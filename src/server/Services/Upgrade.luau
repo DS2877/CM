@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 local Config = Shared.Config
 local Upgrades = require(Config.Upgrades)
+local World = require(Config.World)
 local EconomyConfig = require(Config.Economy)
 local Mutations = require(Config.Mutations)
 local Progression = require(Shared.Progression)
@@ -76,10 +77,36 @@ function Upgrade.sync(player: Player)
 	player:SetAttribute("Plots", Upgrade.plots(player))
 end
 
+local pads = World.upgradePads()
+
+-- Upgrades are bought at an Upgrade Shop on the plaza (stand on its pad).
+function Upgrade.atShop(player: Player): boolean
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return false
+	end
+	local p = (root :: BasePart).Position
+	for _, pad in pads do
+		local d = Vector3.new(p.X - pad.X, 0, p.Z - pad.Z).Magnitude
+		if d <= World.UpgradePadRadius + World.UpgradeServerSlack then
+			return true
+		end
+	end
+	return false
+end
+
 function Upgrade.buy(player: Player, id: string): boolean
 	local data = Data.get(player)
 	local track = trackById[id]
 	if not data or not track or not track.enabled then
+		return false
+	end
+	if not Upgrade.atShop(player) then
+		Remotes.get(Remotes.Names.Notice):FireClient(player, {
+			text = "Upgrades are sold at the Upgrade Shop by the market ⬆",
+			kind = "info",
+		})
 		return false
 	end
 	local level = data.Upgrades[id] or 0

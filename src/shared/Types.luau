@@ -27,7 +27,8 @@ export type HarvestResult = {
 export type SellResult = {
 	total: number,
 	count: number,
-	bonus: number, -- market boom multiplier on this sale (1 = none)
+	bonus: number, -- total market multiplier on this sale vs base (1 = none)
+	boom: boolean?, -- sold during a market boom
 }
 
 export type Announcement = {

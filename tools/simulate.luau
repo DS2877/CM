@@ -6,8 +6,12 @@
 --   lune run tools/simulate          -> prints a summary and writes tools/simulation-report.md
 --
 -- Player model: harvests each plot ~REACTION seconds after it is ready, then taps to plant it
--- again (PLANT_TAP seconds, Basic seeds; planting is manual), sells right away, and buys the cheapest available upgrade whenever it can afford it
--- (that is what the goal bar points at). No seeds, no boosts, no events, no Robux.
+-- again (PLANT_TAP seconds, Basic seeds; planting is manual). Harvests go into the basket.
+-- Selling and upgrading happen in the world: the player walks to the market (TRIP seconds there
+-- and back, plots keep growing meanwhile) when the basket is full, or as soon as the basket plus
+-- cash pays for the next upgrade (the guide line points there). At the market everything sells
+-- at the market price (MarketBonus) and the cheapest upgrades are bought.
+-- No seeds, no boosts, no booms, no Robux.
 
 local fs = require("@lune/fs")
 
@@ -21,11 +25,15 @@ local Sizes = require("../src/shared/Config/Sizes")
 local Mutations = require("../src/shared/Config/Mutations")
 local Upgrades = require("../src/shared/Config/Upgrades")
 local Economy = require("../src/shared/Config/Economy")
+local Events = require("../src/shared/Config/Events")
 
 local RUNS = 24
 local DURATION = 4 * 3600
 local REACTION = 0.8
 local PLANT_TAP = 0.6 -- harvest no longer auto-replants: one more tap per plot
+-- Farm -> green circle -> Upgrade Shop -> farm at WalkSpeed 22: ~105 studs each way plus a few
+-- seconds on the plaza.
+local TRIP = 14
 
 type Purchase = { t: number, track: string, level: number, cost: number }
 type RunResult = {
@@ -35,6 +43,7 @@ type RunResult = {
 	levels: { [string]: number },
 	cash: number,
 	earned: number,
+	trips: number,
 }
 
 local configs: Roller.RollConfigs = {
@@ -98,6 +107,25 @@ local function simulate(seed: number): RunResult
 		return math.max(Economy.MinGrowTime, base * (1 + (rng() * 2 - 1) * Economy.GrowJitter))
 	end
 
+	local basketCount = 0
+	local basketValue = 0
+	local busyUntil = 0
+	local trips = 0
+
+	local function capacity(): number
+		return Progression.stepValue(trackById.BasketSize, levels.BasketSize, Economy.BasketCapacity)
+	end
+
+	local function cheapestCost(): number
+		local best = math.huge
+		for _, track in Upgrades do
+			if track.enabled and not Progression.isMaxed(track, levels[track.id]) then
+				best = math.min(best, Progression.cost(track, levels[track.id]))
+			end
+		end
+		return best
+	end
+
 	local function plotCount(): number
 		return Progression.plots(trackById.FarmSize, levels.FarmSize, Economy.StartingPlots)
 	end
@@ -141,7 +169,7 @@ local function simulate(seed: number): RunResult
 				plot, soonest = i, r
 			end
 		end
-		local t = soonest + REACTION
+		local t = math.max(soonest + REACTION, busyUntil)
 		if t > DURATION then
 			break
 		end
@@ -184,13 +212,22 @@ local function simulate(seed: number): RunResult
 			mutation = Value.mutationMultiplier(mults),
 			valueUpgrade = Progression.bonus(trackById.Value, levels.Value),
 		})
-		cash += value
-		earned += value
-		local minute = math.floor(t / 60) + 1
-		incomeByMinute[minute] = (incomeByMinute[minute] or 0) + value
-
+		basketCount += 1
+		basketValue += value * Events.MarketBonus
 		readyAt[plot] = t + PLANT_TAP + growTime(plot)
-		buyAll(t)
+
+		-- Walk to the market when the basket is full or it pays for the next upgrade
+		if basketCount >= capacity() or cash + basketValue >= cheapestCost() then
+			local sellAt = t + TRIP / 2
+			cash += basketValue
+			earned += basketValue
+			local minute = math.floor(sellAt / 60) + 1
+			incomeByMinute[minute] = (incomeByMinute[minute] or 0) + basketValue
+			basketCount, basketValue = 0, 0
+			buyAll(sellAt)
+			busyUntil = t + TRIP
+			trips += 1
+		end
 	end
 
 	return {
@@ -200,6 +237,7 @@ local function simulate(seed: number): RunResult
 		levels = levels,
 		cash = cash,
 		earned = earned,
+		trips = trips,
 	}
 end
 
@@ -228,10 +266,11 @@ out("# Economy simulation report")
 out("")
 out(
 	string.format(
-		"%d runs x %s, active player (harvest %.1fs after ready, sell immediately, buy cheapest upgrade). No seeds/boosts/events.",
+		"%d runs x %s, active player (harvest %.1fs after ready, %ds market trip when the basket is full or pays for the next upgrade, buy cheapest upgrade). No seeds/boosts/booms.",
 		RUNS,
 		Format.duration(DURATION),
-		REACTION
+		REACTION,
+		TRIP
 	)
 )
 out("")
@@ -358,6 +397,15 @@ for level = 1, Progression.maxLevel(fs4) do
 	)
 end
 out("")
+
+do
+	local perHour = {}
+	for _, r in results do
+		table.insert(perHour, r.trips / (DURATION / 3600))
+	end
+	out(string.format("Market trips per hour (median): %.0f", median(perHour)))
+	out("")
+end
 
 fs.writeFile("tools/simulation-report.md", table.concat(lines, "\n") .. "\n")
 print("\nWrote tools/simulation-report.md")

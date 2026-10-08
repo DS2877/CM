@@ -315,7 +315,7 @@ local function onHarvest(r: Types.HarvestResult)
 end
 
 local function onSell(r: Types.SellResult)
-	local boom = r.bonus > 1.001
+	local boom = r.boom == true and r.bonus > 1.001
 	local coins = math.clamp(math.floor(3 + math.log10(math.max(1, r.total)) * 2.5), 3, 18)
 	if boom then
 		-- "Sell All under a boom should feel like a jackpot"

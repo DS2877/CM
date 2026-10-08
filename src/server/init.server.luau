@@ -27,7 +27,7 @@ local Daily = require(Services.Daily)
 Remotes.setup()
 local world = WorldBuilder.build()
 
-Economy.start(world.sellPrompt, world.marketCFrame.Position)
+Economy.start(world.marketCFrame.Position)
 Upgrade.start()
 Seeds.start()
 Farm.start(world)
@@ -88,7 +88,20 @@ do
 	end)
 end
 
+local WorldConfig = require(ReplicatedStorage.Shared.Config.World)
+
 local function onPlayerAdded(player: Player)
+	-- Snappier walking: selling and upgrading are trips to the market
+	local function setSpeed(character: Model)
+		local humanoid = character:WaitForChild("Humanoid", 10)
+		if humanoid and humanoid:IsA("Humanoid") then
+			humanoid.WalkSpeed = WorldConfig.WalkSpeed
+		end
+	end
+	player.CharacterAdded:Connect(setSpeed)
+	if player.Character then
+		task.spawn(setSpeed, player.Character)
+	end
 	local data = Data.load(player)
 	if not data then
 		return

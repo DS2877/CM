@@ -10,7 +10,6 @@ local Remotes = {}
 Remotes.Names = {
 	-- client -> server
 	PlotAction = "PlotAction", -- (plotIndex: number)
-	SellAll = "SellAll", -- ()
 	BuyUpgrade = "BuyUpgrade", -- (trackId: string)
 	BuySeed = "BuySeed", -- (seedId: string, amount: number)
 	SelectSeed = "SelectSeed", -- (seedId: string)

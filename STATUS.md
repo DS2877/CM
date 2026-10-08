@@ -1,6 +1,35 @@
 # STATUS – Carrot Market
 
-Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 5 – soft launch (förberedd, väntar på Philips steg nedan)**. Fas 1–4 publicerade.
+Senast uppdaterad: 8 okt 2026 (kväll). Aktuell fas: **Fas 5 – soft launch (förberedd, väntar på Philips steg nedan)**. Fas 1–4 publicerade.
+
+## Ny spelloop 8 okt (kväll): sälj och uppgradera på fasta platser i världen
+
+Philips feedback: "inga knappar för att sälja eller uppgradera, det ska vara fasta platser i världen". Byggt:
+
+| Del | Status | Hur det testas |
+|---|---|---|
+| Sälj vid marknaden | Klar | SELL-knappen är borta. Gå in i den **gröna cirkeln runt marknaden** så säljs hela korgen direkt (marknadspris +20 %, plus boom-pris under en boom). |
+| Full korg | Klar | När korgen är full går det inte att skörda. Morötterna står kvar klara på ploten (inget försvinner) tills du har sålt. Korg-pillret blinkar rött och en linje visar vägen till marknaden. |
+| Upgrade Shop | Klar | Uppgraderingsknappen är borta. Två stånd med turkost tak och skylten "⬆ UPGRADES" står på torget, mellan stigarna. Ställ dig på den turkosa plattan framför ståndet så öppnas uppgraderingspanelen. Den stängs när du går därifrån. Servern godkänner bara köp på plattan. |
+| Guidelinje | Klar | En lysande linje från fötterna till nästa plats, med en studsande skylt där ("SELL HERE 🧺" eller "UPGRADES ⬆"). Den visas när korgen är full, vid boom med morötter i korgen, när nästa uppgradering är köpbar, och 12 s efter tryck på målbaren. Döljs när du är framme. |
+| Snabbare gång | Klar | WalkSpeed 22 (Roblox standard 16), så en tur till marknaden tar cirka 5 s åt varje håll. Värdet finns i `Config/World.luau`. |
+| Tutorial | Klar | Plantera → skörda → följ linjen till marknaden och sälj → följ linjen till Upgrade Shop och köp → klart. |
+| Ekonomi | Simulerad | Ny modell med korg och 14 s marknadstur. Tid till nästa köp: 29 s, 1:02, 2:50, 4:59 (alla inom mål). Cirka 26 marknadsturer i timmen. Rapport: `tools/simulation-report.md`. |
+
+**HUD (ombyggd):**
+- Uppe till vänster: pengar (ritat mynt i stället för sedel-emoji), korg ("9/40" plus vad den säljs för) och Legendary-mätaren. Pillren växer med texten, så ingenting klipps längre ("Legendary in 202" blev avklippt förut). Korgen och mätaren har en tunn fyllnadsstapel i botten.
+- Vänster kant: 2x2 rutor, Daily (🎁), Seeds, Index och Shop.
+- Uppe till höger: runda knappar för 🔍 odds och 🎵 musik, nu tillräckligt stora för tummen.
+- Målbaren överst visar "Luck 2  $26/$825". Ikonen ligger på mörk botten så att emojin syns. När målet är köpbart står det "GO UPGRADE! ⬆", och ett tryck visar vägen.
+
+**Titel över huvudet:** storleken sätts nu i studs i stället för pixlar, så den följer avatarens storlek ("HARVESTER" var jättestor när kameran var långt bort). Den är liten och har "⭐ VIP" på samma skylt.
+
+**Världen:**
+- Farmskylten är nu en entréport över stigen med en målad skylt i farmens färg, läsbar från torget.
+- VIP-loungen har en riktig skylt över dörren i stället för en svävande text.
+- Pokalen på piedestalen har en lutande skylt utanför staketet i stället för en svävande text.
+- Topplistorna har träram och litet tak.
+- Stenarna är runda stenblock i par i stället för grå kuber. Blommorna är buskar med blommor i stället för lösa kulor.
 
 ## Helhetsgenomgång 8 okt – retention, FTUE, status, liv
 
