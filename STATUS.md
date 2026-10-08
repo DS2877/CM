@@ -132,6 +132,16 @@ Bra att veta vid test: du kan trycka på dina plots (eller etiketten ovanför) s
 
 ## Beslut tagna under bygget (regel 10)
 
+Design-pass 8 okt (HUD, marknad, värld):
+- **HUD-buggen:** HUD hade en egen kopia av skalfunktionen med den gamla formeln, så förra krympningen nådde aldrig HUD:en. Kopian är borta; allt skalar via `UI.screenScale` (telefon ~0,8).
+- **HUD-layout:** mitten av skärmen tillhör farmen. Valutor som mörka glas-piller uppe till vänster (cash, korg, pity + 🔍). Meny 2×2 vid vänsterkanten. SELL mindre, vid högerkanten ovanför hoppknappen.
+- **Marknadsskylt:** den svävande pristabellen är borta. En griffeltavla på ett staffli framför marknaden (spawn-sidan) visar det spelaren vill veta: nästa boom och nedräkning, vad som boomar, dagens heta raritet. Ovanför marknaden svävar bara en liten timer "BOOM 4:38" (orange "BOOM! 2:31" under boom) som syns från alla farmer.
+- **Värld:** djupare grönt gräs och dämpad mättnad (inte neon), varma jordstigar med kant, torg i kräm/terrakotta med åtta orange ekrar som pekar mot farmerna, kullar runt kanten som ramar in dalen, lager-träd.
+- **Marknaden** är kartans landmärke: trädäck, röda stolpar, våningstält i orange/kräm med girlang-kant, namnskylt på alla fyra sidor, jättemorot på taket.
+- **Farmer:** mörka jordbäddar med träram (morötterna syns bättre), klippta gräsränder, en lada bakom varje farm i farmens egen färg (åtta färger) + färgad kant på skylten. Piedestalen i guld/marmor i stället för neon.
+- **VIP-loungen:** häckar med guldkant och lila matta i stället för en neon-gul låda.
+- Art direction finns nu kort i CLAUDE.md så att framtida sessioner håller stilen.
+
 UI-storlek 8 okt (efter Philips iPhone-skärmdump):
 - **HUD-skalan** räknas nu mot 520 pt höjd (var 400): en liggande telefon hamnar runt 0,8 i stället för ~1,15. Surfplatta/dator max 1,25.
 - **Målbaren** i toppfältet max 300 pt bred och 32 pt hög. Bannern mindre.

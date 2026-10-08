@@ -28,6 +28,8 @@ Roblox game built entirely from this repo (Rojo + Luau). The full design doc ("C
 - Value = base × size × mutation × market × (1 + valueUpg) × prestige × min(boosts, 6). Shared in `src/shared/Value.luau`.
 - Market gives a decision, never a loss: prices never go below base. Global schedule from `os.time`.
 - UI: mobile first, bright child-friendly colors, chunky simulator style (Luckiest Guy, thick outlines, tiles with badges). Better carrots get more particles (Config/Rarity aura).
+- HUD layout: the screen center belongs to the farm. Currencies = dark-glass pills top-left; menu = 2x2 buttons on the left edge; SELL right edge above jump; goal bar in the top bar. Author for a 520 pt tall screen; scale only via `UI.screenScale` (never a private copy).
+- World art direction ("sunny valley farmers' market"): green = land, warm dirt = paths, orange/cream = the market (the hero landmark), dark soil = plots so carrots pop. Each farm has an identity color (barn + sign). Signs are physical boards (SurfaceGui), not floating billboards; floating UI only for small, glanceable info (boom timer). Moderate saturation; no neon except reveal effects.
 - Economy: next purchase 30–90 s away early, 2–3 min after 30 min, 3–5 min after an hour. Simulate before locking curves.
 
 ## Layout

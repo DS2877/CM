@@ -1,8 +1,12 @@
 --!strict
--- The market's public face (design doc §5): a big price board above the kiosk with today's
--- prices and the boom countdown, a market bell everyone hears when a boom starts, and an arrow
--- that points the way to the market while a boom is on. All timing comes from the shared
--- EventSchedule, so every client shows the same countdown as every server.
+-- The market's public face (design doc §5). Two pieces, each answering one question:
+--   * the chalkboard on the market's easel (read up close): what's on now, when the next boom
+--     comes, and today's hot rarity. No price table: a player's question is "when do I sell?",
+--     not "what is the base price of an Epic?".
+--   * a compact floating timer above the market statue (read from every farm): "BOOM 4:38", or
+--     "BOOM! 2:31" in orange while it runs.
+-- Plus the market bell when a boom starts and a small pill that points the way while it's on.
+-- All timing comes from the shared EventSchedule, so every client and server agree.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,9 +15,7 @@ local RunService = game:GetService("RunService")
 local Shared = ReplicatedStorage.Shared
 local Config = Shared.Config
 local Events = require(Config.Events)
-local Rarity = require(Config.Rarity)
 local EventSchedule = require(Shared.EventSchedule)
-local CarrotInfo = require(Shared.CarrotInfo)
 local Format = require(Shared.Format)
 
 local UI = require(script.Parent.Parent.Util.UI)
@@ -26,12 +28,17 @@ local MarketBoard = {}
 
 local cfg: EventSchedule.EventsConfig = Events :: any
 
-type Row = { rarity: Rarity.RarityDef, price: TextLabel, change: TextLabel }
+local CHALK = Color3.fromRGB(245, 242, 230)
+local CHALK_DIM = Color3.fromRGB(190, 205, 195)
+local HOT = Color3.fromRGB(255, 176, 60)
 
-local statusLabel: TextLabel
-local nextLabel: TextLabel
+local kickerLabel: TextLabel -- "NEXT BOOM IN" / "BOOM ON NOW!"
+local timeLabel: TextLabel -- "4:38"
+local boomLabel: TextLabel -- "Carrot Craze · ALL carrots x2"
 local dailyLabel: TextLabel
-local rows: { Row } = {}
+local hintLabel: TextLabel
+local timerText: TextLabel
+local timerFrame: Frame
 local arrow: TextLabel
 local pointer: Frame
 local pointerText: TextLabel
@@ -41,102 +48,119 @@ local function now(): number
 	return workspace:GetServerTimeNow()
 end
 
--- Multiplier for a whole rarity right now at the market (sizes/mutations aside).
-local function rarityMult(state: EventSchedule.State, rarityId: string): number
-	local m = if rarityId == state.dailyRarity then state.dailyMult else 1
-	if state.boomActive then
-		local b = state.boom
-		if b.kind == "all" or (b.kind == "rarity" and b.targets and table.find(b.targets, rarityId)) then
-			m *= b.mult
-		end
+local function chalk(props: { [string]: any }): TextLabel
+	local l: TextLabel = UI.new("TextLabel", {
+		BackgroundTransparency = 1,
+		Font = Enum.Font.FredokaOne,
+		TextScaled = true,
+		TextColor3 = CHALK,
+	})
+	for k, v in props do
+		(l :: any)[k] = v
 	end
-	return m
+	return l
 end
 
 local function build()
-	local anchor = workspace:WaitForChild("World"):WaitForChild("PriceBoardAnchor") :: BasePart
+	local world = workspace:WaitForChild("World")
+	local anchor = world:WaitForChild("PriceBoardAnchor") :: BasePart
 	marketPos = Vector3.new(anchor.Position.X, 4, anchor.Position.Z)
 	local playerGui = player:WaitForChild("PlayerGui") :: PlayerGui
 
-	local bb: BillboardGui = UI.new("BillboardGui", {
+	-- Chalkboard on the easel (Market.PriceBoard, text on its back face = the spawn side)
+	local market = world:WaitForChild("Market")
+	local board = market:WaitForChild("PriceBoard") :: BasePart
+	local sg: SurfaceGui = UI.new("SurfaceGui", {
 		Name = "PriceBoard",
-		Adornee = anchor,
-		-- Sized to read from the plaza without blotting out the sky over half the map.
-		Size = UDim2.new(12, 0, 8.2, 0),
-		LightInfluence = 0,
-		MaxDistance = 140,
+		Adornee = board,
+		Face = Enum.NormalId.Back,
+		CanvasSize = Vector2.new(440, 290),
+		LightInfluence = 0.15,
+		MaxDistance = 120,
 		ResetOnSpawn = false,
 		Parent = playerGui,
 	})
-	local frame = UI.new("Frame", {
-		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Color3.fromRGB(255, 248, 230),
-		Parent = bb,
-	}, { UI.corner(18), UI.stroke(Color3.fromRGB(150, 70, 0), 4) })
-	local header = UI.new("Frame", {
-		Size = UDim2.fromScale(1, 0.17),
-		BackgroundColor3 = Color3.fromRGB(255, 160, 40),
-		Parent = frame,
-	}, { UI.corner(18) })
-	UI.bigText({
-		Position = UDim2.fromScale(0.03, 0.08),
-		Size = UDim2.fromScale(0.94, 0.84),
-		Text = "🥕 MARKET PRICES",
-		Parent = header,
-	}, Color3.fromRGB(110, 50, 0), 3)
-	statusLabel = UI.bigText({
-		Position = UDim2.fromScale(0.03, 0.18),
-		Size = UDim2.fromScale(0.94, 0.11),
-		Text = "",
-		TextColor3 = Color3.fromRGB(255, 90, 60),
-		Parent = frame,
-	}, Color3.fromRGB(90, 20, 0), 2.5)
-	nextLabel = UI.label({
-		Position = UDim2.fromScale(0.03, 0.29),
-		Size = UDim2.fromScale(0.94, 0.07),
-		Text = "",
-		TextColor3 = Color3.fromRGB(110, 80, 50),
-		Parent = frame,
+	local pad = UI.new("Frame", {
+		Position = UDim2.fromOffset(22, 14),
+		Size = UDim2.new(1, -44, 1, -28),
+		BackgroundTransparency = 1,
+		Parent = sg,
 	})
-	dailyLabel = UI.label({
-		Position = UDim2.fromScale(0.03, 0.36),
-		Size = UDim2.fromScale(0.94, 0.07),
-		Text = "",
-		TextColor3 = Color3.fromRGB(60, 140, 60),
-		Parent = frame,
+	chalk({
+		Size = UDim2.new(1, 0, 0, 34),
+		Text = "🥕 CARROT MARKET",
+		Font = Enum.Font.LuckiestGuy,
+		TextColor3 = HOT,
+		Parent = pad,
 	})
-	local rowH = 0.52 / #Rarity
-	for i, r in Rarity do
-		local y = 0.45 + (i - 1) * rowH
-		local color = CarrotInfo.color(r.color)
-		UI.bigText({
-			Position = UDim2.fromScale(0.05, y),
-			Size = UDim2.fromScale(0.42, rowH * 0.9),
-			Text = r.name,
-			TextColor3 = color,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Parent = frame,
-		}, color:Lerp(Color3.new(0, 0, 0), 0.6), 2)
-		local price = UI.bigText({
-			Position = UDim2.fromScale(0.45, y),
-			Size = UDim2.fromScale(0.27, rowH * 0.9),
-			Text = Format.cash(r.baseValue),
-			TextColor3 = Color3.fromRGB(70, 60, 50),
-			TextXAlignment = Enum.TextXAlignment.Right,
-			Parent = frame,
-		}, Color3.fromRGB(255, 255, 255), 1.5)
-		local change = UI.bigText({
-			Position = UDim2.fromScale(0.74, y),
-			Size = UDim2.fromScale(0.22, rowH * 0.9),
-			Text = "",
-			TextColor3 = Color3.fromRGB(60, 190, 60),
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Parent = frame,
-		}, Color3.fromRGB(10, 70, 10), 1.5)
-		table.insert(rows, { rarity = r, price = price, change = change })
-	end
+	UI.new("Frame", {
+		Position = UDim2.fromOffset(40, 42),
+		Size = UDim2.new(1, -80, 0, 2),
+		BackgroundColor3 = CHALK_DIM,
+		BackgroundTransparency = 0.4,
+		BorderSizePixel = 0,
+		Parent = pad,
+	})
+	kickerLabel = chalk({
+		Position = UDim2.fromOffset(0, 54),
+		Size = UDim2.new(1, 0, 0, 24),
+		Text = "NEXT BOOM IN",
+		TextColor3 = CHALK_DIM,
+		Parent = pad,
+	})
+	timeLabel = chalk({
+		Position = UDim2.fromOffset(0, 78),
+		Size = UDim2.new(1, 0, 0, 70),
+		Text = "",
+		Font = Enum.Font.LuckiestGuy,
+		Parent = pad,
+	})
+	boomLabel = chalk({
+		Position = UDim2.fromOffset(0, 152),
+		Size = UDim2.new(1, 0, 0, 30),
+		Text = "",
+		TextColor3 = HOT,
+		Parent = pad,
+	})
+	dailyLabel = chalk({
+		Position = UDim2.fromOffset(0, 196),
+		Size = UDim2.new(1, 0, 0, 22),
+		Text = "",
+		TextColor3 = CHALK_DIM,
+		Parent = pad,
+	})
+	hintLabel = chalk({
+		Position = UDim2.fromOffset(0, 230),
+		Size = UDim2.new(1, 0, 0, 20),
+		Text = "",
+		TextColor3 = CHALK_DIM,
+		Parent = pad,
+	})
 
-	-- Screen arrow toward the market during a boom (sits under the goal bar)
+	-- Compact boom timer above the market statue, readable from every farm
+	local bb: BillboardGui = UI.new("BillboardGui", {
+		Name = "BoomTimer",
+		Adornee = anchor,
+		Size = UDim2.new(7, 0, 1.9, 0),
+		LightInfluence = 0,
+		MaxDistance = 320,
+		ResetOnSpawn = false,
+		Parent = playerGui,
+	})
+	timerFrame = UI.new("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Color3.fromRGB(30, 34, 48),
+		BackgroundTransparency = 0.15,
+		Parent = bb,
+	}, { UI.corner(16), UI.stroke(Color3.fromRGB(255, 255, 255), 2, 0.6) })
+	timerText = UI.bigText({
+		Position = UDim2.fromScale(0.06, 0.12),
+		Size = UDim2.fromScale(0.88, 0.76),
+		Text = "",
+		Parent = timerFrame,
+	}, Color3.fromRGB(10, 10, 20), 2)
+
+	-- Screen pill toward the market during a boom (sits under the goal bar)
 	local arrowGui: ScreenGui = UI.new("ScreenGui", {
 		Name = "MarketArrow",
 		ResetOnSpawn = false,
@@ -150,25 +174,21 @@ local function build()
 		Name = "Pointer",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 6),
-		Size = UDim2.fromOffset(210, 36),
+		Size = UDim2.fromOffset(200, 34),
 		BackgroundColor3 = Color3.fromRGB(255, 160, 40),
 		Visible = false,
 		Parent = arrowGui,
 	}, {
-		UI.corner(22),
-		UI.stroke(Color3.fromRGB(130, 55, 0), 3),
-		UI.new("UIGradient", {
-			Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(215, 200, 190)),
-			Rotation = 90,
-		}),
+		UI.corner(17),
+		UI.stroke(Color3.fromRGB(130, 55, 0), 2.5),
 	})
 	local circle = UI.new("Frame", {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 4, 0.5, 0),
-		Size = UDim2.fromOffset(28, 28),
+		Size = UDim2.fromOffset(26, 26),
 		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		Parent = pointer,
-	}, { UI.corner(14), UI.stroke(Color3.fromRGB(130, 55, 0), 2.5) })
+	}, { UI.corner(13), UI.stroke(Color3.fromRGB(130, 55, 0), 2) })
 	arrow = UI.bigText({
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
@@ -176,41 +196,43 @@ local function build()
 		Text = "▲",
 		TextColor3 = Color3.fromRGB(255, 140, 30),
 		Parent = circle,
-	}, Color3.fromRGB(130, 55, 0), 2)
+	}, Color3.fromRGB(130, 55, 0), 1.5)
 	pointerText = UI.bigText({
-		Position = UDim2.fromOffset(38, 6),
-		Size = UDim2.new(1, -46, 1, -12),
+		Position = UDim2.fromOffset(36, 6),
+		Size = UDim2.new(1, -44, 1, -12),
 		Text = "MARKET BOOM!",
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = pointer,
-	}, Color3.fromRGB(130, 55, 0), 2.5)
+	}, Color3.fromRGB(130, 55, 0), 2)
 end
 
 local function update(state: EventSchedule.State)
 	local t = now()
 	if state.boomActive then
-		statusLabel.Text = string.format(
-			"🔔 %s! %s · %s left",
-			state.boom.name,
-			state.boom.description,
-			Format.duration(state.boomEnd - t)
-		)
-		nextLabel.Text = "Sell HERE for the boom price!"
+		local left = Format.duration(state.boomEnd - t)
+		kickerLabel.Text = "BOOM ON NOW! ENDS IN"
+		kickerLabel.TextColor3 = HOT
+		timeLabel.Text = left
+		timeLabel.TextColor3 = HOT
+		boomLabel.Text = string.format("%s · %s", state.boom.name, state.boom.description)
+		hintLabel.Text = "Sell HERE for the boom price!"
+		timerText.Text = "BOOM! " .. left
+		timerText.TextColor3 = HOT
+		timerFrame.BackgroundColor3 = Color3.fromRGB(150, 60, 10)
 	else
-		statusLabel.Text = string.format("Next boom in %s", Format.duration(state.boomStart - t))
-		nextLabel.Text = string.format("Coming up: %s – %s", state.boom.name, state.boom.description)
+		local left = Format.duration(state.boomStart - t)
+		kickerLabel.Text = "NEXT BOOM IN"
+		kickerLabel.TextColor3 = CHALK_DIM
+		timeLabel.Text = left
+		timeLabel.TextColor3 = CHALK
+		boomLabel.Text = string.format("%s · %s", state.boom.name, state.boom.description)
+		hintLabel.Text = "Save carrots in your basket, sell during the boom"
+		timerText.Text = "BOOM " .. left
+		timerText.TextColor3 = Color3.fromRGB(255, 255, 255)
+		timerFrame.BackgroundColor3 = Color3.fromRGB(30, 34, 48)
 	end
-	dailyLabel.Text = string.format(
-		"Today's market: %s carrots x%s everywhere",
-		state.dailyRarity,
-		tostring(state.dailyMult)
-	)
-	for _, row in rows do
-		local m = rarityMult(state, row.rarity.id)
-		row.price.Text = Format.cash(math.floor(row.rarity.baseValue * m + 0.5))
-		row.change.Text = if m > 1 then "▲ x" .. tostring(math.floor(m * 100 + 0.5) / 100) else "●"
-		row.change.TextColor3 = if m > 1 then Color3.fromRGB(60, 200, 60) else Color3.fromRGB(170, 160, 150)
-	end
+	dailyLabel.Text =
+		string.format("TODAY: %s carrots x%s everywhere", state.dailyRarity, tostring(state.dailyMult))
 end
 
 local function updateArrow(state: EventSchedule.State)

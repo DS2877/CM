@@ -46,24 +46,46 @@ local LEADERBOARD_ROWS = 10
 
 local WorldBuilder = {}
 
--- Bright, saturated, child-friendly palette.
+-- Art direction: sunny valley farmers' market. Warm and toy-like, but grounded enough that the
+-- bright UI and the rare carrots are what pops. Hue roles: green = land, warm dirt = where you
+-- walk, orange/cream = the market (the hero), dark soil = where carrots grow.
 local COLORS = {
-	grass = Color3.fromRGB(110, 205, 75),
-	farmGrass = Color3.fromRGB(140, 222, 95),
-	soil = Color3.fromRGB(176, 112, 62),
-	soilFurrow = Color3.fromRGB(150, 92, 50),
-	soilEdge = Color3.fromRGB(125, 78, 42),
-	path = Color3.fromRGB(250, 222, 160),
-	plaza = Color3.fromRGB(240, 232, 215),
-	wood = Color3.fromRGB(205, 140, 80),
-	darkWood = Color3.fromRGB(160, 100, 55),
-	fence = Color3.fromRGB(255, 255, 250),
-	orange = Color3.fromRGB(255, 140, 30),
-	white = Color3.fromRGB(255, 255, 250),
-	leaf = Color3.fromRGB(85, 200, 70),
-	leafLight = Color3.fromRGB(150, 230, 85),
-	trunk = Color3.fromRGB(150, 100, 60),
-	rock = Color3.fromRGB(185, 185, 195),
+	grass = Color3.fromRGB(98, 176, 70),
+	grassFar = Color3.fromRGB(80, 150, 60),
+	farmGrass = Color3.fromRGB(122, 194, 80),
+	farmGrassStripe = Color3.fromRGB(112, 184, 74),
+	soil = Color3.fromRGB(96, 64, 42),
+	soilFurrow = Color3.fromRGB(76, 50, 32),
+	soilEdge = Color3.fromRGB(150, 104, 62),
+	path = Color3.fromRGB(196, 150, 100),
+	pathEdge = Color3.fromRGB(160, 120, 80),
+	plaza = Color3.fromRGB(238, 222, 190),
+	plazaInner = Color3.fromRGB(224, 204, 168),
+	terracotta = Color3.fromRGB(205, 120, 80),
+	wood = Color3.fromRGB(190, 132, 78),
+	darkWood = Color3.fromRGB(120, 78, 46),
+	fence = Color3.fromRGB(246, 238, 222),
+	orange = Color3.fromRGB(255, 136, 36),
+	cream = Color3.fromRGB(255, 244, 222),
+	red = Color3.fromRGB(214, 74, 64),
+	white = Color3.fromRGB(255, 252, 245),
+	leaf = Color3.fromRGB(72, 158, 64),
+	leafLight = Color3.fromRGB(122, 196, 78),
+	trunk = Color3.fromRGB(128, 86, 54),
+	rock = Color3.fromRGB(168, 168, 176),
+	gold = Color3.fromRGB(255, 200, 60),
+	chalk = Color3.fromRGB(40, 66, 54),
+	-- One identity color per farm (barn + sign trim), so "the blue farm" is a place.
+	barns = {
+		Color3.fromRGB(214, 74, 64),
+		Color3.fromRGB(70, 130, 220),
+		Color3.fromRGB(250, 180, 40),
+		Color3.fromRGB(150, 90, 210),
+		Color3.fromRGB(60, 170, 120),
+		Color3.fromRGB(240, 110, 160),
+		Color3.fromRGB(60, 180, 210),
+		Color3.fromRGB(240, 130, 50),
+	},
 	flowers = {
 		Color3.fromRGB(255, 110, 170),
 		Color3.fromRGB(255, 225, 60),
@@ -152,52 +174,49 @@ local function label(parent: Instance, props: { [string]: any }): TextLabel
 end
 
 local function buildLighting()
-	Lighting.ClockTime = 13.5
-	Lighting.GeographicLatitude = 35
-	Lighting.Brightness = 3
-	Lighting.Ambient = Color3.fromRGB(110, 105, 100)
-	Lighting.OutdoorAmbient = Color3.fromRGB(170, 165, 160)
-	Lighting.EnvironmentDiffuseScale = 0.6
-	Lighting.EnvironmentSpecularScale = 0.6
+	-- Early afternoon, slightly warm. Moderate saturation: the world should feel bright without
+	-- turning neon on phone screens (which already boost saturation).
+	Lighting.ClockTime = 14.6
+	Lighting.GeographicLatitude = 30
+	Lighting.Brightness = 2.4
+	Lighting.Ambient = Color3.fromRGB(120, 112, 105)
+	Lighting.OutdoorAmbient = Color3.fromRGB(165, 160, 150)
+	Lighting.EnvironmentDiffuseScale = 0.5
+	Lighting.EnvironmentSpecularScale = 0.4
 	Lighting.GlobalShadows = true
-	Lighting.ShadowSoftness = 0.3
+	Lighting.ShadowSoftness = 0.45
 
 	for _, child in Lighting:GetChildren() do
 		child:Destroy()
 	end
 
 	local sky = Instance.new("Sky")
-	sky.SunAngularSize = 14
+	sky.SunAngularSize = 9
 	sky.MoonAngularSize = 9
 	sky.StarCount = 2000
 	sky.Parent = Lighting
 
 	local atmosphere = Instance.new("Atmosphere")
-	atmosphere.Density = 0.22
-	atmosphere.Offset = 0.1
-	atmosphere.Color = Color3.fromRGB(200, 230, 255)
-	atmosphere.Decay = Color3.fromRGB(140, 190, 255)
-	atmosphere.Glare = 0.1
-	atmosphere.Haze = 0.6
+	atmosphere.Density = 0.3
+	atmosphere.Offset = 0.15
+	atmosphere.Color = Color3.fromRGB(205, 225, 245)
+	atmosphere.Decay = Color3.fromRGB(150, 185, 230)
+	atmosphere.Glare = 0
+	atmosphere.Haze = 1.1
 	atmosphere.Parent = Lighting
 
 	local bloom = Instance.new("BloomEffect")
-	bloom.Intensity = 0.5
-	bloom.Size = 24
-	bloom.Threshold = 1.5
+	bloom.Intensity = 0.35
+	bloom.Size = 20
+	bloom.Threshold = 2
 	bloom.Parent = Lighting
 
 	local cc = Instance.new("ColorCorrectionEffect")
-	cc.Saturation = 0.28
-	cc.Contrast = 0.06
-	cc.Brightness = 0.04
-	cc.TintColor = Color3.fromRGB(255, 252, 245)
+	cc.Saturation = 0.12
+	cc.Contrast = 0.1
+	cc.Brightness = 0.02
+	cc.TintColor = Color3.fromRGB(255, 249, 238)
 	cc.Parent = Lighting
-
-	local rays = Instance.new("SunRaysEffect")
-	rays.Intensity = 0.04
-	rays.Spread = 0.6
-	rays.Parent = Lighting
 end
 
 local function buildGround(world: Folder)
@@ -224,16 +243,36 @@ local function buildGround(world: Folder)
 		}, world)
 	end
 
-	disc("Plaza", Vector3.new(0, 0.25, 0), 64, 0.5, {
-		Material = Enum.Material.Cobblestone,
+	-- Plaza: terracotta rim, warm cream stone, and a compass of orange spokes that point at the
+	-- eight farms, so the map explains itself from the spawn.
+	disc("PlazaRing", Vector3.new(0, 0.2, 0), 70, 0.4, {
+		Material = Enum.Material.Brick,
+		Color = COLORS.terracotta,
+		CastShadow = false,
+	}, world)
+	disc("Plaza", Vector3.new(0, 0.3, 0), 64, 0.5, {
+		Material = Enum.Material.Slate,
 		Color = COLORS.plaza,
 		CastShadow = false,
 	}, world)
-	disc("PlazaRing", Vector3.new(0, 0.2, 0), 68, 0.4, {
-		Material = Enum.Material.Brick,
-		Color = Color3.fromRGB(170, 120, 90),
+	disc("PlazaInner", Vector3.new(0, 0.34, 0), 34, 0.5, {
+		Material = Enum.Material.Slate,
+		Color = COLORS.plazaInner,
 		CastShadow = false,
 	}, world)
+	for i = 0, World.FarmCount - 1 do
+		local a = i * (2 * math.pi / World.FarmCount)
+		local dir = Vector3.new(math.sin(a), 0, math.cos(a))
+		part({
+			Name = "Spoke",
+			Size = Vector3.new(2.2, 0.1, 13),
+			CFrame = CFrame.lookAt(dir * 23.5 + Vector3.new(0, 0.33, 0), dir * 40 + Vector3.new(0, 0.33, 0)),
+			Material = Enum.Material.Slate,
+			Color = COLORS.orange,
+			CastShadow = false,
+			CanCollide = false,
+		}, world)
+	end
 end
 
 -- A big decorative carrot (tip down) made of primitives, used on top of the market.
@@ -274,103 +313,174 @@ local function statueCarrot(parent: Instance, top: Vector3, scale: number)
 	model.Parent = parent
 end
 
+-- Text on a physical board (SurfaceGui), so signs are part of the world instead of floating
+-- billboards that cover the sky.
+local function boardText(board: BasePart, face: Enum.NormalId, canvas: Vector2, props: { [string]: any })
+	local surface = Instance.new("SurfaceGui")
+	surface.Face = face
+	surface.CanvasSize = canvas
+	surface.LightInfluence = 0.2
+	surface.MaxDistance = 220
+	surface.Parent = board
+	label(surface, props)
+end
+
+-- The market: the map's hero landmark, readable from every farm. Raised deck, red posts, four
+-- counters with carrot crates, a tiered striped tent roof with a scalloped edge, a name board on
+-- every side, and a giant carrot on top. Its price sign is a chalkboard on the spawn side; the
+-- client draws the live board on it (PriceBoard) and a small boom timer above the roof.
 local function buildMarket(world: Folder): (ProximityPrompt, CFrame)
 	local market = Instance.new("Model")
 	market.Name = "Market"
 
-	local size = 16
+	disc("Deck", Vector3.new(0, 0.9, 0), 26, 0.6, {
+		Material = Enum.Material.WoodPlanks,
+		Color = COLORS.wood,
+	}, market)
+	disc("DeckRim", Vector3.new(0, 0.55, 0), 27.5, 0.4, {
+		Material = Enum.Material.Wood,
+		Color = COLORS.darkWood,
+	}, market)
+
+	local size = 18
 	local h = size / 2
-	-- Corner posts
 	for _, sx in { -1, 1 } do
 		for _, sz in { -1, 1 } do
-			pillar("Post", Vector3.new(sx * (h - 0.6), 0.5, sz * (h - 0.6)), 9.5, 1.2, {
-				Color = COLORS.darkWood,
-				Material = Enum.Material.Wood,
+			pillar("Post", Vector3.new(sx * (h - 0.7), 0.9, sz * (h - 0.7)), 9.2, 1.3, {
+				Color = COLORS.red,
+				Material = Enum.Material.SmoothPlastic,
 			}, market)
 		end
 	end
-	-- Counters on all four sides, with crates of carrots on top
+	-- Counters with crates of carrots (the crates sit on the counters, carrots poke out)
 	for i = 0, 3 do
 		local rot = CFrame.Angles(0, i * math.pi / 2, 0)
 		part({
 			Name = "Counter",
-			Size = Vector3.new(size - 2.4, 3.4, 2.2),
-			CFrame = rot * CFrame.new(0, 2.2, h - 1.1),
+			Size = Vector3.new(size - 3, 3, 2.4),
+			CFrame = rot * CFrame.new(0, 2.4, h - 1.2),
 			Material = Enum.Material.WoodPlanks,
 			Color = COLORS.wood,
+		}, market)
+		part({
+			Name = "CounterTop",
+			Size = Vector3.new(size - 2.4, 0.3, 2.8),
+			CFrame = rot * CFrame.new(0, 4.05, h - 1.2),
+			Material = Enum.Material.Wood,
+			Color = COLORS.darkWood,
 		}, market)
 		for c = -1, 1 do
 			local crate = part({
 				Name = "Crate",
-				Size = Vector3.new(2.6, 1, 1.6),
-				CFrame = rot * CFrame.new(c * 4, 4.4, h - 1.1),
-				Material = Enum.Material.Wood,
-				Color = COLORS.darkWood,
+				Size = Vector3.new(3.2, 1.1, 1.9),
+				CFrame = rot * CFrame.new(c * 4.6, 4.75, h - 1.2) * CFrame.Angles(0, (c * 0.07), 0),
+				Material = Enum.Material.WoodPlanks,
+				Color = COLORS.wood,
 			}, market)
 			for k = -1, 1 do
-				part({
-					Name = "CrateCarrot",
-					Shape = Enum.PartType.Ball,
-					Size = Vector3.new(0.7, 0.7, 0.7),
-					CFrame = crate.CFrame * CFrame.new(k * 0.75, 0.55, 0),
-					Color = COLORS.orange,
-					CastShadow = false,
-				}, market)
+				for j = -1, 1, 2 do
+					part({
+						Name = "CrateCarrot",
+						Size = Vector3.new(0.6, 1.2, 0.6),
+						CFrame = crate.CFrame
+							* CFrame.new(k * 0.95, 0.75, j * 0.42)
+							* CFrame.Angles(math.rad(12 * j), 0, math.rad(10 * k)),
+						Color = COLORS.orange,
+						CastShadow = false,
+						CanCollide = false,
+					}, market)
+				end
 			end
 		end
 	end
-	-- Roof with orange/white stripes
-	part({
-		Name = "Roof",
-		Size = Vector3.new(size + 3, 0.8, size + 3),
-		CFrame = CFrame.new(0, 10.4, 0),
-		Material = Enum.Material.WoodPlanks,
-		Color = COLORS.white,
-	}, market)
-	local stripes = 9
-	local stripeW = (size + 3) / stripes
-	for s = 0, stripes - 1 do
+
+	-- Tiered tent roof: alternating orange/cream tiers read as "market stall" from far away.
+	local tiers = { { 22, 10.6 }, { 17, 11.8 }, { 12, 13 }, { 7, 14.2 } }
+	for i, t in tiers do
 		part({
-			Name = "Stripe",
-			Size = Vector3.new(stripeW, 0.3, size + 3.2),
-			CFrame = CFrame.new(-(size + 3) / 2 + stripeW * (s + 0.5), 10.95, 0),
+			Name = "RoofTier",
+			Size = Vector3.new(t[1], 1.2, t[1]),
+			CFrame = CFrame.new(0, t[2], 0),
 			Material = Enum.Material.Fabric,
-			Color = if s % 2 == 0 then COLORS.orange else COLORS.white,
-			CastShadow = false,
+			Color = if i % 2 == 1 then COLORS.orange else COLORS.cream,
 		}, market)
 	end
-	statueCarrot(market, Vector3.new(0, 19.5, 0), 1.2)
+	-- Scalloped valance around the roof edge
+	local edge = 11
+	local step = 1.6
+	local n = math.floor(edge * 2 / step)
+	for side = 0, 3 do
+		local rot = CFrame.Angles(0, side * math.pi / 2, 0)
+		for k = 0, n - 1 do
+			local x = -edge + step * (k + 0.5)
+			part({
+				Name = "Scallop",
+				Shape = Enum.PartType.Ball,
+				Size = Vector3.new(1.5, 1.5, 1.5),
+				CFrame = rot * CFrame.new(x, 9.95, edge - 0.2),
+				Material = Enum.Material.Fabric,
+				Color = if k % 2 == 0 then COLORS.cream else COLORS.orange,
+				CastShadow = false,
+				CanCollide = false,
+			}, market)
+		end
+	end
 
-	-- Sign
-	local signPart = part({
-		Name = "SignAnchor",
-		Size = Vector3.new(1, 1, 1),
-		CFrame = CFrame.new(0, 25, 0),
-		Transparency = 1,
-		CanCollide = false,
-		CanQuery = false,
+	-- Name boards under the roof edge on all four sides
+	for side = 0, 3 do
+		local rot = CFrame.Angles(0, side * math.pi / 2, 0)
+		local board = part({
+			Name = "NameBoard",
+			Size = Vector3.new(15, 2.2, 0.5),
+			CFrame = rot * CFrame.new(0, 8.6, h + 0.2),
+			Material = Enum.Material.WoodPlanks,
+			Color = COLORS.darkWood,
+		}, market)
+		boardText(board, Enum.NormalId.Back, Vector2.new(600, 88), {
+			Size = UDim2.new(1, -24, 1, -12),
+			Position = UDim2.fromOffset(12, 6),
+			Text = "CARROT MARKET",
+			Font = Enum.Font.LuckiestGuy,
+			TextColor3 = Color3.fromRGB(255, 196, 80),
+			TextStrokeColor3 = Color3.fromRGB(60, 25, 5),
+			TextStrokeTransparency = 0,
+		})
+	end
+
+	-- Giant carrot on top, slightly tilted for charm (tip resting on the roof)
+	statueCarrot(market, Vector3.new(0, 26, 0), 1.6)
+	for _, d in market:GetChildren() do
+		if d:IsA("Model") and d.Name == "CarrotStatue" then
+			d:PivotTo(CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.rad(8)) * d:GetPivot())
+		end
+	end
+
+	-- Chalkboard price sign on an easel, on the spawn side, angled toward arriving players
+	local boardCF = CFrame.new(0, 0, 16.5) * CFrame.Angles(0, 0, 0)
+	for _, x in { -4.2, 4.2 } do
+		part({
+			Name = "EaselLeg",
+			Size = Vector3.new(0.5, 9, 0.5),
+			CFrame = boardCF * CFrame.new(x, 4.3, -0.4) * CFrame.Angles(math.rad(-6), 0, 0),
+			Material = Enum.Material.Wood,
+			Color = COLORS.darkWood,
+		}, market)
+	end
+	part({
+		Name = "PriceBoardFrame",
+		Size = Vector3.new(9.6, 6.6, 0.4),
+		CFrame = boardCF * CFrame.new(0, 5.2, -0.1),
+		Material = Enum.Material.Wood,
+		Color = COLORS.darkWood,
+	}, market)
+	part({
+		Name = "PriceBoard",
+		Size = Vector3.new(8.8, 5.8, 0.2),
+		CFrame = boardCF * CFrame.new(0, 5.2, 0.15),
+		Material = Enum.Material.SmoothPlastic,
+		Color = COLORS.chalk,
 		CastShadow = false,
 	}, market)
-	local bb = Instance.new("BillboardGui")
-	bb.Name = "Sign"
-	bb.Size = UDim2.fromScale(30, 8)
-	bb.LightInfluence = 0
-	bb.MaxDistance = 400
-	bb.Parent = signPart
-	label(bb, {
-		Name = "Title",
-		Size = UDim2.fromScale(1, 0.62),
-		Text = "CARROT MARKET",
-		TextColor3 = Color3.fromRGB(255, 170, 60),
-		TextStrokeColor3 = Color3.fromRGB(70, 30, 0),
-		TextStrokeTransparency = 0,
-	})
-	label(bb, {
-		Name = "Slogan",
-		Position = UDim2.fromScale(0, 0.62),
-		Size = UDim2.fromScale(1, 0.38),
-		Text = "Grow carrots. Find rare ones. Get rich.",
-	})
 
 	-- One sell prompt reachable from every counter.
 	local promptPart = part({
@@ -387,7 +497,7 @@ local function buildMarket(world: Folder): (ProximityPrompt, CFrame)
 	prompt.ActionText = "Sell All"
 	prompt.ObjectText = "Market"
 	prompt.HoldDuration = 0
-	prompt.MaxActivationDistance = 15
+	prompt.MaxActivationDistance = 16
 	prompt.RequiresLineOfSight = false
 	prompt.KeyboardKeyCode = Enum.KeyCode.E
 	prompt.Parent = promptPart
@@ -399,34 +509,62 @@ end
 local function buildTree(parent: Instance, pos: Vector3, scale: number, rng: Random)
 	local tree = Instance.new("Model")
 	tree.Name = "Tree"
-	local trunkH = 7 * scale
-	pillar("Trunk", pos, trunkH, 1.6 * scale, {
+	local trunkH = 6 * scale
+	pillar("Trunk", pos, trunkH + 2 * scale, 1.5 * scale, {
 		Material = Enum.Material.Wood,
 		Color = COLORS.trunk,
 	}, tree)
-	local leafColor = COLORS.leaf:Lerp(COLORS.leafLight, rng:NextNumber())
+	-- Canopy: a darker base blob and two lighter blobs on top read as volume from any angle.
+	local leaf = COLORS.leaf:Lerp(COLORS.leafLight, rng:NextNumber() * 0.6)
+	local top = pos + Vector3.new(0, trunkH + 3 * scale, 0)
 	part({
 		Name = "Leaves",
 		Shape = Enum.PartType.Ball,
-		Size = Vector3.one * 9 * scale,
-		CFrame = CFrame.new(pos + Vector3.new(0, trunkH + 2.5 * scale, 0)),
+		Size = Vector3.one * 9.5 * scale,
+		CFrame = CFrame.new(top),
 		Material = Enum.Material.SmoothPlastic,
-		Color = leafColor,
+		Color = leaf:Lerp(Color3.new(0, 0.15, 0), 0.25),
 	}, tree)
-	part({
-		Name = "Leaves",
-		Shape = Enum.PartType.Ball,
-		Size = Vector3.one * 6 * scale,
-		CFrame = CFrame.new(pos + Vector3.new(1.5 * scale, trunkH + 5.5 * scale, -1 * scale)),
-		Material = Enum.Material.SmoothPlastic,
-		Color = leafColor:Lerp(Color3.new(1, 1, 1), 0.12),
-	}, tree)
+	for _, o in { Vector3.new(-1.8, 2.4, 1), Vector3.new(1.9, 2.8, -0.8) } do
+		part({
+			Name = "Leaves",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.one * (6.2 + rng:NextNumber()) * scale,
+			CFrame = CFrame.new(top + o * scale),
+			Material = Enum.Material.SmoothPlastic,
+			Color = leaf,
+			CastShadow = false,
+		}, tree)
+	end
 	tree.Parent = parent
+end
+
+-- Rolling hills around the edge frame the valley and hide the end of the world.
+local function buildHills(world: Folder, rng: Random)
+	local hills = folder("Hills", world)
+	local count = 30
+	for i = 0, count - 1 do
+		local a = (i + rng:NextNumber() * 0.6) * (2 * math.pi / count)
+		local r = 335 + rng:NextNumber() * 30
+		local w = 90 + rng:NextNumber() * 70
+		local hgt = 40 + rng:NextNumber() * 45
+		part({
+			Name = "Hill",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(w, w, w),
+			CFrame = CFrame.new(math.sin(a) * r, -w / 2 + hgt, math.cos(a) * r),
+			Material = Enum.Material.Grass,
+			Color = COLORS.grassFar:Lerp(COLORS.grass, rng:NextNumber() * 0.5),
+			CastShadow = false,
+			CanCollide = false,
+		}, hills)
+	end
 end
 
 local function buildDecor(world: Folder)
 	local decor = folder("Decor", world)
 	local rng = Random.new(World.Seed)
+	buildHills(world, rng)
 	local angleStep = 2 * math.pi / World.FarmCount
 
 	-- Trees between farms
@@ -521,6 +659,22 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 		Color = COLORS.farmGrass,
 		CastShadow = false,
 	}, model)
+	-- Mowed stripes: the farm reads as cared-for land, distinct from the wild grass around it.
+	local stripes = 6
+	for k = 0, stripes - 1, 2 do
+		local w = half * 2 / stripes
+		part({
+			Name = "MowStripe",
+			Size = Vector3.new(w, 0.05, half * 2),
+			CFrame = center * CFrame.new(-half + w * (k + 0.5), 0.22, 0),
+			Material = Enum.Material.Grass,
+			Color = COLORS.farmGrassStripe,
+			CastShadow = false,
+			CanCollide = false,
+			CanQuery = false,
+		}, model)
+	end
+	local identity = COLORS.barns[(id - 1) % #COLORS.barns + 1]
 
 	-- Fence with an entrance at the front
 	local fenceH = 3
@@ -564,32 +718,34 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 	local plots: { BasePart } = {}
 	for index, c in World.PlotCells do
 		local localPos = Vector3.new(c[1] * cell, 0, c[2] * cell)
+		-- A raised bed of dark soil: reads as "something grows here", and makes every carrot
+		-- color (especially the rare ones) pop against it.
 		local plot = part({
 			Name = "Plot_" .. index,
 			Size = Vector3.new(World.PlotSize, 0.8, World.PlotSize),
 			CFrame = center * CFrame.new(localPos + Vector3.new(0, 0.4, 0)),
-			Material = Enum.Material.SmoothPlastic,
+			Material = Enum.Material.Ground,
 			Color = COLORS.soil,
 			CastShadow = false,
 		}, plotsFolder)
-		-- Three soft furrows on top
+		-- Three soil ridges on top
 		for f = -1, 1 do
 			part({
 				Name = "Furrow",
-				Size = Vector3.new(0.9, 0.2, World.PlotSize - 1.2),
-				CFrame = center * CFrame.new(localPos + Vector3.new(f * 2.1, 0.85, 0)),
-				Material = Enum.Material.SmoothPlastic,
+				Size = Vector3.new(1.3, 0.25, World.PlotSize - 1.4),
+				CFrame = center * CFrame.new(localPos + Vector3.new(f * 2.1, 0.88, 0)),
+				Material = Enum.Material.Ground,
 				Color = COLORS.soilFurrow,
 				CastShadow = false,
 				CanCollide = false,
 			}, plot)
 		end
-		-- Darker rim so plots read clearly from above on small screens
+		-- Wooden frame around the bed
 		part({
 			Name = "Rim",
-			Size = Vector3.new(World.PlotSize + 0.8, 0.5, World.PlotSize + 0.8),
-			CFrame = center * CFrame.new(localPos + Vector3.new(0, 0.25, 0)),
-			Material = Enum.Material.WoodPlanks,
+			Size = Vector3.new(World.PlotSize + 0.9, 0.6, World.PlotSize + 0.9),
+			CFrame = center * CFrame.new(localPos + Vector3.new(0, 0.3, 0)),
+			Material = Enum.Material.Wood,
 			Color = COLORS.soilEdge,
 			CastShadow = false,
 			CanQuery = false,
@@ -619,12 +775,19 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 			Color = COLORS.darkWood,
 		}, model)
 	end
+	part({
+		Name = "SignTrim",
+		Size = Vector3.new(7.2, 3.2, 0.3),
+		CFrame = signCF * CFrame.new(0, 4.4, 0.25),
+		Material = Enum.Material.SmoothPlastic,
+		Color = identity,
+	}, model)
 	local board = part({
 		Name = "SignBoard",
 		Size = Vector3.new(6.6, 2.6, 0.4),
 		CFrame = signCF * CFrame.new(0, 4.4, 0),
 		Material = Enum.Material.WoodPlanks,
-		Color = COLORS.wood,
+		Color = COLORS.darkWood,
 	}, model)
 	local surface = Instance.new("SurfaceGui")
 	surface.Face = Enum.NormalId.Front
@@ -674,16 +837,16 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 		Shape = Enum.PartType.Cylinder,
 		Size = Vector3.new(2.2, 3.6, 3.6),
 		CFrame = pedestalCF * CFrame.new(0, 2.5, 0) * CFrame.Angles(0, 0, math.rad(90)),
-		Material = Enum.Material.SmoothPlastic,
-		Color = Color3.fromRGB(255, 230, 150),
+		Material = Enum.Material.Marble,
+		Color = COLORS.cream,
 	}, model)
 	local pedestalTop = part({
 		Name = "PedestalTop",
 		Shape = Enum.PartType.Cylinder,
 		Size = Vector3.new(0.6, 4.6, 4.6),
 		CFrame = pedestalCF * CFrame.new(0, 3.9, 0) * CFrame.Angles(0, 0, math.rad(90)),
-		Material = Enum.Material.Neon,
-		Color = Color3.fromRGB(255, 205, 60),
+		Material = Enum.Material.SmoothPlastic,
+		Color = COLORS.gold,
 	}, model)
 	pedestalTop:SetAttribute("FarmId", id)
 
@@ -699,14 +862,66 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 	}, model)
 	local spawnCFrame = CFrame.lookAt(padPos + Vector3.new(0, 3.5, 0), centerPos + Vector3.new(0, 3.5, 0))
 
+	-- Barn behind the farm in the farm's identity color: a landmark you can name and find.
+	local barnCF = center * CFrame.new(0, 0, half + 9)
+	part({
+		Name = "BarnBody",
+		Size = Vector3.new(12, 7, 8),
+		CFrame = barnCF * CFrame.new(0, 3.5, 0),
+		Material = Enum.Material.WoodPlanks,
+		Color = identity,
+	}, model)
+	for _, sx in { -1, 1 } do
+		part({
+			Name = "BarnRoof",
+			Size = Vector3.new(7.4, 0.6, 9),
+			CFrame = barnCF * CFrame.new(sx * 3.1, 9.1, 0) * CFrame.Angles(0, 0, math.rad(-sx * 38)),
+			Material = Enum.Material.WoodPlanks,
+			Color = COLORS.darkWood,
+		}, model)
+	end
+	part({
+		Name = "BarnGable",
+		Size = Vector3.new(5, 2.2, 7.8),
+		CFrame = barnCF * CFrame.new(0, 8.1, 0),
+		Material = Enum.Material.WoodPlanks,
+		Color = identity,
+	}, model)
+	part({
+		Name = "BarnDoor",
+		Size = Vector3.new(4.6, 5, 0.2),
+		CFrame = barnCF * CFrame.new(0, 2.5, -4.05),
+		Material = Enum.Material.Wood,
+		Color = COLORS.white,
+	}, model)
+	for _, d in { 1, -1 } do
+		part({
+			Name = "BarnDoorX",
+			Size = Vector3.new(0.4, 6.4, 0.25),
+			CFrame = barnCF * CFrame.new(0, 2.5, -4.2) * CFrame.Angles(0, 0, math.rad(d * 42)),
+			Material = Enum.Material.Wood,
+			Color = identity:Lerp(Color3.new(0, 0, 0), 0.25),
+			CanCollide = false,
+		}, model)
+	end
+
 	-- Path from the plaza to the entrance
 	local startPos = centerPos.Unit * 33
 	local endPos = (center * CFrame.new(0, 0, -half)).Position
 	local length = (endPos - startPos).Magnitude
+	local pathCF = CFrame.lookAt((startPos + endPos) / 2, endPos)
+	part({
+		Name = "PathEdge",
+		Size = Vector3.new(9.4, 0.16, length),
+		CFrame = pathCF * CFrame.new(0, 0.08, 0),
+		Material = Enum.Material.Slate,
+		Color = COLORS.pathEdge,
+		CastShadow = false,
+	}, paths)
 	part({
 		Name = "Path",
 		Size = Vector3.new(8, 0.2, length),
-		CFrame = CFrame.lookAt((startPos + endPos) / 2, endPos) * CFrame.new(0, 0.1, 0),
+		CFrame = pathCF * CFrame.new(0, 0.1, 0),
 		Material = Enum.Material.Sand,
 		Color = COLORS.path,
 		CastShadow = false,
@@ -818,23 +1033,42 @@ local function buildVipLounge(parent: Instance)
 	local model = Instance.new("Model")
 	model.Name = "VipLounge"
 	local size = 16
-	local gold = Color3.fromRGB(255, 205, 60)
+	-- A private garden: trimmed hedges with gold caps and a royal-purple carpet. Status should
+	-- look classy, not like a neon box.
+	local gold = COLORS.gold
 	part({
 		Name = "Floor",
 		Size = Vector3.new(size, 0.4, size),
 		CFrame = cf * CFrame.new(0, 0.2, 0),
-		Material = Enum.Material.SmoothPlastic,
-		Color = Color3.fromRGB(255, 240, 190),
+		Material = Enum.Material.Marble,
+		Color = COLORS.cream,
 		CastShadow = false,
+	}, model)
+	part({
+		Name = "Carpet",
+		Size = Vector3.new(size - 5, 0.1, size - 3),
+		CFrame = cf * CFrame.new(0, 0.45, -1.5),
+		Material = Enum.Material.Fabric,
+		Color = Color3.fromRGB(120, 70, 190),
+		CastShadow = false,
+		CanCollide = false,
 	}, model)
 	local wallH = 5
 	local function wall(localCF: CFrame, length: number)
 		part({
 			Name = "Wall",
-			Size = Vector3.new(length, wallH, 0.6),
+			Size = Vector3.new(length, wallH, 1.6),
 			CFrame = cf * localCF * CFrame.new(0, wallH / 2, 0),
+			Material = Enum.Material.Grass,
+			Color = Color3.fromRGB(58, 132, 56),
+		}, model)
+		part({
+			Name = "WallCap",
+			Size = Vector3.new(length + 0.2, 0.3, 1.8),
+			CFrame = cf * localCF * CFrame.new(0, wallH + 0.15, 0),
 			Material = Enum.Material.SmoothPlastic,
 			Color = gold,
+			CastShadow = false,
 		}, model)
 	end
 	local h = size / 2
@@ -868,7 +1102,7 @@ local function buildVipLounge(parent: Instance)
 	for _, p in model:GetDescendants() do
 		if p:IsA("BasePart") and p.Parent and p.Parent.Name == "CarrotStatue" then
 			p.Color = gold
-			p.Material = Enum.Material.Neon
+			p.Material = Enum.Material.Foil
 		end
 	end
 	local signPart = part({
@@ -880,9 +1114,9 @@ local function buildVipLounge(parent: Instance)
 		CanQuery = false,
 	}, model)
 	local bb = Instance.new("BillboardGui")
-	bb.Size = UDim2.fromScale(12, 2.5)
+	bb.Size = UDim2.fromScale(8, 1.6)
 	bb.LightInfluence = 0
-	bb.MaxDistance = 150
+	bb.MaxDistance = 90
 	bb.Parent = signPart
 	label(bb, {
 		Size = UDim2.fromScale(1, 1),
@@ -922,11 +1156,11 @@ function WorldBuilder.build(): WorldBuild
 		farms[id] = buildFarm(farmsFolder, paths, id)
 	end
 
-	-- Price board anchor above the market (the client renders the live board on it)
+	-- Anchor for the compact boom timer above the market (client renders it)
 	part({
 		Name = "PriceBoardAnchor",
 		Size = Vector3.new(1, 1, 1),
-		CFrame = CFrame.new(0, 38, 0),
+		CFrame = CFrame.new(0, 34, 0),
 		Transparency = 1,
 		CanCollide = false,
 		CanQuery = false,

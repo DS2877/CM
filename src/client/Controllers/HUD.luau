@@ -1,11 +1,12 @@
 --!strict
--- Mobile-first HUD in the style of current top Roblox simulators:
---   * goal bar in the free part of the Roblox top bar (yellow progress bar, tap to buy)
---   * left stack of chunky tiles with red "!" badges (Upgrades)
---   * right SELL tile with a count badge, basket value under it (thumb reach, above jump)
---   * bottom-left currency stack with big stroked numbers
---   * big stroked toasts above the bottom center, big center banners
--- Every tap target is at least ~60 pt on a phone; nothing needs hover or a keyboard.
+-- Mobile-first HUD. Layout rule: the middle of the screen belongs to the farm.
+--   * top center: goal bar in the free part of the Roblox top bar (tap to buy)
+--   * top-left: compact currency pills (cash, basket, pity) on dark glass, readable on any sky
+--   * left edge: 2x2 menu buttons (Upgrades, Seeds, Index, Shop) with "!" badges
+--   * right edge: SELL with count badge and basket value, above the jump button (thumb reach)
+--   * bottom center: toasts; upper third: banners
+-- Sizes are authored for a ~520 pt tall screen and scaled by UI.screenScale (phones ~0.8);
+-- every tap target stays >= 44 pt on a phone. Nothing needs hover or a keyboard.
 
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
@@ -113,12 +114,12 @@ local function badge(parent: GuiObject, color: Color3, text: string): (Frame, Te
 	local b: Frame = UI.new("Frame", {
 		Name = "Badge",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(1, -6, 0, 6),
-		Size = UDim2.fromOffset(28, 28),
+		Position = UDim2.new(1, -5, 0, 5),
+		Size = UDim2.fromOffset(24, 24),
 		BackgroundColor3 = color,
 		ZIndex = 5,
 		Parent = parent,
-	}, { UI.corner(14), UI.stroke(Color3.new(1, 1, 1), 2.5) })
+	}, { UI.corner(12), UI.stroke(Color3.new(1, 1, 1), 2) })
 	local l = bigText({
 		Size = UDim2.new(1, -6, 1, -6),
 		Position = UDim2.fromOffset(3, 3),
@@ -149,32 +150,25 @@ local function tile(
 		UI.corner(14),
 		UI.stroke(dark, 3),
 		UI.new("UIGradient", {
-			Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(190, 190, 190)),
+			Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(200, 200, 200)),
 			Rotation = 90,
 		}),
 	})
 	local icon = UI.icon(iconName, emoji)
 	icon.AnchorPoint = Vector2.new(0.5, 0.5)
-	icon.Position = UDim2.fromScale(0.5, 0.42)
-	icon.Size = UDim2.fromScale(0.68, 0.68)
+	icon.Position = UDim2.fromScale(0.5, 0.4)
+	icon.Size = UDim2.fromScale(0.6, 0.6)
 	icon.Parent = b
 	bigText({
 		Name = "Label",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, 4),
-		Size = UDim2.new(1, 6, 0, 22),
+		Position = UDim2.new(0.5, 0, 1, 2),
+		Size = UDim2.new(1, 2, 0, 17),
 		Text = text,
 		ZIndex = 3,
 		Parent = b,
-	}, dark, 2.5)
+	}, dark, 2)
 	return b
-end
-
-local function screenScale(): number
-	local camera = workspace.CurrentCamera
-	local size = if camera then camera.ViewportSize else Vector2.new(844, 390)
-	-- Phones in landscape are ~390 pt tall; scale up on tablets/PC, down on tiny screens.
-	return math.clamp(math.min(size.Y / 400, size.X / 760), 0.75, 1.6)
 end
 
 local function buildGoalBar(): TextButton
@@ -275,11 +269,11 @@ local function build()
 		Parent = playerGui,
 	})
 	local scale: UIScale = UI.new("UIScale", { Parent = gui })
-	scale.Scale = screenScale()
+	scale.Scale = UI.screenScale()
 	local camera = workspace.CurrentCamera
 	if camera then
 		camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
-			scale.Scale = screenScale()
+			scale.Scale = UI.screenScale()
 		end)
 	end
 
@@ -297,18 +291,18 @@ local function build()
 	GuiService:GetPropertyChangedSignal("TopbarInset"):Connect(placeGoalBar)
 	topGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeGoalBar)
 
-	-- Tile row under the currency stack (the thumbstick owns the bottom-left corner)
+	-- Menu buttons: 2x2 on the left edge, above the thumbstick zone, clear of the farm.
 	local left = UI.new("Frame", {
 		Name = "Left",
-		AnchorPoint = Vector2.new(0, 0),
-		Position = UDim2.new(0, 12, 0, 148),
-		Size = UDim2.fromOffset(284, 66),
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 14, 0.46, 0),
+		Size = UDim2.fromOffset(136, 136),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
 		UI.new("UIGridLayout", {
 			CellSize = UDim2.fromOffset(62, 62),
-			CellPadding = UDim2.fromOffset(9, 9),
+			CellPadding = UDim2.fromOffset(10, 10),
 			FillDirection = Enum.FillDirection.Horizontal,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
@@ -340,7 +334,7 @@ local function build()
 	}
 	for i, d in tileDefs do
 		local name = d.name
-		local t = tile(name, 68, d.color, d.dark, d.icon, d.emoji, name)
+		local t = tile(name, 62, d.color, d.dark, d.icon, d.emoji, name)
 		t.LayoutOrder = i
 		t.Parent = left
 		tiles[name] = t
@@ -361,21 +355,21 @@ local function build()
 	local right = UI.new("Frame", {
 		Name = "Right",
 		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -12, 0.46, 0),
-		Size = UDim2.fromOffset(120, 128),
+		Position = UDim2.new(1, -16, 0.44, 0),
+		Size = UDim2.fromOffset(96, 110),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	})
-	sellTile = tile("Sell", 92, C.sell, C.sellDark, "Basket", "🧺", "SELL")
+	sellTile = tile("Sell", 80, C.sell, C.sellDark, "Basket", "🧺", "SELL")
 	sellTile.AnchorPoint = Vector2.new(0.5, 0)
 	sellTile.Position = UDim2.new(0.5, 0, 0, 0)
 	sellTile.Parent = right
 	sellBadge, sellBadgeText = badge(sellTile, C.sell, "0")
-	sellBadge.Size = UDim2.fromOffset(34, 28)
+	sellBadge.Size = UDim2.fromOffset(30, 24)
 	sellValue = bigText({
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 100),
-		Size = UDim2.new(1, 20, 0, 26),
+		Position = UDim2.new(0.5, 0, 0, 86),
+		Size = UDim2.new(1, 20, 0, 22),
 		Text = "$0",
 		TextColor3 = C.cash,
 		Parent = right,
@@ -384,109 +378,123 @@ local function build()
 	boomTag = bigText({
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 0, -4),
-		Size = UDim2.fromOffset(170, 22),
+		Size = UDim2.fromOffset(150, 18),
 		Text = "",
 		TextColor3 = Color3.fromRGB(255, 150, 40),
 		Visible = false,
 		Parent = right,
-	}, Color3.fromRGB(100, 30, 0), 2.5)
+	}, Color3.fromRGB(100, 30, 0), 2)
 
-	-- Currency stack, top-left under the Roblox buttons (the thumbstick owns the bottom-left)
+	-- Currency pills, top-left under the Roblox buttons. Dark glass behind the numbers keeps them
+	-- readable over sky, grass and white fences alike; the icon overlaps the pill's left end.
 	local currencies = UI.new("Frame", {
 		Name = "Currencies",
 		AnchorPoint = Vector2.new(0, 0),
-		Position = UDim2.new(0, 14, 0, 6),
-		Size = UDim2.fromOffset(260, 136),
+		Position = UDim2.new(0, 16, 0, 8),
+		Size = UDim2.fromOffset(240, 120),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
 		UI.new("UIListLayout", {
-			Padding = UDim.new(0, 2),
+			Padding = UDim.new(0, 7),
 			VerticalAlignment = Enum.VerticalAlignment.Top,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
 	})
-	local basketRow = UI.new("Frame", {
-		Name = "Basket",
-		Size = UDim2.fromOffset(260, 30),
-		BackgroundTransparency = 1,
-		LayoutOrder = 2,
-		Parent = currencies,
-	})
-	local carrotIcon = UI.icon("Carrot", "🥕")
-	carrotIcon.Size = UDim2.fromOffset(30, 30)
-	carrotIcon.Parent = basketRow
-	basketLabel = bigText({
-		Position = UDim2.fromOffset(38, 2),
-		Size = UDim2.new(1, -38, 1, -4),
-		Text = "0",
-		TextColor3 = C.carrot,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = basketRow,
-	}, Color3.fromRGB(90, 35, 0), 2.5)
-	cashRow = UI.new("Frame", {
-		Name = "Cash",
-		Size = UDim2.fromOffset(260, 46),
-		BackgroundTransparency = 1,
-		LayoutOrder = 1,
-		Parent = currencies,
-	})
+	local function pill(name: string, width: number, height: number, order: number): Frame
+		local holder: Frame = UI.new("Frame", {
+			Name = name,
+			Size = UDim2.fromOffset(width, height),
+			BackgroundTransparency = 1,
+			LayoutOrder = order,
+			Parent = currencies,
+		})
+		UI.new("Frame", {
+			Name = "Glass",
+			Position = UDim2.fromOffset(height * 0.45, 0),
+			Size = UDim2.new(1, -height * 0.45, 1, 0),
+			BackgroundColor3 = Color3.fromRGB(22, 26, 40),
+			BackgroundTransparency = 0.3,
+			Parent = holder,
+		}, { UI.corner(height // 2), UI.stroke(Color3.fromRGB(255, 255, 255), 1.5, 0.75) })
+		return holder
+	end
+
+	cashRow = pill("Cash", 196, 36, 1)
 	local cashIcon = UI.icon("Cash", "💵")
+	cashIcon.Position = UDim2.fromOffset(-4, -4)
 	cashIcon.Size = UDim2.fromOffset(44, 44)
+	cashIcon.ZIndex = 3
 	cashIcon.Parent = cashRow
 	cashLabel = bigText({
-		Position = UDim2.fromOffset(50, 2),
-		Size = UDim2.new(1, -50, 1, -4),
+		Position = UDim2.fromOffset(46, 4),
+		Size = UDim2.new(1, -56, 1, -8),
 		Text = "$0",
 		TextColor3 = C.cash,
 		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 2,
 		Parent = cashRow,
-	}, C.cashDark, 3)
+	}, C.cashDark, 2)
 
-	-- Pity meter: Legendary guaranteed within N plantings
-	local pityRow = UI.new("Frame", {
-		Name = "Pity",
-		Size = UDim2.fromOffset(260, 28),
-		BackgroundTransparency = 1,
-		LayoutOrder = 3,
-		Parent = currencies,
-	})
+	local basketRow = pill("Basket", 148, 28, 2)
+	local carrotIcon = UI.icon("Carrot", "🥕")
+	carrotIcon.Position = UDim2.fromOffset(-3, -3)
+	carrotIcon.Size = UDim2.fromOffset(34, 34)
+	carrotIcon.ZIndex = 3
+	carrotIcon.Parent = basketRow
+	basketLabel = bigText({
+		Position = UDim2.fromOffset(38, 4),
+		Size = UDim2.new(1, -46, 1, -8),
+		Text = "0",
+		TextColor3 = C.carrot,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 2,
+		Parent = basketRow,
+	}, Color3.fromRGB(90, 35, 0), 2)
+
+	-- Pity meter: Legendary guaranteed within N plantings, with the odds (Scanner) button beside it.
+	local pityRow = pill("Pity", 176, 28, 3)
 	local crown = UI.icon("Crown", "👑")
-	crown.Size = UDim2.fromOffset(28, 28)
+	crown.Position = UDim2.fromOffset(-3, -3)
+	crown.Size = UDim2.fromOffset(34, 34)
+	crown.ZIndex = 3
 	crown.Parent = pityRow
 	local bar = UI.new("Frame", {
-		Position = UDim2.fromOffset(36, 4),
-		Size = UDim2.fromOffset(170, 20),
-		BackgroundColor3 = Color3.fromRGB(255, 248, 225),
+		Position = UDim2.fromOffset(36, 6),
+		Size = UDim2.new(1, -46, 1, -12),
+		BackgroundColor3 = Color3.fromRGB(60, 50, 30),
+		ZIndex = 2,
 		Parent = pityRow,
-	}, { UI.corner(10), UI.stroke(C.goalDark, 2.5) })
+	}, { UI.corner(8) })
 	local clip = UI.new("Frame", {
-		Position = UDim2.fromOffset(2, 2),
-		Size = UDim2.new(1, -4, 1, -4),
+		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		ClipsDescendants = true,
+		ZIndex = 2,
 		Parent = bar,
 	}, { UI.corner(8) })
 	pityFill = UI.new("Frame", {
 		Size = UDim2.fromScale(0, 1),
 		BackgroundColor3 = Color3.fromRGB(255, 200, 40),
+		ZIndex = 2,
 		Parent = clip,
 	}, { UI.corner(8) })
 	pityLabel = bigText({
-		Position = UDim2.fromOffset(6, 2),
-		Size = UDim2.new(1, -12, 1, -4),
+		Position = UDim2.fromOffset(4, 0),
+		Size = UDim2.new(1, -8, 1, 0),
 		Text = "",
-		ZIndex = 2,
+		ZIndex = 3,
 		Parent = bar,
-	}, C.goalDark, 2)
-	-- 🔍 My odds (Carrot Scanner)
+	}, C.goalDark, 1.5)
+	-- 🔍 My odds (Carrot Scanner), 36 pt hit area around a 26 pt button
 	local oddsButton: TextButton = UI.new("TextButton", {
-		Position = UDim2.fromOffset(212, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(1, 8, 0.5, 0),
 		Size = UDim2.fromOffset(28, 28),
 		BackgroundColor3 = Color3.fromRGB(90, 220, 200),
 		Text = "",
 		Parent = pityRow,
-	}, { UI.corner(14), UI.stroke(Color3.fromRGB(10, 100, 90), 2.5) })
+	}, { UI.corner(14), UI.stroke(Color3.fromRGB(10, 100, 90), 2) })
 	local oddsIcon = UI.icon("Scanner", "🔍")
 	oddsIcon.Position = UDim2.fromOffset(4, 4)
 	oddsIcon.Size = UDim2.new(1, -8, 1, -8)
@@ -499,7 +507,7 @@ local function build()
 
 	-- Active buffs: friend bonus, watered
 	buffLabel = bigText({
-		Size = UDim2.fromOffset(260, 22),
+		Size = UDim2.fromOffset(220, 18),
 		Text = "",
 		TextColor3 = Color3.fromRGB(120, 210, 255),
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -512,7 +520,7 @@ local function build()
 		Name = "Toasts",
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -24),
-		Size = UDim2.fromOffset(430, 150),
+		Size = UDim2.fromOffset(420, 130),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
@@ -691,7 +699,7 @@ end
 
 function HUD.toast(text: string, color: Color3?, seconds: number?)
 	local l = bigText({
-		Size = UDim2.fromOffset(430, 26),
+		Size = UDim2.fromOffset(420, 22),
 		Text = text,
 		TextColor3 = color or C.info,
 		LayoutOrder = math.floor(os.clock() * 1000),
@@ -776,7 +784,7 @@ end
 
 -- HUD scale factor, so effects can match the HUD size.
 function HUD.scale(): number
-	return screenScale()
+	return UI.screenScale()
 end
 
 -- What a left tile does when tapped ("Upgrades", "Seeds", "Index").
