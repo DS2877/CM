@@ -14,8 +14,12 @@ export type Stats = {
 	Sold: number,
 	TotalEarned: number,
 	BestValue: number,
+	BiggestSale: number,
 	Upgrades: number,
 }
+
+-- Best carrot ever (shown on the farm pedestal).
+export type BestCarrot = { Type: string, Size: string, Mutations: string, Value: number }
 
 export type PlayerData = {
 	Version: number,
@@ -31,6 +35,9 @@ export type PlayerData = {
 	SelectedSeed: string,
 	DexClaims: { Types: number, Stamps: number }, -- milestones already rewarded
 	LastOnline: number, -- os.time() when last seen, for offline growth
+	Best: BestCarrot,
+	Likes: number, -- hearts received on your farm
+	LikedToday: { Day: number, Users: { [string]: boolean } }, -- farms you liked today
 	Stats: Stats,
 }
 
@@ -48,12 +55,16 @@ local TEMPLATE: PlayerData = {
 	SelectedSeed = "Basic",
 	DexClaims = { Types = 0, Stamps = 0 },
 	LastOnline = 0,
+	Best = { Type = "", Size = "", Mutations = "", Value = 0 },
+	Likes = 0,
+	LikedToday = { Day = 0, Users = {} },
 	Stats = {
 		Plantings = 0,
 		Harvests = 0,
 		Sold = 0,
 		TotalEarned = 0,
 		BestValue = 0,
+		BiggestSale = 0,
 		Upgrades = 0,
 	},
 }
@@ -65,6 +76,8 @@ local MIGRATIONS: { [number]: (data: PlayerData) -> () } = {
 	[1] = function(data: PlayerData)
 		data.LastOnline = 0
 	end,
+	-- v2 -> v3 (phase 3): pedestal, likes, biggest sale. Filled by Reconcile; nothing to convert.
+	[2] = function(_data: PlayerData) end,
 }
 
 local Data = {}

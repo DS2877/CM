@@ -7,6 +7,7 @@ local suites = {
 	{ name = "Value", run = require("./Value.spec") },
 	{ name = "Roll", run = require("./Roll.spec") },
 	{ name = "Progression", run = require("./Progression.spec") },
+	{ name = "EventSchedule", run = require("./EventSchedule.spec") },
 }
 
 local failures = 0

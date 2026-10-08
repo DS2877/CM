@@ -421,6 +421,8 @@ local function update()
 end
 
 -- Find which of my plots a tap refers to. Taps slightly outside a plot still count.
+local lastWater = 0
+
 local function resolveTap(screenPos: Vector2): View?
 	local camera = workspace.CurrentCamera
 	if not camera then
@@ -443,6 +445,13 @@ local function resolveTap(screenPos: Vector2): View?
 		local index = inst:GetAttribute("PlotIndex")
 		if typeof(farmId) == "number" and typeof(index) == "number" then
 			if farmId ~= mine then
+				-- Someone else's plot: water their farm (the server checks range and cooldown).
+				local farm = farmsFolder:FindFirstChild("Farm_" .. farmId)
+				local owner = farm and farm:GetAttribute("OwnerUserId")
+				if typeof(owner) == "number" and owner ~= 0 and os.clock() - lastWater > 1 then
+					lastWater = os.clock()
+					Remotes.get(Remotes.Names.WaterFarm):FireServer(farmId)
+				end
 				return nil
 			end
 			for _, view in views do

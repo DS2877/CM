@@ -77,6 +77,12 @@ local function effectText(track: Upgrades.UpgradeDef, level: number): string
 			Progression.plots(track, level, EconomyConfig.StartingPlots),
 			Progression.plots(track, level + 1, EconomyConfig.StartingPlots)
 		)
+	elseif id == "BasketSize" then
+		return string.format(
+			"Basket %d → %d carrots",
+			Progression.stepValue(track, level, EconomyConfig.BasketCapacity),
+			Progression.stepValue(track, level + 1, EconomyConfig.BasketCapacity)
+		)
 	elseif id == "HarvestPower" then
 		return string.format(
 			"Big carrots %s → %s",

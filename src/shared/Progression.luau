@@ -62,6 +62,9 @@ function Progression.plots(track: UpgradeLike, level: number, startingPlots: num
 	return levels[math.min(level, #levels)]
 end
 
+-- Value from a stepped track (Farm Size plots, Basket Size capacity); level 0 = `base`.
+Progression.stepValue = Progression.plots
+
 -- Mutation luck from overall luck: 1 + (luck - 1) * factor.
 function Progression.mutationLuck(luck: number, factor: number): number
 	return 1 + (luck - 1) * factor

@@ -14,6 +14,7 @@ Remotes.Names = {
 	BuyUpgrade = "BuyUpgrade", -- (trackId: string)
 	BuySeed = "BuySeed", -- (seedId: string, amount: number)
 	SelectSeed = "SelectSeed", -- (seedId: string)
+	WaterFarm = "WaterFarm", -- (farmId: number)
 	-- server -> client
 	HarvestResult = "HarvestResult", -- (Types.HarvestResult)
 	SellResult = "SellResult", -- (Types.SellResult)
@@ -21,6 +22,7 @@ Remotes.Names = {
 	Notice = "Notice", -- (Types.Notice)
 	DexSync = "DexSync", -- (Types.DexState)
 	OfflineReveal = "OfflineReveal", -- (Types.OfflineResult)
+	Watered = "Watered", -- (farmId: number, byName: string)
 }
 
 local FOLDER_NAME = "Remotes"

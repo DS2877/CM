@@ -19,6 +19,8 @@ local Format = require(Shared.Format)
 local Progression = require(Shared.Progression)
 local Remotes = require(Shared.Remotes)
 local Types = require(Shared.Types)
+local Events = require(Config.Events)
+local EventSchedule = require(Shared.EventSchedule)
 
 local UI = require(script.Parent.Parent.Util.UI)
 local Sound = require(script.Parent.Parent.Util.Sound)
@@ -67,6 +69,8 @@ local tileHandlers: { [string]: () -> () } = {}
 local tileBadges: { [string]: { frame: Frame, label: TextLabel } } = {}
 local pityFill: Frame
 local pityLabel: TextLabel
+local buffLabel: TextLabel
+local boomTag: TextLabel
 local toastList: Frame
 local bannerLabel: TextLabel
 
@@ -367,13 +371,23 @@ local function build()
 		TextColor3 = C.cash,
 		Parent = right,
 	}, C.cashDark, 2.5)
+	-- Boom tag above the SELL tile
+	boomTag = bigText({
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 0, -4),
+		Size = UDim2.fromOffset(170, 22),
+		Text = "",
+		TextColor3 = Color3.fromRGB(255, 150, 40),
+		Visible = false,
+		Parent = right,
+	}, Color3.fromRGB(100, 30, 0), 2.5)
 
 	-- Currency stack, top-left under the Roblox buttons (the thumbstick owns the bottom-left)
 	local currencies = UI.new("Frame", {
 		Name = "Currencies",
 		AnchorPoint = Vector2.new(0, 0),
 		Position = UDim2.new(0, 14, 0, 6),
-		Size = UDim2.fromOffset(260, 112),
+		Size = UDim2.fromOffset(260, 136),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
@@ -456,6 +470,16 @@ local function build()
 		ZIndex = 2,
 		Parent = bar,
 	}, C.goalDark, 2)
+
+	-- Active buffs: friend bonus, watered
+	buffLabel = bigText({
+		Size = UDim2.fromOffset(260, 22),
+		Text = "",
+		TextColor3 = Color3.fromRGB(120, 210, 255),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		LayoutOrder = 4,
+		Parent = currencies,
+	}, Color3.fromRGB(10, 50, 110), 2)
 
 	-- Toasts: big stroked text at the bottom center, between thumbstick and jump button
 	toastList = UI.new("Frame", {
@@ -553,16 +577,68 @@ local function refreshSeedTile()
 	end
 end
 
+local eventsCfg: EventSchedule.EventsConfig = Events :: any
+
+local function atMarket(): boolean
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return false
+	end
+	local p = (root :: BasePart).Position
+	return Vector2.new(p.X, p.Z).Magnitude <= Events.MarketRadius
+end
+
+-- Boom tag + which price the SELL tile shows (the server decides the real price).
+local function refreshBoom()
+	local state = EventSchedule.at(workspace:GetServerTimeNow(), eventsCfg)
+	local value = attrNumber("BasketValue")
+	local marketValue = attrNumber("BasketMarketValue")
+	local boosted = state.boomActive and marketValue > value
+	if boosted and atMarket() then
+		sellValue.Text = Format.cash(marketValue)
+		sellValue.TextColor3 = Color3.fromRGB(255, 170, 40)
+		boomTag.Text = "BOOM PRICE!"
+		boomTag.Visible = true
+	elseif boosted then
+		sellValue.Text = Format.cash(value)
+		sellValue.TextColor3 = C.cash
+		boomTag.Text = Format.cash(marketValue) .. " at market!"
+		boomTag.Visible = true
+	else
+		sellValue.Text = Format.cash(value)
+		sellValue.TextColor3 = C.cash
+		boomTag.Visible = false
+	end
+end
+
+local function refreshBuffs()
+	local parts = {}
+	local friends = attrNumber("FriendCount")
+	if friends > 0 then
+		table.insert(
+			parts,
+			string.format("👥 +%d%% luck", math.floor(attrNumber("FriendBoost") * 100 + 0.5))
+		)
+	end
+	local watered = attrNumber("Buff_Watered") - workspace:GetServerTimeNow()
+	if watered > 0 then
+		table.insert(parts, "💧 " .. Format.duration(watered))
+	end
+	buffLabel.Text = table.concat(parts, "   ")
+end
+
 local function refreshBasket()
 	local count = attrNumber("BasketCount")
-	local value = attrNumber("BasketValue")
 	local cap = attrNumber("BasketCapacity")
-	sellValue.Text = Format.cash(value)
+	refreshBoom()
 	sellBadgeText.Text = Format.number(count)
 	sellBadge.Visible = count > 0
 	basketLabel.Text = if cap > 0
 		then string.format("%s/%s", Format.number(count), Format.number(cap))
 		else tostring(count)
+	-- Full basket: harvests now sell at base price, so nudge the player to sell or upgrade.
+	basketLabel.TextColor3 = if cap > 0 and count >= cap then C.bad else C.carrot
 end
 
 function HUD.toast(text: string, color: Color3?, seconds: number?)
@@ -699,7 +775,12 @@ function HUD.start()
 		if name == "Cash" then
 			targetCash = attrNumber("Cash")
 			refreshGoal()
-		elseif name == "BasketCount" or name == "BasketValue" or name == "BasketCapacity" then
+		elseif
+			name == "BasketCount"
+			or name == "BasketValue"
+			or name == "BasketCapacity"
+			or name == "BasketMarketValue"
+		then
 			refreshBasket()
 		elseif string.sub(name, 1, 4) == "Upg_" then
 			refreshGoal()
@@ -721,6 +802,7 @@ function HUD.start()
 
 	-- Cash count-up and attention pulses
 	local t = 0
+	local slowAcc = 0
 	RunService.RenderStepped:Connect(function(dt: number)
 		if shownCash ~= targetCash then
 			local diff = targetCash - shownCash
@@ -733,6 +815,13 @@ function HUD.start()
 			cashLabel.Text = Format.cash(math.floor(shownCash + 0.5))
 		end
 		t += dt
+		slowAcc += dt
+		if slowAcc >= 0.25 then
+			slowAcc = 0
+			refreshBoom()
+			refreshBuffs()
+		end
+		boomTag.Rotation = math.sin(t * 5) * 4
 		local pulse = 0.5 + 0.5 * math.sin(t * 6)
 		local goalStroke = goalButton:FindFirstChildOfClass("UIStroke")
 		if goalStroke then

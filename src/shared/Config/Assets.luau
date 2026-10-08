@@ -15,6 +15,8 @@ local Assets = {
 		Sell = "rbxasset://sounds/electronicpingshort.wav",
 		Purchase = "rbxasset://sounds/electronicpingshort.wav",
 		Discover = "",
+		Bell = "rbxasset://sounds/electronicpingshort.wav",
+		Water = "",
 		Click = "",
 	},
 	Meshes = {

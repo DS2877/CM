@@ -1,6 +1,32 @@
 # STATUS – Carrot Market
 
-Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 2 – progression (byggd, väntar på grind-test)**. Fas 1 publicerad och UI-justerad efter Philips första test.
+Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 3 – marknad och socialt (byggd, väntar på grind-test)**. Fas 1–2 publicerade.
+
+## Fas 3 – marknad och socialt
+
+| Del | Status | Hur det testas |
+|---|---|---|
+| EventSchedule (globala events) | Klar | Räknas från `os.time` – samma i alla servrar. Var 10:e minut kommer en boom på 3 min (Carrot Craze ×2 alla, Rare Rush ×3, Gold Rush ×3 muterade, Big Bonanza ×3 stora, Common Craze ×4). Daglig marknad: en rarity ×1,25 hela dagen, samma överallt. Lune-test bevisar att priser aldrig går under bas. |
+| Boom bara vid marknaden | Klar | SELL var som helst = fullt baspris. Står du vid marknaden (inom 32 studs) under boom får du boompriset. SELL-rutan visar "$X at market!" under boom och "BOOM PRICE!" när du står där. |
+| Prisbräda | Klar | Stor tavla ovanför marknaden: dagens pris per rarity med ▲ när det är förhöjt, nedräkning "Next boom in 4:12" / "Carrot Craze! 2:31 left" och vilken boom som kommer. |
+| Lagerkorg | Klar | Korgen startar på 40 och uppgraderas med cash (Basket Size: 80 → 160 → 320 → 640 → 1 280). Full korg = siffran blir röd och nya skördar säljs direkt till baspris. |
+| Marknadsklocka + pil | Klar | När boomen startar: klockljud, banner "MARKET BOOM!" och en gul pil som pekar mot marknaden tills du är där. |
+| 8 farms, tilldelning | Klar | (sedan fas 1) |
+| Piedestal | Klar | Varje farm har en piedestal i främre hörnet där ägarens bästa morot någonsin svävar, stor och glödande, med namn och värde. |
+| Utrop i tre nivåer | Klar | Epic: toast till dig. Legendary: banner till hela servern. Mythic/Secret: hela servern + alla andra servrar via MessagingService ("🌍 Anna found a MYTHIC … in another server!"). Fungerar inte i Studio (MessagingService). |
+| Vattna en vän | Klar | Tryck på en annan spelares plots → +10 % växtfart för er båda i 2 min (💧-timer uppe till vänster), 2 min cooldown per farm. Skylt "💧 Tap plots to water!" syns över andras farms när du är nära. |
+| Vänbonus | Klar | +10 % tur per Roblox-vän i servern, max 3 (👥 +20 % luck uppe till vänster). |
+| Gilla en farm | Klar | Prompt "Like ❤" vid farmskylten, ett hjärta per farm och dag. Antal hjärtan syns på skylten. |
+| Leaderboards | Klar | Tre tavlor runt torget: 🏆 Veckans bästa morot (nollställs måndagar 00:00 UTC), 💰 Största försäljning, 📖 CarrotDex. OrderedDataStore, uppdateras varje minut. Fungerar inte i Studio utan API-åtkomst. |
+
+## Grind för fas 3 – be Philip testa (helst med 2–3 vänner i samma server)
+
+1. Titta på prisbrädan ovanför marknaden. Vänta in en boom (max 10 min): hörs klockan, syns pilen?
+2. Spara morötter i korgen, spring till marknaden under boom och sälj – kändes det som en jackpot?
+3. Uppgradera Basket Size.
+4. Med en vän: vattna varandras farms, gilla varandras farm, se vänbonusen.
+5. Hitta en Epic/Legendary – syns piedestalen och utropen?
+6. Kolla leaderboard-tavlorna efter några minuter.
 
 ## Fas 2 – progression
 
@@ -75,6 +101,17 @@ Bra att veta vid test: du kan trycka på dina plots (eller etiketten ovanför) s
 
 ## Beslut tagna under bygget (regel 10)
 
+Fas 3:
+- **Boompriset betalas bara vid marknaden** (designplan §2: sälj på plats till fullt pris, marknaden ger bonus under boom). Det gör korgen och marknaden till ett riktigt beslut.
+- **Boom i slutet av varje 10-minuterscykel** (7 min väntan, 3 min boom) så nedräkningen alltid pekar framåt. Boomtypen väljs med en deterministisk hash av cykelnumret.
+- **Daglig marknad** (en rarity ×1,25 hela dagen, alla servrar) gäller överallt, inte bara vid marknaden.
+- **Korgen startar på 40** (var 200) så att lagerbeslutet märks; Basket Size-spåret köps med cash. Gamepasset Big Basket kommer i fas 4.
+- **Vattning** ger båda spelarna bonus, räknas bara i servern, cooldown 2 min per farm.
+- **Piedestalen** jämför bästa morot på basvärde (utan event-bonus) så ingen "fuskar till sig" en topp under boom.
+- **Rikast-listan** väntar till prestige (Update 1), enligt designplanen.
+- **Profilversion 3** (pedestal, likes, största försäljning) med migrering.
+
+
 Fas 2:
 - **Balans efter simulering:** startvärdena gav 117 köp på 10 min och Mythic efter 11 min (Luck kunde nå ×7). Ny kurva: Growth ×1,65/nivå (max 25), Luck +5 %/nivå ×1,65 (max 40 → ×3), Value +10 %/nivå ×1,38, Harvest Power +8 %/nivå ×1,6, Farm Size $1,500 / $20K / $200K / $1,5M.
 - **Fler morotstyper:** fas 1 hade 8, nu 24 (målet ~30) för att Dex ska ha en riktig samlarsvans redan nu.
@@ -110,6 +147,8 @@ Fas 1:
 | Meshes.Carrot | Morotsmodell | Byggd av primitiva delar |
 | Images.Cash / Carrot / Basket / Upgrade | HUD-ikoner | Emoji-fallback (💵 🥕 🧺 ⬆️) |
 | Images.Seeds / Index / Crown | HUD-ikoner (fas 2) | Emoji-fallback (🌱 📖 👑) |
+| Sounds.Bell | Marknadsklocka | Platshållare `electronicpingshort.wav` |
+| Sounds.Water | Vattning | Tyst |
 | Images.Icon | Spelikon | Saknas |
 
 ## Kvar / kända begränsningar
@@ -117,6 +156,7 @@ Fas 1:
 - Morötter som växer när man lämnar räknas inte (offline-skörden räknar från noll med Basic-frön).
 - Fler mutationer (mål 8) och dubbelmutationer kommer med säsonger.
 - Inga marknadsevents/boom (fas 3). Utrop till alla servrar (MessagingService) kommer i fas 3; Mythic/Secret ropas nu bara ut i den egna servern.
+- MessagingService och OrderedDataStore fungerar bara i publicerade servrar (inte i Studio).
 - Upplevelsen bör vara **privat/endast vänner** fram till soft launch – varje push till `main` publicerar.
 - Publiceringsnyckeln behöver Open Cloud-behörigheten `universe-places:write` för universe 10769879996 och en IP-tillåtelse för GitHubs runners (t.ex. `0.0.0.0/0`). 401/403 = nästan alltid något av de två.
 

@@ -7,6 +7,7 @@
 --   Value        value bonus = perLevel * level, i.e. value * (1 + bonus)
 --   FarmSize     plots = levels[level] (level 0 = Economy.StartingPlots)
 --   HarvestPower size luck = 1 + perLevel * level (Large/Huge/Giant weights)
+--   BasketSize   basket capacity = levels[level] (level 0 = Economy.BasketCapacity)
 
 export type UpgradeDef = {
 	id: string,
@@ -85,6 +86,20 @@ local Upgrades: { UpgradeDef } = {
 		perLevel = 0.08,
 		emoji = "💪",
 		color = { 255, 110, 160 },
+	},
+	{
+		id = "BasketSize",
+		name = "Basket Size",
+		description = "Store more carrots for the next boom",
+		enabled = true,
+		baseCost = 0,
+		costGrowth = 1,
+		maxLevel = 5,
+		perLevel = 0,
+		costs = { 1200, 12000, 120000, 1200000, 12000000 },
+		levels = { 80, 160, 320, 640, 1280 },
+		emoji = "🧺",
+		color = { 200, 140, 90 },
 	},
 }
 

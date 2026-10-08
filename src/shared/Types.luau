@@ -27,6 +27,7 @@ export type HarvestResult = {
 export type SellResult = {
 	total: number,
 	count: number,
+	bonus: number, -- market boom multiplier on this sale (1 = none)
 }
 
 export type Announcement = {
@@ -38,6 +39,8 @@ export type Announcement = {
 	rarity: string,
 	value: number,
 	scope: number, -- 1 personal toast, 2 server, 3 global
+	otherServer: boolean, -- arrived from another server via MessagingService
+	jobId: string?, -- sender server (cross-server payload only)
 }
 
 export type DexState = {

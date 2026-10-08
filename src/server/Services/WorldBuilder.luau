@@ -17,13 +17,32 @@ export type FarmBuild = {
 	spawnCFrame: CFrame,
 	signTitle: TextLabel,
 	signSubtitle: TextLabel,
+	likePrompt: ProximityPrompt,
+	pedestalTop: BasePart,
 }
+
+export type LeaderboardRow = { name: TextLabel, value: TextLabel }
+export type LeaderboardBuild = { id: string, rows: { LeaderboardRow } }
 
 export type WorldBuild = {
 	farms: { FarmBuild },
 	sellPrompt: ProximityPrompt,
 	marketCFrame: CFrame,
+	leaderboards: { LeaderboardBuild },
 }
+
+-- Leaderboard boards around the plaza: id, title, header color, angle (degrees)
+local LEADERBOARDS = {
+	{
+		id = "WeeklyBest",
+		title = "🏆 Best Carrot This Week",
+		color = Color3.fromRGB(255, 190, 40),
+		angle = 22.5,
+	},
+	{ id = "BiggestSale", title = "💰 Biggest Sale", color = Color3.fromRGB(110, 220, 90), angle = 157.5 },
+	{ id = "Dex", title = "📖 CarrotDex Masters", color = Color3.fromRGB(80, 170, 255), angle = 292.5 },
+}
+local LEADERBOARD_ROWS = 10
 
 local WorldBuilder = {}
 
@@ -628,6 +647,45 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 		Text = "",
 		TextColor3 = Color3.fromRGB(255, 220, 160),
 	})
+	-- One heart per farm per day
+	local likePrompt = Instance.new("ProximityPrompt")
+	likePrompt.Name = "LikePrompt"
+	likePrompt.ActionText = "Like ❤"
+	likePrompt.ObjectText = "Farm"
+	likePrompt.HoldDuration = 0
+	likePrompt.MaxActivationDistance = 14
+	likePrompt.RequiresLineOfSight = false
+	likePrompt.KeyboardKeyCode = Enum.KeyCode.F
+	likePrompt.Enabled = false
+	likePrompt.Parent = board
+
+	-- Pedestal for the owner's best carrot, in the front corner where passers-by see it
+	local pedestalCF = center * CFrame.new(half - 3.6, 0, -half + 3.6)
+	part({
+		Name = "PedestalBase",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(1.4, 5.4, 5.4),
+		CFrame = pedestalCF * CFrame.new(0, 0.7, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Material = Enum.Material.SmoothPlastic,
+		Color = COLORS.white,
+	}, model)
+	part({
+		Name = "PedestalColumn",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(2.2, 3.6, 3.6),
+		CFrame = pedestalCF * CFrame.new(0, 2.5, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Material = Enum.Material.SmoothPlastic,
+		Color = Color3.fromRGB(255, 230, 150),
+	}, model)
+	local pedestalTop = part({
+		Name = "PedestalTop",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.6, 4.6, 4.6),
+		CFrame = pedestalCF * CFrame.new(0, 3.9, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Material = Enum.Material.Neon,
+		Color = Color3.fromRGB(255, 205, 60),
+	}, model)
+	pedestalTop:SetAttribute("FarmId", id)
 
 	-- Spawn pad just inside the entrance, facing the plots
 	local padPos = (center * CFrame.new(0, 0, -half + 4)).Position
@@ -663,7 +721,92 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 		spawnCFrame = spawnCFrame,
 		signTitle = title,
 		signSubtitle = subtitle,
+		likePrompt = likePrompt,
+		pedestalTop = pedestalTop,
 	}
+end
+
+local function buildLeaderboard(
+	parent: Instance,
+	def: { id: string, title: string, color: Color3, angle: number }
+): LeaderboardBuild
+	local a = math.rad(def.angle)
+	local pos = Vector3.new(math.sin(a) * 50, 0, math.cos(a) * 50)
+	local cf = CFrame.lookAt(pos, Vector3.zero)
+	local model = Instance.new("Model")
+	model.Name = "Leaderboard_" .. def.id
+	for _, x in { -7.4, 7.4 } do
+		part({
+			Name = "Post",
+			Size = Vector3.new(0.8, 14, 0.8),
+			CFrame = cf * CFrame.new(x, 7, 0.3),
+			Material = Enum.Material.Wood,
+			Color = COLORS.darkWood,
+		}, model)
+	end
+	local board = part({
+		Name = "Board",
+		Size = Vector3.new(14, 10, 0.6),
+		CFrame = cf * CFrame.new(0, 8.5, 0),
+		Material = Enum.Material.SmoothPlastic,
+		Color = Color3.fromRGB(255, 248, 230),
+	}, model)
+	local surface = Instance.new("SurfaceGui")
+	surface.Face = Enum.NormalId.Front
+	surface.CanvasSize = Vector2.new(560, 400)
+	surface.LightInfluence = 0.2
+	surface.Parent = board
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, 0, 0, 62)
+	header.BackgroundColor3 = def.color
+	header.BorderSizePixel = 0
+	header.Parent = surface
+	label(header, {
+		Size = UDim2.new(1, -20, 1, -12),
+		Position = UDim2.fromOffset(10, 6),
+		Text = def.title,
+		Font = Enum.Font.LuckiestGuy,
+		TextStrokeTransparency = 0,
+		TextStrokeColor3 = Color3.fromRGB(60, 40, 10),
+	})
+	local rows: { LeaderboardRow } = {}
+	local rowH = (400 - 70) / LEADERBOARD_ROWS
+	for i = 1, LEADERBOARD_ROWS do
+		local y = 66 + (i - 1) * rowH
+		local rankColor = if i == 1
+			then Color3.fromRGB(255, 190, 30)
+			elseif i == 2 then Color3.fromRGB(170, 180, 200)
+			elseif i == 3 then Color3.fromRGB(220, 140, 70)
+			else Color3.fromRGB(120, 100, 80)
+		label(surface, {
+			Position = UDim2.fromOffset(10, y),
+			Size = UDim2.fromOffset(50, rowH - 2),
+			Text = "#" .. i,
+			Font = Enum.Font.LuckiestGuy,
+			TextColor3 = rankColor,
+			TextStrokeTransparency = 1,
+		})
+		local name = label(surface, {
+			Position = UDim2.fromOffset(66, y),
+			Size = UDim2.fromOffset(300, rowH - 2),
+			Text = "",
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextColor3 = Color3.fromRGB(70, 50, 30),
+			TextStrokeTransparency = 1,
+		})
+		local value = label(surface, {
+			Position = UDim2.fromOffset(370, y),
+			Size = UDim2.fromOffset(180, rowH - 2),
+			Text = "",
+			TextXAlignment = Enum.TextXAlignment.Right,
+			Font = Enum.Font.LuckiestGuy,
+			TextColor3 = Color3.fromRGB(40, 150, 40),
+			TextStrokeTransparency = 1,
+		})
+		rows[i] = { name = name, value = value }
+	end
+	model.Parent = parent
+	return { id = def.id, rows = rows }
 end
 
 function WorldBuilder.build(): WorldBuild
@@ -693,8 +836,25 @@ function WorldBuilder.build(): WorldBuild
 		farms[id] = buildFarm(farmsFolder, paths, id)
 	end
 
+	-- Price board anchor above the market (the client renders the live board on it)
+	part({
+		Name = "PriceBoardAnchor",
+		Size = Vector3.new(1, 1, 1),
+		CFrame = CFrame.new(0, 38, 0),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		CastShadow = false,
+	}, world)
+
+	local boards = folder("Leaderboards", world)
+	local leaderboards = {}
+	for _, def in LEADERBOARDS do
+		table.insert(leaderboards, buildLeaderboard(boards, def))
+	end
+
 	assert(#World.PlotCells >= Economy.MaxPlots, "World.PlotCells must cover MaxPlots")
-	return { farms = farms, sellPrompt = sellPrompt, marketCFrame = marketCFrame }
+	return { farms = farms, sellPrompt = sellPrompt, marketCFrame = marketCFrame, leaderboards = leaderboards }
 end
 
 return WorldBuilder

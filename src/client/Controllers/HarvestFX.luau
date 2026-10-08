@@ -313,7 +313,18 @@ local function onHarvest(r: Types.HarvestResult)
 end
 
 local function onSell(r: Types.SellResult)
+	local boom = r.bonus > 1.001
 	local coins = math.clamp(math.floor(3 + math.log10(math.max(1, r.total)) * 2.5), 3, 18)
+	if boom then
+		-- "Sell All under a boom should feel like a jackpot"
+		coins = math.min(30, coins * 2)
+		HUD.banner(
+			string.format("BOOM SALE! x%s", tostring(math.floor(r.bonus * 10 + 0.5) / 10)),
+			Color3.fromRGB(255, 170, 40),
+			3
+		)
+		Sound.play("Legendary", { volume = 0.6, speed = 1.2 })
+	end
 	local from = HUD.centerOf("sell")
 	local to = HUD.centerOf("cash")
 	Sound.play("Sell", { speed = 1 + math.min(0.5, coins / 40), volume = 0.6 })
@@ -382,8 +393,17 @@ local function onAnnounce(a: Types.Announcement)
 	local rarityName = if rarity then string.upper(rarity.name) else a.rarity
 	local carrot: Types.Carrot = { type = a.type, size = a.size, mutations = a.mutations }
 	local name = CarrotInfo.displayName(carrot)
-	local isMe = a.userId == player.UserId
+	local isMe = a.userId == player.UserId and not a.otherServer
 
+	if a.otherServer then
+		HUD.banner(
+			string.format("🌍 %s found a %s %s in another server!", a.playerName, rarityName, name),
+			color,
+			6
+		)
+		Sound.play("Legendary", { volume = 0.4 })
+		return
+	end
 	if a.scope <= 1 then
 		HUD.toast(string.format("%s! %s  (%s)", rarityName, name, Format.cash(a.value)), color, 4)
 		return

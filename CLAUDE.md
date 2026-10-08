@@ -31,9 +31,9 @@ Roblox game built entirely from this repo (Rojo + Luau). The full design doc ("C
 - Economy: next purchase 30–90 s away early, 2–3 min after 30 min, 3–5 min after an hour. Simulate before locking curves.
 
 ## Layout
-- `src/shared` → ReplicatedStorage.Shared (Config, pure logic: Format, Value, Roller, Progression; CarrotInfo, Remotes, Types)
-- `src/server` → ServerScriptService.Server (Services: WorldBuilder, Data, Roll, Farm, Economy, Upgrade, Seeds, Dex, Offline, Announce)
-- `src/client` → StarterPlayerScripts.Client (Controllers: HUD, Shop, Seeds, Dex, Offline, Plot, RevealFX, HarvestFX; Util: UI, Panel, Sound, CarrotModel, CarrotIcon)
+- `src/shared` → ReplicatedStorage.Shared (Config, pure logic: Format, Value, Roller, Progression, EventSchedule; CarrotInfo, Remotes, Types)
+- `src/server` → ServerScriptService.Server (Services: WorldBuilder, Data, Roll, Farm, Economy, Upgrade, Seeds, Dex, Offline, Buffs, Social, Announce, Leaderboards)
+- `src/client` → StarterPlayerScripts.Client (Controllers: HUD, Shop, Seeds, Dex, Offline, Plot, RevealFX, HarvestFX, Farms, MarketBoard; Util: UI, Panel, Sound, CarrotModel, CarrotIcon)
 - `tools/simulate.luau` economy simulation → `tools/simulation-report.md`. Re-run after any balance change.
 - `tests/` Lune specs (`lune run tests`). Pure modules must not use Roblox APIs so Lune can test them.
 - Plot state is replicated via attributes on plot parts; clients render all plots from them.

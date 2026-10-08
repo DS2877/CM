@@ -12,11 +12,14 @@ local Shop = require(Controllers.Shop)
 local Seeds = require(Controllers.Seeds)
 local Dex = require(Controllers.Dex)
 local Offline = require(Controllers.Offline)
+local Farms = require(Controllers.Farms)
+local MarketBoard = require(Controllers.MarketBoard)
 local Plot = require(Controllers.Plot)
 local HarvestFX = require(Controllers.HarvestFX)
 
--- Plots and effects can render before data is loaded.
+-- Plots, pedestals and effects can render before data is loaded.
 Plot.start()
+Farms.start()
 
 local waited = 0
 while player:GetAttribute("Loaded") ~= true and waited < 60 do
@@ -29,3 +32,4 @@ Seeds.start()
 Dex.start()
 HarvestFX.start()
 Offline.start()
+MarketBoard.start()

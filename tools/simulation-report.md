@@ -6,27 +6,27 @@
 
 | Window | Median gap | Purchase moments/run | Target |
 |---|---|---|---|
-| 0-10 min | 25s | 17.7 | 30-90 s |
-| 10-30 min | 1:20 | 13.6 | ~1-2 min |
-| 30-60 min | 2:56 | 8.8 | 2-3 min |
-| 1-2 h | 5:16 | 10.0 | 3-5 min |
-| 2-4 h | 12:23 | 9.3 | soft wall (prestige later) |
+| 0-10 min | 26s | 17.5 | 30-90 s |
+| 10-30 min | 1:11 | 14.2 | ~1-2 min |
+| 30-60 min | 2:41 | 9.5 | 2-3 min |
+| 1-2 h | 5:04 | 10.5 | 3-5 min |
+| 2-4 h | 11:53 | 9.8 | soft wall (prestige later) |
 
 ## Income per minute (median)
 
 | Minute | Income/min |
 |---|---|
 | 1 | $1,365 |
-| 3 | $2,251 |
-| 5 | $3,202 |
-| 10 | $9,034 |
-| 20 | $18.6K |
-| 30 | $34.4K |
-| 60 | $68.7K |
-| 90 | $84.5K |
-| 120 | $99.2K |
-| 180 | $142K |
-| 240 | $119K |
+| 3 | $2,230 |
+| 5 | $2,827 |
+| 10 | $8,738 |
+| 20 | $18.5K |
+| 30 | $28.8K |
+| 60 | $51.5K |
+| 90 | $66.6K |
+| 120 | $80.8K |
+| 180 | $106K |
+| 240 | $125K |
 
 ## First time each rarity appears (median, runs where it appeared)
 
@@ -36,9 +36,9 @@
 | Uncommon | 18s | 24/24 |
 | Rare | 39s | 24/24 |
 | Epic | 1:19 | 24/24 |
-| Legendary | 6:11 | 24/24 |
-| Mythic | 19:04 | 24/24 |
-| Secret | 2:43:44 | 9/24 |
+| Legendary | 6:25 | 24/24 |
+| Mythic | 20:52 | 24/24 |
+| Secret | 2:47:49 | 9/24 |
 
 ## Upgrade levels after 4 h (median)
 
@@ -46,14 +46,15 @@
 |---|---|---|
 | Growth Speed | 22 | 25 |
 | Luck | 18 | 40 |
-| Value | 24 | 100 |
+| Value | 23 | 100 |
 | Farm Size | 4 | 4 |
 | Harvest Power | 18 | 40 |
+| Basket Size | 4 | 5 |
 
 ## Farm Size purchases (median time)
 
-- 6 plots: 5:24 (24/24 runs)
-- 9 plots: 16:43 (24/24 runs)
-- 12 plots: 52:19 (24/24 runs)
-- 16 plots: 2:40:48 (24/24 runs)
+- 6 plots: 5:45 (24/24 runs)
+- 9 plots: 17:39 (24/24 runs)
+- 12 plots: 57:20 (24/24 runs)
+- 16 plots: 2:55:36 (23/24 runs)
 

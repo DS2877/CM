@@ -22,6 +22,9 @@ local Roll = require(script.Parent.Roll)
 local Economy = require(script.Parent.Economy)
 local Upgrade = require(script.Parent.Upgrade)
 local Seeds = require(script.Parent.Seeds)
+local Buffs = require(script.Parent.Buffs)
+local Leaderboards = require(script.Parent.Leaderboards)
+local SocialConfig = require(Config.Social)
 local SeedsConfig = require(Config.Seeds)
 local Dex = require(script.Parent.Dex)
 local Announce = require(script.Parent.Announce)
@@ -56,6 +59,12 @@ for _, t in Upgrades do
 end
 
 local pityOrder = CarrotInfo.rarityOrder(EconomyConfig.PityRarity)
+
+-- Friend bonus (set by the Social service): +10 % luck per friend in the server.
+local function friendLuck(player: Player): number
+	local v = player:GetAttribute("FriendBoost")
+	return 1 + (if typeof(v) == "number" then v else 0)
+end
 
 local function now(): number
 	return workspace:GetServerTimeNow()
@@ -125,7 +134,7 @@ function Farm.rollFor(player: Player, seed: SeedsConfig.SeedDef): Roller.RollRes
 	local data: Data.PlayerData = maybeData
 
 	local ctx: Roller.RollContext = {
-		luck = Upgrade.luck(player) * seed.luck,
+		luck = Upgrade.luck(player) * seed.luck * friendLuck(player),
 		mutationLuck = Upgrade.mutationLuck(player) * seed.mutationLuck,
 		sizeLuck = Upgrade.sizeLuck(player),
 	}
@@ -162,13 +171,17 @@ end
 function Farm.growTimeFor(player: Player, plotIndex: number): number
 	local level = Upgrade.level(player, growthTrack.id)
 	local factor = EconomyConfig.PlotGrowFactors[plotIndex] or 1
-	return Progression.growTime(
+	local t = Progression.growTime(
 		EconomyConfig.BaseGrowTime,
 		EconomyConfig.MinGrowTime,
 		growthTrack,
 		level,
 		factor
 	)
+	if Buffs.isActive(player, "Watered") then
+		t = math.max(EconomyConfig.MinGrowTime, t / (1 + SocialConfig.WaterGrowthBonus))
+	end
+	return t
 end
 
 local function plant(player: Player, plot: PlotRuntime)
@@ -242,6 +255,8 @@ local function harvest(player: Player, plot: PlotRuntime)
 		totalTypes = CarrotInfo.TotalTypes,
 	}
 	Remotes.get(Remotes.Names.HarvestResult):FireClient(player, result)
+	Leaderboards.report(player, "WeeklyBest", value)
+	Leaderboards.report(player, "Dex", found)
 	Announce.harvest(player, carrot, value)
 
 	clearPlot(plot)
@@ -282,6 +297,116 @@ local function pivotCharacter(player: Player, farm: FarmRuntime)
 	end
 end
 
+-- Pedestal + sign: best carrot ever and likes, shown to everyone via farm attributes.
+local function refreshShowcase(farm: FarmRuntime)
+	local model = farm.build.model
+	local owner = farm.owner
+	local data = owner and Data.get(owner)
+	if not owner or not data then
+		model:SetAttribute("BestType", "")
+		model:SetAttribute("BestSize", "")
+		model:SetAttribute("BestMutations", "")
+		model:SetAttribute("BestValue", 0)
+		model:SetAttribute("Likes", 0)
+		farm.build.signSubtitle.Text = ""
+		farm.build.likePrompt.Enabled = false
+		return
+	end
+	model:SetAttribute("BestType", data.Best.Type)
+	model:SetAttribute("BestSize", data.Best.Size)
+	model:SetAttribute("BestMutations", data.Best.Mutations)
+	model:SetAttribute("BestValue", data.Best.Value)
+	model:SetAttribute("Likes", data.Likes)
+	farm.build.signSubtitle.Text = string.format("❤ %d   @%s", data.Likes, owner.Name)
+	farm.build.likePrompt.Enabled = true
+end
+
+local function today(): number
+	return math.floor(os.time() / 86400)
+end
+
+local function onLike(liker: Player, farm: FarmRuntime)
+	local owner = farm.owner
+	local likerData, ownerData = Data.get(liker), owner and Data.get(owner)
+	if not owner or not likerData or not ownerData then
+		return
+	end
+	local notice = Remotes.get(Remotes.Names.Notice)
+	if owner == liker then
+		notice:FireClient(liker, { text = "That's your own farm – ask a friend for a like!" })
+		return
+	end
+	if likerData.LikedToday.Day ~= today() then
+		likerData.LikedToday = { Day = today(), Users = {} }
+	end
+	local key = tostring(owner.UserId)
+	if likerData.LikedToday.Users[key] then
+		notice:FireClient(liker, { text = "You already liked this farm today ❤" })
+		return
+	end
+	likerData.LikedToday.Users[key] = true
+	ownerData.Likes += 1
+	refreshShowcase(farm)
+	notice:FireClient(
+		liker,
+		{ text = string.format("You liked %s's farm! ❤", owner.DisplayName), kind = "good" }
+	)
+	notice:FireClient(
+		owner,
+		{ text = string.format("%s liked your farm! ❤", liker.DisplayName), kind = "good" }
+	)
+end
+
+-- Water a friend: both get faster growth for a while (once per farm per cooldown).
+local waterCooldowns: { [Player]: { [number]: number } } = setmetatable({}, { __mode = "k" }) :: any
+
+local function onWater(player: Player, farmId: number)
+	local farm = farms[farmId]
+	local owner = farm and farm.owner
+	if not farm or not owner or owner == player then
+		return
+	end
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return
+	end
+	if ((root :: BasePart).Position - farm.build.center.Position).Magnitude > SocialConfig.WaterRange then
+		return
+	end
+	local list = waterCooldowns[player]
+	if not list then
+		list = {}
+		waterCooldowns[player] = list
+	end
+	assert(list, "cooldown list")
+	local last = list[owner.UserId]
+	local clock = os.clock()
+	local notice = Remotes.get(Remotes.Names.Notice)
+	if last and clock - last < SocialConfig.WaterCooldown then
+		notice:FireClient(player, {
+			text = string.format(
+				"You can water again in %ds 💧",
+				math.ceil(SocialConfig.WaterCooldown - (clock - last))
+			),
+		})
+		return
+	end
+	list[owner.UserId] = clock
+	Buffs.add(player, "Watered", SocialConfig.WaterSeconds)
+	Buffs.add(owner, "Watered", SocialConfig.WaterSeconds)
+	local pct = math.floor(SocialConfig.WaterGrowthBonus * 100 + 0.5)
+	notice:FireClient(player, {
+		text = string.format("You watered %s's farm! +%d%% growth for both 💧", owner.DisplayName, pct),
+		kind = "good",
+	})
+	notice:FireClient(owner, {
+		text = string.format("%s watered your farm! +%d%% growth for both 💧", player.DisplayName, pct),
+		kind = "good",
+	})
+	Remotes.get(Remotes.Names.Watered):FireAllClients(farm.build.id, player.DisplayName)
+end
+
 local function applyUnlocked(farm: FarmRuntime, count: number)
 	for i, plot in farm.plots do
 		local unlocked = i <= count
@@ -320,6 +445,7 @@ function Farm.onPlayerReady(player: Player)
 	applyUnlocked(farm, Farm.unlockedPlots(player))
 	player:SetAttribute("FarmId", farm.build.id)
 	Farm.syncPity(player)
+	refreshShowcase(farm)
 
 	player.CharacterAdded:Connect(function()
 		task.defer(pivotCharacter, player, farm)
@@ -338,8 +464,8 @@ function Farm.release(player: Player)
 	model:SetAttribute("OwnerUserId", 0)
 	model:SetAttribute("OwnerName", "")
 	farm.build.signTitle.Text = "Free Farm"
-	farm.build.signSubtitle.Text = ""
 	applyUnlocked(farm, 0)
+	refreshShowcase(farm)
 end
 
 function Farm.start(world: WorldBuilder.WorldBuild)
@@ -358,6 +484,29 @@ function Farm.start(world: WorldBuilder.WorldBuild)
 		end
 		table.insert(farms, runtime)
 	end
+
+	for _, farm in farms do
+		farm.build.likePrompt.Triggered:Connect(function(liker)
+			onLike(liker, farm)
+		end)
+	end
+	Economy.onNewBest(function(player)
+		local farm = farmOf[player]
+		if farm then
+			refreshShowcase(farm)
+		end
+	end)
+	local waterLimit = EconomyConfig.RateLimits.WaterFarm
+	local allowWater = RateLimit.new(waterLimit.rate, waterLimit.burst)
+	Remotes.get(Remotes.Names.WaterFarm).OnServerEvent:Connect(function(player, raw: unknown)
+		if not allowWater(player) or typeof(raw) ~= "number" then
+			return
+		end
+		local farmId = raw :: number
+		if farmId == farmId and farmId % 1 == 0 then
+			onWater(player, farmId)
+		end
+	end)
 
 	-- Farm Size upgrade: open the new plots right away (growing plots are kept).
 	Upgrade.onPurchased(function(player, trackId)

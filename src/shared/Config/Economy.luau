@@ -4,7 +4,7 @@
 local Economy = {
 	-- DataStore name. CM_Dev_v1 during development, CM_Live_v1 at soft launch.
 	DataStoreName = "CM_Dev_v1",
-	ProfileVersion = 2,
+	ProfileVersion = 3,
 
 	StartingCash = 20,
 
@@ -40,8 +40,9 @@ local Economy = {
 	StartingPlots = 4,
 	MaxPlots = 16,
 
-	-- Basket (harvested carrots waiting to be sold). If full, harvests auto-sell.
-	BasketCapacity = 200,
+	-- Basket (harvested carrots waiting to be sold). If full, harvests auto-sell at base price.
+	-- Starting capacity; the Basket Size upgrade raises it (Config/Upgrades).
+	BasketCapacity = 40,
 
 	-- Bad-luck protection: guaranteed Legendary or better after this many plantings without one.
 	PityLegendary = 250,
@@ -63,6 +64,7 @@ local Economy = {
 		BuyUpgrade = { rate = 6, burst = 8 },
 		BuySeed = { rate = 6, burst = 8 },
 		SelectSeed = { rate = 4, burst = 6 },
+		WaterFarm = { rate = 3, burst = 4 },
 	},
 }
 
