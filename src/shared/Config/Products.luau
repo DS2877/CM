@@ -1,6 +1,7 @@
 --!strict
--- Game passes and developer products (design doc §8). IDs are 0 until Philip creates them in
--- Creator Hub; the game works without them (buttons say "Coming soon").
+-- Game passes and developer products (design doc §8). The Roblox IDs were created through Open Cloud
+-- by tools/ops/roblox_setup.py (push a branch named ops/* to run it; it only creates what's missing
+-- and writes the IDs back here). An ID of 0 means "not created": the button says "Coming soon".
 -- Rules (design doc §11): everything sold for Robux has KNOWN contents (no Mystery Seeds, no
 -- random rewards), boosts count PLAY time only, no fake countdowns, no offers after a loss.
 -- `price` is only a display fallback: the real price comes from Roblox when the ID is set.

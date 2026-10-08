@@ -22,10 +22,10 @@ Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 5 – soft launch (förberedd,
 | Live-data | Redo | Byt `DataStoreName` i `Config/Economy.luau` från `CM_Dev_v2` till `CM_Live_v1` samma dag som lanseringen. Alla börjar då om rent. |
 
 ### Philip: inför soft launch
-1. **Game passes och developer products:** skapa dem och skicka ID:na (lista under Fas 4).
-2. **Roblox-grupp:** skapa gruppen och skicka grupp-ID:t.
-3. **Max Players = 8** (Places → Settings), eftersom världen har exakt 8 farmer.
-4. **Ikon och thumbnails:** ladda upp (designerna finns). Slå på thumbnail-A/B-test.
+1. ~~Game passes och developer products~~ **Klart (8 okt, via API).** 5 game passes, 5 gåvoprodukter och 10 developer products är skapade och ID:na ligger i `Config/Products.luau`. Butiken säljer på riktigt nu. Logg: `tools/ops/ops-log.md`. Ikonerna är Robloxs standardbild, byt gärna i Creator Hub (Monetization) när du har bilder.
+2. **Roblox-grupp:** skapa gruppen och skicka grupp-ID:t. Grupper går inte att skapa via API.
+3. ~~Max Players = 8~~ **Klart (8 okt, via API).**
+4. **Ikon och thumbnails:** ladda upp (designerna finns). Roblox API:t kan inte ladda upp spelikon eller thumbnails, så det här måste göras i Creator Hub. Slå på thumbnail-A/B-test.
 5. **Frågeformuläret för innehållsmognad** i Creator Hub.
 6. **Lyssna igenom ljuden** och säg till om något ska bytas.
 7. **Speltesta grinden:** plantera, skörda, uppgradera mot 9 plots, vänta in en boom och sälj vid marknaden, lämna 5 min och kom tillbaka (dina planterade morötter ska stå klara, inget extra).
