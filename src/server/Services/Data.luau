@@ -27,6 +27,10 @@ export type PlayerData = {
 	Basket: { [string]: number }, -- carrot key -> count
 	Pity: number,
 	FirstMutationGiven: boolean,
+	Seeds: { [string]: number }, -- seed id -> count (Basic is unlimited, not stored)
+	SelectedSeed: string,
+	DexClaims: { Types: number, Stamps: number }, -- milestones already rewarded
+	LastOnline: number, -- os.time() when last seen, for offline growth
 	Stats: Stats,
 }
 
@@ -40,6 +44,10 @@ local TEMPLATE: PlayerData = {
 	Basket = {},
 	Pity = 0,
 	FirstMutationGiven = false,
+	Seeds = {},
+	SelectedSeed = "Basic",
+	DexClaims = { Types = 0, Stamps = 0 },
+	LastOnline = 0,
 	Stats = {
 		Plantings = 0,
 		Harvests = 0,
@@ -51,7 +59,13 @@ local TEMPLATE: PlayerData = {
 }
 
 -- Migrations: MIGRATIONS[n] upgrades a profile from version n to n + 1.
-local MIGRATIONS: { [number]: (data: PlayerData) -> () } = {}
+local MIGRATIONS: { [number]: (data: PlayerData) -> () } = {
+	-- v1 -> v2 (phase 2): seeds, Dex rewards and offline growth. New fields come from Reconcile;
+	-- old v1 players get no offline basket on their first v2 login.
+	[1] = function(data: PlayerData)
+		data.LastOnline = 0
+	end,
+}
 
 local Data = {}
 

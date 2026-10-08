@@ -6,6 +6,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 local Config = Shared.Config
 local EconomyConfig = require(Config.Economy)
+local Upgrades = require(Config.Upgrades)
+local Progression = require(Shared.Progression)
 local CarrotInfo = require(Shared.CarrotInfo)
 local Remotes = require(Shared.Remotes)
 local Types = require(Shared.Types)
@@ -14,9 +16,25 @@ local RateLimit = require(script.Parent.Parent.Util.RateLimit)
 
 local Economy = {}
 
--- Phase 1: no market events, value upgrades, prestige or boosts yet.
-function Economy.valueContext(_player: Player): CarrotInfo.ValueContext
-	return { market = 1, valueUpgrade = 0, prestige = 1, boosts = 1 }
+local valueTrack: Upgrades.UpgradeDef? = nil
+for _, t in Upgrades do
+	if t.id == "Value" then
+		valueTrack = t
+	end
+end
+
+-- Value upgrade bonus (read straight from data to avoid a require cycle with Upgrade).
+function Economy.valueBonus(player: Player): number
+	local data = Data.get(player)
+	if not data or not valueTrack then
+		return 0
+	end
+	return Progression.bonus(valueTrack, data.Upgrades.Value or 0)
+end
+
+-- Market events (phase 3), prestige (phase 6) and boosts (phase 4) are 1 for now.
+function Economy.valueContext(player: Player): CarrotInfo.ValueContext
+	return { market = 1, valueUpgrade = Economy.valueBonus(player), prestige = 1, boosts = 1 }
 end
 
 function Economy.valueOf(player: Player, carrot: Types.Carrot): number

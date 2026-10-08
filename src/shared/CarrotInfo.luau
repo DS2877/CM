@@ -44,6 +44,7 @@ for _, m in Mutations.List do
 end
 
 CarrotInfo.TotalTypes = #Carrots
+CarrotInfo.TotalStamps = #Carrots * #Mutations.List
 
 function CarrotInfo.type(id: string): CarrotDef?
 	return typeById[id]

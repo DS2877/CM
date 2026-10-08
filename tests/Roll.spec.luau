@@ -28,7 +28,9 @@ local function check(label: string, observed: number, p: number)
 		tolerance = math.max(5 * math.sqrt(expected * (1 - p)), 3)
 	end
 	if math.abs(observed - expected) > tolerance then
-		error(string.format("%s: observed %d, expected %.1f (+/- %.1f)", label, observed, expected, tolerance))
+		error(
+			string.format("%s: observed %d, expected %.1f (+/- %.1f)", label, observed, expected, tolerance)
+		)
 	end
 end
 
@@ -63,13 +65,33 @@ return function()
 		anyMutation += m.chance
 	end
 	check("no mutation", mutationCount.None or 0, 1 - anyMutation)
-	-- Classic and Baby split Common evenly
-	check("type Classic", typeCount.Classic or 0, 0.35)
+	-- Common types split Common evenly by weight
+	local commonWeight, classicWeight = 0, 0
+	for _, c in Carrots do
+		if c.rarity == "Common" then
+			commonWeight += c.weight
+			if c.id == "Classic" then
+				classicWeight = c.weight
+			end
+		end
+	end
+	check("type Classic", typeCount.Classic or 0, 0.70 * classicWeight / commonWeight)
+	-- Every rarity has at least one carrot type
+	for _, r in Rarity do
+		local has = false
+		for _, c in Carrots do
+			has = has or c.rarity == r.id
+		end
+		assert(has, "no carrot type for rarity " .. r.id)
+	end
 
 	-- Pity: minimum rarity is always respected
 	for _ = 1, 2000 do
 		local r = Roller.roll(configs, { minRarityOrder = 5 }, nextNumber)
-		assert(r.rarity == "Legendary" or r.rarity == "Mythic" or r.rarity == "Secret", "pity broke: " .. r.rarity)
+		assert(
+			r.rarity == "Legendary" or r.rarity == "Mythic" or r.rarity == "Secret",
+			"pity broke: " .. r.rarity
+		)
 	end
 	-- Forced mutation
 	local forced = Roller.roll(configs, { forceMutation = "Golden" }, nextNumber)

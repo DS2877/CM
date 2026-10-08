@@ -9,6 +9,9 @@ local Controllers = script.Controllers
 
 local HUD = require(Controllers.HUD)
 local Shop = require(Controllers.Shop)
+local Seeds = require(Controllers.Seeds)
+local Dex = require(Controllers.Dex)
+local Offline = require(Controllers.Offline)
 local Plot = require(Controllers.Plot)
 local HarvestFX = require(Controllers.HarvestFX)
 
@@ -22,4 +25,7 @@ end
 
 HUD.start()
 Shop.start()
+Seeds.start()
+Dex.start()
 HarvestFX.start()
+Offline.start()

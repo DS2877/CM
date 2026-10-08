@@ -26,7 +26,6 @@ local Sound = require(script.Parent.Parent.Util.Sound)
 local player = Players.LocalPlayer
 
 local HUD = {}
-HUD.foundTypes = {} :: { [string]: boolean }
 
 local C = {
 	cash = Color3.fromRGB(110, 240, 90),
@@ -63,12 +62,16 @@ local sellBadgeText: TextLabel
 local sellValue: TextLabel
 local upgradesTile: TextButton
 local upgradesBadge: Frame
+local tiles: { [string]: TextButton } = {}
+local tileHandlers: { [string]: () -> () } = {}
+local tileBadges: { [string]: { frame: Frame, label: TextLabel } } = {}
+local pityFill: Frame
+local pityLabel: TextLabel
 local toastList: Frame
 local bannerLabel: TextLabel
 
 local shownCash = 0
 local targetCash = 0
-local openShop: (() -> ())? = nil
 
 local function attrNumber(name: string): number
 	local v = player:GetAttribute(name)
@@ -289,26 +292,57 @@ local function build()
 	GuiService:GetPropertyChangedSignal("TopbarInset"):Connect(placeGoalBar)
 	topGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(placeGoalBar)
 
-	-- Left tile stack
+	-- Left tile grid (2 columns, like the top simulators)
 	local left = UI.new("Frame", {
 		Name = "Left",
 		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 12, 0.56, 0),
-		Size = UDim2.fromOffset(80, 200),
+		Position = UDim2.new(0, 12, 0.6, 0),
+		Size = UDim2.fromOffset(146, 146),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
-		UI.new("UIListLayout", {
-			Padding = UDim.new(0, 14),
-			VerticalAlignment = Enum.VerticalAlignment.Center,
+		UI.new("UIGridLayout", {
+			CellSize = UDim2.fromOffset(68, 68),
+			CellPadding = UDim2.fromOffset(10, 12),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
 	})
-	upgradesTile = tile("Upgrades", 76, C.upgrade, C.upgradeDark, "Upgrade", "⬆️", "Upgrades")
-	upgradesTile.LayoutOrder = 1
-	upgradesTile.Parent = left
-	upgradesBadge = badge(upgradesTile, C.badge, "!")
-	upgradesBadge.Visible = false
+	type TileDef = { name: string, color: Color3, dark: Color3, icon: string, emoji: string }
+	local tileDefs: { TileDef } = {
+		{ name = "Upgrades", color = C.upgrade, dark = C.upgradeDark, icon = "Upgrade", emoji = "⬆️" },
+		{
+			name = "Seeds",
+			color = Color3.fromRGB(120, 215, 90),
+			dark = Color3.fromRGB(40, 110, 30),
+			icon = "Seeds",
+			emoji = "🌱",
+		},
+		{
+			name = "Index",
+			color = Color3.fromRGB(80, 170, 255),
+			dark = Color3.fromRGB(20, 70, 150),
+			icon = "Index",
+			emoji = "📖",
+		},
+	}
+	for i, d in tileDefs do
+		local name = d.name
+		local t = tile(name, 68, d.color, d.dark, d.icon, d.emoji, name)
+		t.LayoutOrder = i
+		t.Parent = left
+		tiles[name] = t
+		local f, l = badge(t, C.badge, "!")
+		f.Visible = false
+		tileBadges[name] = { frame = f, label = l }
+		t.Activated:Connect(function()
+			local handler = tileHandlers[name]
+			if handler then
+				handler()
+			end
+		end)
+	end
+	upgradesTile = tiles.Upgrades
+	upgradesBadge = tileBadges.Upgrades.frame
 
 	-- Right SELL tile with count badge and value underneath
 	local right = UI.new("Frame", {
@@ -339,7 +373,7 @@ local function build()
 		Name = "Currencies",
 		AnchorPoint = Vector2.new(0, 0),
 		Position = UDim2.new(0, 14, 0, 6),
-		Size = UDim2.fromOffset(260, 84),
+		Size = UDim2.fromOffset(260, 112),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
@@ -385,6 +419,43 @@ local function build()
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = cashRow,
 	}, C.cashDark, 3)
+
+	-- Pity meter: Legendary guaranteed within N plantings
+	local pityRow = UI.new("Frame", {
+		Name = "Pity",
+		Size = UDim2.fromOffset(260, 28),
+		BackgroundTransparency = 1,
+		LayoutOrder = 3,
+		Parent = currencies,
+	})
+	local crown = UI.icon("Crown", "👑")
+	crown.Size = UDim2.fromOffset(28, 28)
+	crown.Parent = pityRow
+	local bar = UI.new("Frame", {
+		Position = UDim2.fromOffset(36, 4),
+		Size = UDim2.fromOffset(170, 20),
+		BackgroundColor3 = Color3.fromRGB(255, 248, 225),
+		Parent = pityRow,
+	}, { UI.corner(10), UI.stroke(C.goalDark, 2.5) })
+	local clip = UI.new("Frame", {
+		Position = UDim2.fromOffset(2, 2),
+		Size = UDim2.new(1, -4, 1, -4),
+		BackgroundTransparency = 1,
+		ClipsDescendants = true,
+		Parent = bar,
+	}, { UI.corner(8) })
+	pityFill = UI.new("Frame", {
+		Size = UDim2.fromScale(0, 1),
+		BackgroundColor3 = Color3.fromRGB(255, 200, 40),
+		Parent = clip,
+	}, { UI.corner(8) })
+	pityLabel = bigText({
+		Position = UDim2.fromOffset(6, 2),
+		Size = UDim2.new(1, -12, 1, -4),
+		Text = "",
+		ZIndex = 2,
+		Parent = bar,
+	}, C.goalDark, 2)
 
 	-- Toasts: big stroked text at the bottom center, between thumbstick and jump button
 	toastList = UI.new("Frame", {
@@ -455,6 +526,31 @@ local function refreshGoal()
 		goalFill.BackgroundColor3 = C.goal
 	end
 	upgradesBadge.Visible = cash >= cost
+end
+
+local function refreshPity()
+	local pity = attrNumber("Pity")
+	local max = attrNumber("PityMax")
+	if max <= 0 then
+		pityLabel.Text = ""
+		return
+	end
+	local left = math.max(1, max - pity)
+	pityLabel.Text = string.format("Legendary in %d", left)
+	UI.tween(pityFill, 0.2, { Size = UDim2.fromScale(math.clamp(pity / max, 0, 1), 1) })
+end
+
+local function refreshSeedTile()
+	local selected = player:GetAttribute("SelectedSeed")
+	local id = if typeof(selected) == "string" then selected else "Basic"
+	local b = tileBadges.Seeds
+	if id ~= "Basic" then
+		b.frame.Visible = true
+		b.frame.BackgroundColor3 = Color3.fromRGB(80, 200, 90)
+		b.label.Text = Format.number(attrNumber("Seed_" .. id))
+	else
+		b.frame.Visible = false
+	end
 end
 
 local function refreshBasket()
@@ -559,8 +655,19 @@ function HUD.scale(): number
 	return screenScale()
 end
 
-function HUD.setShopOpener(fn: () -> ())
-	openShop = fn
+-- What a left tile does when tapped ("Upgrades", "Seeds", "Index").
+function HUD.setTileHandler(name: string, fn: () -> ())
+	tileHandlers[name] = fn
+end
+
+-- Show a badge on a tile (nil hides it).
+function HUD.setTileBadge(name: string, text: string?)
+	local b = tileBadges[name]
+	if b then
+		b.frame.Visible = text ~= nil
+		b.frame.BackgroundColor3 = C.badge
+		b.label.Text = text or ""
+	end
 end
 
 function HUD.start()
@@ -573,20 +680,18 @@ function HUD.start()
 			HUD.toast("Your basket is empty – harvest some carrots first!")
 		end
 	end)
-	upgradesTile.Activated:Connect(function()
-		Sound.play("Click")
-		if openShop then
-			openShop()
-		end
-	end)
+
 	goalButton.Activated:Connect(function()
 		local track, cost = HUD.nextGoal()
 		if track and attrNumber("Cash") >= cost then
 			Remotes.get(Remotes.Names.BuyUpgrade):FireServer(track.id)
 			Sound.play("Purchase")
 			UI.bump(goalButton, 0.1)
-		elseif openShop then
-			openShop()
+		else
+			local handler = tileHandlers.Upgrades
+			if handler then
+				handler()
+			end
 		end
 	end)
 
@@ -598,19 +703,21 @@ function HUD.start()
 			refreshBasket()
 		elseif string.sub(name, 1, 4) == "Upg_" then
 			refreshGoal()
+		elseif name == "Pity" or name == "PityMax" then
+			refreshPity()
+		elseif name == "SelectedSeed" or string.sub(name, 1, 5) == "Seed_" then
+			refreshSeedTile()
 		end
 	end)
 	Remotes.get(Remotes.Names.Notice).OnClientEvent:Connect(HUD.notice)
-	-- CarrotDex screen arrives in phase 2; keep the latest set so nothing queues up.
-	Remotes.get(Remotes.Names.FoundTypes).OnClientEvent:Connect(function(found: { [string]: boolean })
-		HUD.foundTypes = found
-	end)
 
 	shownCash = attrNumber("Cash")
 	targetCash = shownCash
 	cashLabel.Text = Format.cash(shownCash)
 	refreshBasket()
 	refreshGoal()
+	refreshPity()
+	refreshSeedTile()
 
 	-- Cash count-up and attention pulses
 	local t = 0

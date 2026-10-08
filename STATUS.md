@@ -1,6 +1,39 @@
 # STATUS – Carrot Market
 
-Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 1 – spelbar version (byggd, väntar på grind-test)**.
+Senast uppdaterad: 8 okt 2026. Aktuell fas: **Fas 2 – progression (byggd, väntar på grind-test)**. Fas 1 publicerad och UI-justerad efter Philips första test.
+
+## Fas 2 – progression
+
+| Del | Status | Hur det testas |
+|---|---|---|
+| Alla 5 uppgraderingsspår | Klar | UPGRADES-rutan: Growth Speed, Luck, Value, Farm Size, Harvest Power. Varje rad visar nivå, "nu → nästa" och pris. Målbaren pekar alltid på billigaste köpet. |
+| Plots 4 → 6 → 9 → 12 → 16 | Klar | Farm Size-spåret öppnar nya plots direkt (växande morötter behålls). Nya plots säger "TAP TO PLANT". |
+| Frön | Klar | SEEDS-rutan: Rare ($250, aldrig Common, 3× tur), Golden ($2,000, alltid Golden ×3), Mystery ($700, blir Rare 60 % / Golden 37 % / Secret 3 % – oddsen visas), Secret (bara från CarrotDex-belöningar, alltid Legendary+). Köp ×1/×10, USE väljer frö. Priser skalar med Value-uppgraderingen. Bara cash, aldrig Robux. Valt frö används för varje plantering (även auto-omplantering) tills det tar slut. |
+| CarrotDex, två lager | Klar | INDEX-rutan: 24 morotstyper (4 Common, 4 Uncommon, 4 Rare, 4 Epic, 3 Legendary, 3 Mythic, 2 Secret) i 3D. Ej hittade visas som siluett med "???", odds "1 in X" syns alltid. Lager 2: tre mutationsprickar per typ (72 stämplar). Röd "!" på Index när du hittat något nytt. Milstolpar ger frön automatiskt (4 hittade → 5 Rare, 8 → 3 Golden, 12 → 5 Mystery, 16/20/24 → Secret; stämplar 5/15/30/50/72). |
+| Synlig pity-mätare | Klar | 👑-baren uppe till vänster: "Legendary in 123" – garanterad Legendary inom 250 planteringar. |
+| Offline-tillväxt + korg | Klar | Lämna i minst 1 minut och kom tillbaka: "While you were away…" avslöjar morötterna en i taget, snabbare och snabbare, bästa sist. Tak 8 h / 100 morötter. Morötterna ligger i korgen (full korg → säljs automatiskt). Offline används bara Basic-frön. |
+| tools/simulate.luau | Klar | `lune run tools/simulate` → `tools/simulation-report.md`. 24 körningar × 4 h. |
+
+### Simulering (sammanfattning, se tools/simulation-report.md)
+
+| Fönster | Median tid till nästa köp | Mål |
+|---|---|---|
+| 0–10 min | 25 s | 30–90 s |
+| 10–30 min | 1:20 | – |
+| 30–60 min | 2:56 | 2–3 min |
+| 1–2 h | 5:16 | 3–5 min |
+| 2–4 h | 12:23 | mjuk vägg (prestige tar över) |
+
+Första Legendary ~6 min, första Mythic ~19 min, Secret i ~40 % av körningarna inom 4 h. 16 plots nås efter ~2 h 40 min. En gratisspelare når max plots och Mythic utan Robux.
+
+## Grind för fas 2 – be Philip testa
+
+1. Köp några uppgraderingar av olika slag. Känns nästa köp lagom nära?
+2. Köp Farm Size och se nya plots dyka upp.
+3. Öppna SEEDS, köp Rare Seeds, tryck USE och plantera. Pröva Mystery Seed.
+4. Öppna INDEX – syns hittade morötter i färg och oupptäckta som siluetter? Får du frön vid 4 hittade?
+5. Följ pity-mätaren.
+6. Lämna spelet i några minuter, kom tillbaka och se avslöjandet "While you were away…".
 
 ## Fas 1 – tickets
 
@@ -42,11 +75,22 @@ Bra att veta vid test: du kan trycka på dina plots (eller etiketten ovanför) s
 
 ## Beslut tagna under bygget (regel 10)
 
+Fas 2:
+- **Balans efter simulering:** startvärdena gav 117 köp på 10 min och Mythic efter 11 min (Luck kunde nå ×7). Ny kurva: Growth ×1,65/nivå (max 25), Luck +5 %/nivå ×1,65 (max 40 → ×3), Value +10 %/nivå ×1,38, Harvest Power +8 %/nivå ×1,6, Farm Size $1,500 / $20K / $200K / $1,5M.
+- **Fler morotstyper:** fas 1 hade 8, nu 24 (målet ~30) för att Dex ska ha en riktig samlarsvans redan nu.
+- **Fröpriser skalar med Value-uppgraderingen** så frön förblir intressanta hela spelet.
+- **Mystery Seed** är slumpad men köps bara med cash, och oddsen visas (§11).
+- **Offline använder bara Basic-frön** så att ingen förlorar köpta frön medan de är borta.
+- **Profilversion 2** med migrering från v1 (inga data förloras).
+- **UI-fix efter test:** målbaren centreras i toppfältet med säkerhetsmarginal mot Robloxs knappar, valutor uppe till vänster (tumspaken äger nere till vänster), toasts smalare, ljusare barnvänlig palett, partikel-aura på alla morötter som växer med rarity.
+
+Fas 1:
+
 - **Auto-omplantering:** skörd planterar direkt ett nytt Basic-frö, så plots aldrig står tomma (`Economy.AutoReplant`). Färre tryck, samma loop.
 - **Korg redan i fas 1:** skördar går till en korg (tak 200) och säljs med SELL var som helst till fullt pris. Är korgen full säljs moroten direkt. Lagerbeslutet (boom) kommer i fas 3.
 - **8 farmer redan nu:** fas 1 säger "en farm", men flera testare i samma server behöver var sin. Varje spelare får en egen farm vid join (fas 3-tilldelningen är alltså redan gjord i enkel form). **Sätt Max Players = 8 i Creator Hub** så att ingen blir utan farm.
 - **Förskjuten skörd:** varje plot har en egen tidsfaktor (0,85–1,5 × 12 s) plus ±8 % slump → 10–18 s i början.
-- **Pity räknas redan:** Legendary garanteras efter 250 planteringar (osynligt nu, mätaren kommer i fas 2).
+- **Pity:** Legendary garanteras efter 250 planteringar; mätaren syns i HUD sedan fas 2.
 - **Första mutationen:** skriptad Golden på plantering nr 18 om spelaren aldrig fått en (~1–2 min in).
 - **Growth Speed:** −5 % per nivå multiplikativt (0,95^nivå), golv 3 s, kostnad $50 × 1,15^nivå.
 - **Ljud:** inga uppladdade ljud än. Platshållare använder Robloxs inbyggda `rbxasset://sounds/...` (kräver ingen uppladdning); saknas en fil blir det bara tyst.
@@ -65,12 +109,13 @@ Bra att veta vid test: du kan trycka på dina plots (eller etiketten ovanför) s
 | Sounds.Discover / Click | Ny morot, knappar | Tyst |
 | Meshes.Carrot | Morotsmodell | Byggd av primitiva delar |
 | Images.Cash / Carrot / Basket / Upgrade | HUD-ikoner | Emoji-fallback (💵 🥕 🧺 ⬆️) |
+| Images.Seeds / Index / Crown | HUD-ikoner (fas 2) | Emoji-fallback (🌱 📖 👑) |
 | Images.Icon | Spelikon | Saknas |
 
 ## Kvar / kända begränsningar
 
-- Plot-tillstånd sparas inte: växande morötter försvinner när man lämnar (offline-tillväxt + skördekorg kommer i fas 2).
-- Ingen CarrotDex-skärm, pity-mätare eller fler uppgraderingsspår än Growth Speed (fas 2).
+- Morötter som växer när man lämnar räknas inte (offline-skörden räknar från noll med Basic-frön).
+- Fler mutationer (mål 8) och dubbelmutationer kommer med säsonger.
 - Inga marknadsevents/boom (fas 3). Utrop till alla servrar (MessagingService) kommer i fas 3; Mythic/Secret ropas nu bara ut i den egna servern.
 - Upplevelsen bör vara **privat/endast vänner** fram till soft launch – varje push till `main` publicerar.
 - Publiceringsnyckeln behöver Open Cloud-behörigheten `universe-places:write` för universe 10769879996 och en IP-tillåtelse för GitHubs runners (t.ex. `0.0.0.0/0`). 401/403 = nästan alltid något av de två.

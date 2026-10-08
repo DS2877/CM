@@ -143,7 +143,7 @@ function CarrotModel.build(typeId: string, mutations: { string }, scale: number)
 	local model, root = newModel("Carrot")
 	local shape = if def and def.shapeScale then def.shapeScale else 1
 	local length = LENGTH * shape
-	local radius = RADIUS * shape
+	local radius = RADIUS * shape * (if def and def.fatness then def.fatness else 1)
 
 	local bodyColor = if def then CarrotInfo.color(def.bodyColor) else Color3.fromRGB(245, 130, 30)
 	local leafColor = if def then CarrotInfo.color(def.leafColor) else Color3.fromRGB(70, 170, 60)
@@ -158,19 +158,22 @@ function CarrotModel.build(typeId: string, mutations: { string }, scale: number)
 	end
 	local leafMaterial = Enum.Material.SmoothPlastic
 	local reflectance = 0
-	local transparency = 0
+	local transparency = if def and def.transparency then def.transparency else 0
+	local stripeColor = if def and def.stripeColor then CarrotInfo.color(def.stripeColor) else nil
 
 	local mutation = mutations[1]
 	if mutation == "Golden" then
 		bodyColor = Color3.fromRGB(255, 200, 45)
 		material = Enum.Material.SmoothPlastic
 		reflectance = 0.35
+		stripeColor = if stripeColor then Color3.fromRGB(255, 240, 160) else nil
 	elseif mutation == "Frozen" then
 		bodyColor = Color3.fromRGB(175, 225, 255)
 		leafColor = Color3.fromRGB(200, 240, 255)
 		material = Enum.Material.Ice
 		leafMaterial = Enum.Material.Ice
-		transparency = 0.1
+		transparency = math.max(transparency, 0.1)
+		stripeColor = nil
 	end
 
 	local body: { BasePart } = {}
@@ -180,7 +183,7 @@ function CarrotModel.build(typeId: string, mutations: { string }, scale: number)
 		local x = if def and def.twisted then math.sin(i * 1.7) * radius * 0.35 else 0
 		local p = segment(model, root, -(i + 0.5) * segLen, x, segLen + 0.04, d, {
 			Name = "Body",
-			Color = bodyColor,
+			Color = if stripeColor and i % 2 == 1 then stripeColor else bodyColor,
 			Material = material,
 			Reflectance = reflectance,
 			Transparency = transparency,
@@ -214,9 +217,41 @@ function CarrotModel.build(typeId: string, mutations: { string }, scale: number)
 			spike.CFrame = root.CFrame * CFrame.Angles(0, a, 0) * CFrame.new(0, 0.22, radius * 0.8)
 		end
 	end
+	if def and def.spikes then
+		-- Little dragon spikes down both sides
+		for i = 0, SEGMENTS - 2 do
+			for _, side in { -1, 1 } do
+				local spike = newPart(model, root, {
+					Name = "Spike",
+					Color = Color3.fromRGB(255, 200, 60),
+					Size = Vector3.new(0.18, 0.35, 0.5),
+				})
+				local d = radius * (1 - i * 0.16)
+				spike.CFrame = root.CFrame
+					* CFrame.new(side * d, -(i + 0.5) * segLen, 0)
+					* CFrame.Angles(0, 0, side * math.rad(-60))
+			end
+		end
+	end
+	if def and def.fire then
+		local fire = emitter(body[1], {
+			Name = "Fire",
+			Rate = 18,
+			Lifetime = NumberRange.new(0.4, 0.8),
+			Speed = NumberRange.new(2, 4),
+			SpreadAngle = Vector2.new(20, 20),
+			EmissionDirection = Enum.NormalId.Top,
+			Size = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.6),
+				NumberSequenceKeypoint.new(1, 0),
+			}),
+			Color = ColorSequence.new(Color3.fromRGB(255, 220, 80), Color3.fromRGB(255, 60, 30)),
+		})
+		fire.Texture = "rbxasset://textures/particles/fire_main.dds"
+	end
 	if def and def.glow then
 		local light = Instance.new("PointLight")
-		light.Color = Color3.fromRGB(255, 120, 150)
+		light.Color = bodyColor
 		light.Range = 10
 		light.Brightness = 2
 		light.Parent = body[1]

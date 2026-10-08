@@ -1,5 +1,5 @@
 --!strict
--- Upgrades panel. Shows every enabled track with level, effect and a big BUY button.
+-- Upgrades panel: every enabled track with level, what the next level does and a big BUY button.
 -- The server re-checks everything; this only previews with the shared Progression math.
 
 local Players = game:GetService("Players")
@@ -15,6 +15,7 @@ local Remotes = require(Shared.Remotes)
 
 local UI = require(script.Parent.Parent.Util.UI)
 local Sound = require(script.Parent.Parent.Util.Sound)
+local Panel = require(script.Parent.Parent.Util.Panel)
 local HUD = require(script.Parent.HUD)
 
 local player = Players.LocalPlayer
@@ -29,7 +30,12 @@ type Row = {
 	buyText: TextLabel,
 }
 
-local panel: Frame
+local GREEN = Color3.fromRGB(80, 210, 90)
+local GREEN_DARK = Color3.fromRGB(25, 100, 35)
+local GRAY = Color3.fromRGB(170, 170, 185)
+local GRAY_DARK = Color3.fromRGB(90, 90, 105)
+
+local panel: Panel.Panel
 local rows: { Row } = {}
 
 local function attrNumber(name: string): number
@@ -37,166 +43,156 @@ local function attrNumber(name: string): number
 	return if typeof(v) == "number" then v else 0
 end
 
+local function x(n: number): string
+	local s = string.format("%.2f", n)
+	s = string.gsub(s, "0+$", "")
+	s = string.gsub(s, "%.$", "")
+	return "x" .. s
+end
+
+-- "now → next" for each track.
 local function effectText(track: Upgrades.UpgradeDef, level: number): string
-	if track.id == "GrowthSpeed" then
+	local id = track.id
+	if id == "GrowthSpeed" then
 		local now =
 			Progression.growTime(EconomyConfig.BaseGrowTime, EconomyConfig.MinGrowTime, track, level, 1)
 		local nxt =
 			Progression.growTime(EconomyConfig.BaseGrowTime, EconomyConfig.MinGrowTime, track, level + 1, 1)
 		return string.format("Grow time %s → %s", Format.duration(now), Format.duration(nxt))
+	elseif id == "Luck" then
+		return string.format(
+			"Luck %s → %s",
+			x(Progression.multiplier(track, level)),
+			x(Progression.multiplier(track, level + 1))
+		)
+	elseif id == "Value" then
+		return string.format(
+			"Sell price +%d%% → +%d%%",
+			math.floor(Progression.bonus(track, level) * 100 + 0.5),
+			math.floor(Progression.bonus(track, level + 1) * 100 + 0.5)
+		)
+	elseif id == "FarmSize" then
+		return string.format(
+			"Plots %d → %d",
+			Progression.plots(track, level, EconomyConfig.StartingPlots),
+			Progression.plots(track, level + 1, EconomyConfig.StartingPlots)
+		)
+	elseif id == "HarvestPower" then
+		return string.format(
+			"Big carrots %s → %s",
+			x(Progression.multiplier(track, level)),
+			x(Progression.multiplier(track, level + 1))
+		)
 	end
 	return track.description
+end
+
+local function setButton(row: Row, color: Color3, dark: Color3)
+	row.buy.BackgroundColor3 = color
+	local stroke = row.buy:FindFirstChildOfClass("UIStroke")
+	if stroke then
+		stroke.Color = dark
+	end
+	local textStroke = row.buyText:FindFirstChildOfClass("UIStroke")
+	if textStroke then
+		textStroke.Color = dark
+	end
 end
 
 local function refresh()
 	local cash = attrNumber("Cash")
 	for _, row in rows do
 		local level = attrNumber("Upg_" .. row.track.id)
-		row.level.Text = "Level " .. level
+		local max = Progression.maxLevel(row.track)
+		row.level.Text = string.format("Level %d/%d", level, max)
 		if Progression.isMaxed(row.track, level) then
-			row.effect.Text = "Maxed!"
+			row.effect.Text = "MAXED!"
 			row.buyText.Text = "MAX"
-			row.buy.BackgroundColor3 = Color3.fromRGB(110, 110, 120)
+			setButton(row, GRAY, GRAY_DARK)
 		else
 			local cost = Progression.cost(row.track, level)
 			row.effect.Text = effectText(row.track, level)
 			row.buyText.Text = Format.cash(cost)
-			row.buy.BackgroundColor3 = if cash >= cost
-				then Color3.fromRGB(70, 200, 90)
-				else Color3.fromRGB(120, 120, 130)
+			if cash >= cost then
+				setButton(row, GREEN, GREEN_DARK)
+			else
+				setButton(row, GRAY, GRAY_DARK)
+			end
 		end
 	end
 end
 
 local function build()
-	local playerGui = player:WaitForChild("PlayerGui") :: PlayerGui
-	local gui = UI.new("ScreenGui", {
-		Name = "Shop",
-		ResetOnSpawn = false,
-		DisplayOrder = 3,
-		Enabled = false,
-		Parent = playerGui,
+	panel = Panel.new("Upgrades", "Upgrades", Color3.fromRGB(255, 170, 50), Color3.fromRGB(150, 70, 0))
+	UI.new("UIListLayout", {
+		Padding = UDim.new(0, 8),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = panel.body,
 	})
-	local camera = workspace.CurrentCamera
-	local scale: UIScale = UI.new("UIScale", { Parent = gui })
-	local function rescale()
-		scale.Scale = HUD.scale()
-	end
-	rescale()
-	if camera then
-		camera:GetPropertyChangedSignal("ViewportSize"):Connect(rescale)
-	end
-
-	-- Tap outside to close
-	local backdrop: TextButton = UI.new("TextButton", {
-		Name = "Backdrop",
-		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Color3.new(0, 0, 0),
-		BackgroundTransparency = 0.5,
-		Text = "",
-		AutoButtonColor = false,
-		Parent = gui,
+	UI.new("UIPadding", {
+		PaddingTop = UDim.new(0, 4),
+		PaddingBottom = UDim.new(0, 8),
+		PaddingLeft = UDim.new(0, 2),
+		PaddingRight = UDim.new(0, 12),
+		Parent = panel.body,
 	})
 
-	local enabled = {}
-	for _, t in Upgrades do
-		if t.enabled then
-			table.insert(enabled, t)
+	for i, track in Upgrades do
+		if not track.enabled then
+			continue
 		end
-	end
-
-	local rowH = 76
-	panel = UI.new("Frame", {
-		Name = "Panel",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.52),
-		Size = UDim2.fromOffset(460, 70 + #enabled * (rowH + 8) + 8),
-		BackgroundColor3 = Color3.fromRGB(255, 200, 120),
-		Parent = gui,
-	}, {
-		UI.corner(20),
-		UI.stroke(Color3.fromRGB(110, 50, 0), 4),
-		UI.new("UIGradient", {
-			Color = ColorSequence.new(Color3.fromRGB(255, 225, 160), Color3.fromRGB(255, 160, 60)),
-			Rotation = 90,
-		}),
-	})
-	UI.bigText({
-		Position = UDim2.fromOffset(20, 10),
-		Size = UDim2.new(1, -100, 0, 44),
-		Text = "Upgrades",
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = panel,
-	}, Color3.fromRGB(110, 50, 0), 3.5)
-
-	local close: TextButton = UI.new("TextButton", {
-		Name = "Close",
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -10, 0, 10),
-		Size = UDim2.fromOffset(48, 48),
-		BackgroundColor3 = Color3.fromRGB(235, 60, 60),
-		Text = "",
-		Parent = panel,
-	}, { UI.corner(14), UI.stroke(Color3.fromRGB(110, 20, 20), 3) })
-	UI.bigText({
-		Position = UDim2.fromOffset(8, 8),
-		Size = UDim2.new(1, -16, 1, -16),
-		Text = "X",
-		Parent = close,
-	}, Color3.fromRGB(110, 20, 20), 2.5)
-
-	for i, track in enabled do
-		local y = 64 + (i - 1) * (rowH + 8)
+		local color = UI.rgb(track.color)
+		local darkColor = color:Lerp(Color3.new(0, 0, 0), 0.45)
 		local row = UI.new("Frame", {
-			Position = UDim2.fromOffset(12, y),
-			Size = UDim2.new(1, -24, 0, rowH),
-			BackgroundColor3 = Color3.fromRGB(70, 50, 40),
-			Parent = panel,
-		}, { UI.corner(14), UI.stroke(Color3.fromRGB(110, 50, 0), 3) })
+			Size = UDim2.new(1, 0, 0, 74),
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			LayoutOrder = i,
+			Parent = panel.body,
+		}, { UI.corner(16), UI.stroke(darkColor, 3) })
+		-- Emoji badge
+		local badge = UI.new("Frame", {
+			Position = UDim2.fromOffset(8, 8),
+			Size = UDim2.fromOffset(58, 58),
+			BackgroundColor3 = color,
+			Parent = row,
+		}, { UI.corner(14), UI.stroke(darkColor, 2.5) })
+		UI.label({
+			Position = UDim2.fromOffset(8, 8),
+			Size = UDim2.new(1, -16, 1, -16),
+			Text = track.emoji,
+			Font = Enum.Font.GothamBold,
+			Parent = badge,
+		})
 		UI.bigText({
-			Position = UDim2.fromOffset(14, 6),
-			Size = UDim2.new(1, -170, 0, 28),
+			Position = UDim2.fromOffset(76, 6),
+			Size = UDim2.new(1, -240, 0, 26),
 			Text = track.name,
+			TextColor3 = color,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = row,
-		})
+		}, darkColor, 2.5)
 		local level = UI.label({
-			Position = UDim2.fromOffset(14, 34),
-			Size = UDim2.new(1, -170, 0, 18),
+			Position = UDim2.fromOffset(76, 33),
+			Size = UDim2.new(1, -240, 0, 17),
 			Text = "",
 			TextXAlignment = Enum.TextXAlignment.Left,
-			TextColor3 = Color3.fromRGB(255, 200, 120),
+			TextColor3 = Color3.fromRGB(120, 90, 60),
 			Parent = row,
 		})
 		local effect = UI.label({
-			Position = UDim2.fromOffset(14, 53),
-			Size = UDim2.new(1, -170, 0, 17),
+			Position = UDim2.fromOffset(76, 51),
+			Size = UDim2.new(1, -240, 0, 17),
 			Text = "",
 			TextXAlignment = Enum.TextXAlignment.Left,
-			TextColor3 = Color3.fromRGB(210, 210, 225),
+			TextColor3 = Color3.fromRGB(70, 70, 90),
 			Parent = row,
 		})
-		local buy: TextButton = UI.new("TextButton", {
+		local buy, buyText = Panel.button({
 			AnchorPoint = Vector2.new(1, 0.5),
 			Position = UDim2.new(1, -8, 0.5, 0),
-			Size = UDim2.fromOffset(140, rowH - 14),
-			BackgroundColor3 = Color3.fromRGB(70, 200, 90),
-			Text = "",
+			Size = UDim2.fromOffset(150, 58),
 			Parent = row,
-		}, {
-			UI.corner(14),
-			UI.stroke(Color3.fromRGB(20, 60, 20), 3),
-			UI.new("UIGradient", {
-				Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(190, 190, 190)),
-				Rotation = 90,
-			}),
-		})
-		local buyText = UI.bigText({
-			Position = UDim2.fromOffset(8, 8),
-			Size = UDim2.new(1, -16, 1, -16),
-			Text = "",
-			Parent = buy,
-		}, Color3.fromRGB(20, 60, 20), 2.5)
+		}, GREEN, GREEN_DARK, "")
 		buy.Activated:Connect(function()
 			local lvl = attrNumber("Upg_" .. track.id)
 			if Progression.isMaxed(track, lvl) then
@@ -213,32 +209,17 @@ local function build()
 		table.insert(rows, { track = track, level = level, effect = effect, buy = buy, buyText = buyText })
 	end
 
-	local function setOpen(open: boolean)
-		gui.Enabled = open
-		if open then
-			refresh()
-			UI.bump(panel, 0.08)
-		end
-	end
-	backdrop.Activated:Connect(function()
-		setOpen(false)
-	end)
-	close.Activated:Connect(function()
-		setOpen(false)
-	end)
-	HUD.setShopOpener(function()
-		setOpen(not gui.Enabled)
-	end)
+	panel.onOpen = refresh
+	HUD.setTileHandler("Upgrades", panel.toggle)
 end
 
 function Shop.start()
 	build()
 	player.AttributeChanged:Connect(function(name)
-		if name == "Cash" or string.sub(name, 1, 4) == "Upg_" then
+		if panel.isOpen() and (name == "Cash" or string.sub(name, 1, 4) == "Upg_") then
 			refresh()
 		end
 	end)
-	refresh()
 end
 
 return Shop

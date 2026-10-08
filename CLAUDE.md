@@ -27,12 +27,14 @@ Roblox game built entirely from this repo (Rojo + Luau). The full design doc ("C
 - Harvest moment scales with value. Always show the next goal (goal bar). Pity guarantees Legendary.
 - Value = base × size × mutation × market × (1 + valueUpg) × prestige × min(boosts, 6). Shared in `src/shared/Value.luau`.
 - Market gives a decision, never a loss: prices never go below base. Global schedule from `os.time`.
+- UI: mobile first, bright child-friendly colors, chunky simulator style (Luckiest Guy, thick outlines, tiles with badges). Better carrots get more particles (Config/Rarity aura).
 - Economy: next purchase 30–90 s away early, 2–3 min after 30 min, 3–5 min after an hour. Simulate before locking curves.
 
 ## Layout
 - `src/shared` → ReplicatedStorage.Shared (Config, pure logic: Format, Value, Roller, Progression; CarrotInfo, Remotes, Types)
-- `src/server` → ServerScriptService.Server (Services: WorldBuilder, Data, Roll, Farm, Economy, Upgrade, Dex, Announce)
-- `src/client` → StarterPlayerScripts.Client (Controllers: HUD, Shop, Plot, RevealFX, HarvestFX; Util: UI, Sound, CarrotModel)
+- `src/server` → ServerScriptService.Server (Services: WorldBuilder, Data, Roll, Farm, Economy, Upgrade, Seeds, Dex, Offline, Announce)
+- `src/client` → StarterPlayerScripts.Client (Controllers: HUD, Shop, Seeds, Dex, Offline, Plot, RevealFX, HarvestFX; Util: UI, Panel, Sound, CarrotModel, CarrotIcon)
+- `tools/simulate.luau` economy simulation → `tools/simulation-report.md`. Re-run after any balance change.
 - `tests/` Lune specs (`lune run tests`). Pure modules must not use Roblox APIs so Lune can test them.
 - Plot state is replicated via attributes on plot parts; clients render all plots from them.
 

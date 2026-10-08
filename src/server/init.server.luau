@@ -12,28 +12,43 @@ local Data = require(Services.Data)
 local Economy = require(Services.Economy)
 local Upgrade = require(Services.Upgrade)
 local Dex = require(Services.Dex)
+local Seeds = require(Services.Seeds)
 local Farm = require(Services.Farm)
+local Offline = require(Services.Offline)
 
 Remotes.setup()
 local world = WorldBuilder.build()
 
 Economy.start(world.sellPrompt)
 Upgrade.start()
+Seeds.start()
 Farm.start(world)
+Offline.start(function()
+	return Players:GetPlayers()
+end)
 
 local function onPlayerAdded(player: Player)
 	local data = Data.load(player)
 	if not data then
 		return
 	end
+	local lastOnline = Offline.checkIn(player)
 	Economy.sync(player)
 	Upgrade.sync(player)
-	Dex.sync(player)
+	Seeds.sync(player)
+	Dex.onPlayerReady(player)
 	Farm.onPlayerReady(player)
 	player:SetAttribute("Loaded", true)
+	-- Give the client a moment to start its controllers before the offline reveal arrives.
+	task.delay(2, function()
+		if player.Parent then
+			Offline.reveal(player, lastOnline)
+		end
+	end)
 end
 
 local function onPlayerRemoving(player: Player)
+	Offline.touch(player)
 	Farm.release(player)
 	Data.release(player)
 end

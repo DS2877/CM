@@ -133,6 +133,25 @@ function UI.icon(name: string, emoji: string): GuiObject
 	})
 end
 
+-- HUD scale: phones in landscape are ~390 pt tall; bigger on tablets/PC, smaller on tiny screens.
+function UI.screenScale(): number
+	local camera = workspace.CurrentCamera
+	local size = if camera then camera.ViewportSize else Vector2.new(844, 390)
+	return math.clamp(math.min(size.Y / 400, size.X / 760), 0.75, 1.6)
+end
+
+-- Adds a UIScale to a ScreenGui that follows UI.screenScale().
+function UI.autoScale(gui: ScreenGui)
+	local scale: UIScale = UI.new("UIScale", { Parent = gui })
+	scale.Scale = UI.screenScale()
+	local camera = workspace.CurrentCamera
+	if camera then
+		camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+			scale.Scale = UI.screenScale()
+		end)
+	end
+end
+
 function UI.rgb(c: { number }): Color3
 	return Color3.fromRGB(c[1], c[2], c[3])
 end

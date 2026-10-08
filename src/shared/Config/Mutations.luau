@@ -19,6 +19,8 @@ local Mutations = {
 
 	-- Never let luck push the total mutation chance above this.
 	MaxTotalChance = 0.5,
+	-- How much of the Luck upgrade applies to mutation chance: mutationLuck = 1 + (luck - 1) * factor.
+	LuckFactor = 0.5,
 	MaxPerCarrot = 1,
 
 	-- The first mutation is scripted: if a player has never had one, planting number

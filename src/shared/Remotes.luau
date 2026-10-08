@@ -12,12 +12,15 @@ Remotes.Names = {
 	PlotAction = "PlotAction", -- (plotIndex: number)
 	SellAll = "SellAll", -- ()
 	BuyUpgrade = "BuyUpgrade", -- (trackId: string)
+	BuySeed = "BuySeed", -- (seedId: string, amount: number)
+	SelectSeed = "SelectSeed", -- (seedId: string)
 	-- server -> client
 	HarvestResult = "HarvestResult", -- (Types.HarvestResult)
 	SellResult = "SellResult", -- (Types.SellResult)
 	Announce = "Announce", -- (Types.Announcement)
 	Notice = "Notice", -- (Types.Notice)
-	FoundTypes = "FoundTypes", -- ({ [typeId]: true })
+	DexSync = "DexSync", -- (Types.DexState)
+	OfflineReveal = "OfflineReveal", -- (Types.OfflineResult)
 }
 
 local FOLDER_NAME = "Remotes"

@@ -21,6 +21,8 @@ local Data = require(script.Parent.Data)
 local Roll = require(script.Parent.Roll)
 local Economy = require(script.Parent.Economy)
 local Upgrade = require(script.Parent.Upgrade)
+local Seeds = require(script.Parent.Seeds)
+local SeedsConfig = require(Config.Seeds)
 local Dex = require(script.Parent.Dex)
 local Announce = require(script.Parent.Announce)
 local WorldBuilder = require(script.Parent.WorldBuilder)
@@ -101,9 +103,60 @@ local function revealTier(roll: Roller.RollResult): number
 end
 
 function Farm.unlockedPlots(player: Player): number
+	return Upgrade.plots(player)
+end
+
+function Farm.syncPity(player: Player)
 	local data = Data.get(player)
-	local n = if data then data.Plots else EconomyConfig.StartingPlots
-	return math.clamp(n, 1, EconomyConfig.MaxPlots)
+	if data then
+		player:SetAttribute("Pity", data.Pity)
+		player:SetAttribute("PityMax", EconomyConfig.PityLegendary)
+	end
+end
+
+-- One server roll for this player with a seed's effect: upgrades, seed, pity and the scripted
+-- first mutation all apply. Updates pity/first-mutation bookkeeping. Used for planting and for
+-- offline growth.
+function Farm.rollFor(player: Player, seed: SeedsConfig.SeedDef): Roller.RollResult?
+	local maybeData = Data.get(player)
+	if not maybeData then
+		return nil
+	end
+	local data: Data.PlayerData = maybeData
+
+	local ctx: Roller.RollContext = {
+		luck = Upgrade.luck(player) * seed.luck,
+		mutationLuck = Upgrade.mutationLuck(player) * seed.mutationLuck,
+		sizeLuck = Upgrade.sizeLuck(player),
+	}
+	local minOrder = 1
+	if seed.minRarity then
+		minOrder = CarrotInfo.rarityOrder(seed.minRarity)
+	end
+	if data.Pity + 1 >= EconomyConfig.PityLegendary then
+		minOrder = math.max(minOrder, pityOrder)
+	end
+	if minOrder > 1 then
+		ctx.minRarityOrder = minOrder
+	end
+	data.Stats.Plantings += 1
+	if seed.forceMutation then
+		ctx.forceMutation = seed.forceMutation
+	elseif not data.FirstMutationGiven and data.Stats.Plantings >= Mutations.GuaranteedFirstAtPlanting then
+		ctx.forceMutation = Mutations.GuaranteedFirstId
+	end
+
+	local roll = Roll.carrot(ctx)
+	if CarrotInfo.rarityOrder(roll.rarity) >= pityOrder then
+		data.Pity = 0
+	else
+		data.Pity += 1
+	end
+	if #roll.mutations > 0 then
+		data.FirstMutationGiven = true
+	end
+	Farm.syncPity(player)
+	return roll
 end
 
 function Farm.growTimeFor(player: Player, plotIndex: number): number
@@ -119,30 +172,12 @@ function Farm.growTimeFor(player: Player, plotIndex: number): number
 end
 
 local function plant(player: Player, plot: PlotRuntime)
-	local maybeData = Data.get(player)
-	if not maybeData then
+	local seed, seedId = Seeds.consume(player)
+	local maybeRoll = Farm.rollFor(player, seed)
+	if not maybeRoll then
 		return
 	end
-	local data: Data.PlayerData = maybeData
-
-	local ctx: Roller.RollContext = {}
-	if data.Pity + 1 >= EconomyConfig.PityLegendary then
-		ctx.minRarityOrder = pityOrder
-	end
-	data.Stats.Plantings += 1
-	if not data.FirstMutationGiven and data.Stats.Plantings >= Mutations.GuaranteedFirstAtPlanting then
-		ctx.forceMutation = Mutations.GuaranteedFirstId
-	end
-
-	local roll = Roll.carrot(ctx)
-	if CarrotInfo.rarityOrder(roll.rarity) >= pityOrder then
-		data.Pity = 0
-	else
-		data.Pity += 1
-	end
-	if #roll.mutations > 0 then
-		data.FirstMutationGiven = true
-	end
+	local roll: Roller.RollResult = maybeRoll
 
 	local jitter = 1 + (Roll.number() * 2 - 1) * EconomyConfig.GrowJitter
 	local growTime = math.max(EconomyConfig.MinGrowTime, Farm.growTimeFor(player, plot.index) * jitter)
@@ -158,6 +193,7 @@ local function plant(player: Player, plot: PlotRuntime)
 	p:SetAttribute("Mutations", "")
 	p:SetAttribute("Rarity", "")
 	p:SetAttribute("RevealTier", revealTier(roll))
+	p:SetAttribute("Seed", seedId)
 	p:SetAttribute("GrowTime", growTime)
 	p:SetAttribute("PlantedAt", plot.plantedAt)
 	p:SetAttribute("State", "Growing")
@@ -283,6 +319,7 @@ function Farm.onPlayerReady(player: Player)
 	farm.build.signSubtitle.Text = "@" .. player.Name
 	applyUnlocked(farm, Farm.unlockedPlots(player))
 	player:SetAttribute("FarmId", farm.build.id)
+	Farm.syncPity(player)
 
 	player.CharacterAdded:Connect(function()
 		task.defer(pivotCharacter, player, farm)
@@ -321,6 +358,14 @@ function Farm.start(world: WorldBuilder.WorldBuild)
 		end
 		table.insert(farms, runtime)
 	end
+
+	-- Farm Size upgrade: open the new plots right away (growing plots are kept).
+	Upgrade.onPurchased(function(player, trackId)
+		local farm = farmOf[player]
+		if farm and trackId == "FarmSize" then
+			applyUnlocked(farm, Farm.unlockedPlots(player))
+		end
+	end)
 
 	local limit = EconomyConfig.RateLimits.PlotAction
 	local allow = RateLimit.new(limit.rate, limit.burst)

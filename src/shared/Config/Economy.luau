@@ -4,7 +4,7 @@
 local Economy = {
 	-- DataStore name. CM_Dev_v1 during development, CM_Live_v1 at soft launch.
 	DataStoreName = "CM_Dev_v1",
-	ProfileVersion = 1,
+	ProfileVersion = 2,
 
 	StartingCash = 20,
 
@@ -47,6 +47,12 @@ local Economy = {
 	PityLegendary = 250,
 	PityRarity = "Legendary",
 
+	-- Offline growth: plots keep growing while you're away, into a capped harvest basket that is
+	-- revealed one carrot at a time on login (best last). Offline uses Basic seeds only.
+	OfflineCapSeconds = 8 * 3600,
+	OfflineMaxCarrots = 100,
+	OfflineMinSeconds = 60,
+
 	-- Global cap for combined boost multipliers in the value formula.
 	BoostCap = 6,
 
@@ -55,6 +61,8 @@ local Economy = {
 		PlotAction = { rate = 12, burst = 20 },
 		SellAll = { rate = 3, burst = 4 },
 		BuyUpgrade = { rate = 6, burst = 8 },
+		BuySeed = { rate = 6, burst = 8 },
+		SelectSeed = { rate = 4, burst = 6 },
 	},
 }
 

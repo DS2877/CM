@@ -26,6 +26,9 @@ local Assets = {
 		Carrot = "",
 		Basket = "",
 		Upgrade = "",
+		Seeds = "",
+		Index = "",
+		Crown = "",
 		Icon = "",
 	},
 }
