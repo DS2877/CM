@@ -1,0 +1,40 @@
+--!strict
+local Format = require("../src/shared/Format")
+
+local function eq(actual: string, expected: string)
+	if actual ~= expected then
+		error(string.format("expected %q, got %q", expected, actual), 2)
+	end
+end
+
+return function()
+	eq(Format.number(0), "0")
+	eq(Format.number(7), "7")
+	eq(Format.number(999), "999")
+	eq(Format.number(1600), "1,600")
+	eq(Format.number(9999), "9,999")
+	eq(Format.number(10000), "10K")
+	eq(Format.number(12345), "12.3K")
+	eq(Format.number(999999), "999K")
+	eq(Format.number(1000000), "1M")
+	eq(Format.number(4567890), "4.56M")
+	eq(Format.number(7.891e9), "7.89B")
+	eq(Format.number(1.5e12), "1.5T")
+	eq(Format.number(2e15), "2Qa")
+	eq(Format.number(3.33e18), "3.33Qi")
+	eq(Format.number(-12345), "-12.3K")
+	eq(Format.number(0 / 0), "0")
+	eq(Format.cash(1600), "$1,600")
+	eq(Format.cash(2500000), "$2.5M")
+	eq(Format.percent(0.7), "70%")
+	eq(Format.percent(0.025), "2.5%")
+	eq(Format.percent(0.0045), "0.45%")
+	eq(Format.percent(0.00049), "0.049%")
+	eq(Format.percent(0.00001), "0.001%")
+	eq(Format.oneIn(0.0045), "1 in 222")
+	eq(Format.oneIn(0.00001), "1 in 100K")
+	eq(Format.duration(9.24), "9.2s")
+	eq(Format.duration(42), "42s")
+	eq(Format.duration(75), "1:15")
+	eq(Format.duration(3725), "1:02:05")
+end

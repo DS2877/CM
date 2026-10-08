@@ -1,0 +1,7 @@
+# Toolchain for Carrot Market. Install locally with `rokit install`.
+# CI installs the same pinned versions via tools/install-tools.sh — keep both in sync.
+[tools]
+rojo = "rojo-rbx/rojo@7.4.4"
+stylua = "JohnnyMorganz/StyLua@2.0.2"
+selene = "Kampfkarren/selene@0.28.0"
+lune = "lune-org/lune@0.8.9"
