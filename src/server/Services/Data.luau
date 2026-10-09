@@ -137,6 +137,15 @@ local MIGRATIONS: { [number]: (data: PlayerData) -> () } = {
 	end,
 	-- v5 -> v6: on/off switches for bought perks (all on by default). Filled by Reconcile.
 	[5] = function(_data: PlayerData) end,
+	-- v6 -> v7: Farm Size (8 steps, 6..36 plots) became Farm Level (20 levels, 4..36 plots).
+	-- Keep at least as many plots: old step -> the first new level with that many plots.
+	[6] = function(data: PlayerData)
+		local OLD_TO_NEW = { 2, 5, 7, 10, 12, 15, 17, 19 }
+		local old = data.Upgrades.FarmSize or 0
+		if old > 0 then
+			data.Upgrades.FarmSize = OLD_TO_NEW[math.min(old, #OLD_TO_NEW)]
+		end
+	end,
 }
 
 local Data = {}

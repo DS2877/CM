@@ -29,13 +29,16 @@ return function()
 	local floor = Progression.growTime(Economy.BaseGrowTime, Economy.MinGrowTime, growth, 200, 1)
 	assert(floor == Economy.MinGrowTime, "grow time never below floor")
 
-	-- First purchase reachable quickly: starting cash + four smallest carrots >= first cost.
-	assert(Economy.StartingCash + 4 * 8 >= Progression.cost(growth, 0), "first upgrade within ~4 harvests")
+	-- First purchase is a real goal (not one carrot) but inside the first basket: 40 Commons pay it.
+	local first = Progression.cost(growth, 0)
+	assert(first > Economy.StartingCash + 4 * 10, "first upgrade takes more than a few carrots")
+	assert(first <= Economy.BasketCapacity * 10 * 2, "first upgrade within one starting basket")
 
-	-- Farm Size: explicit costs and plot counts, 4 -> 6 -> 9 -> 12 -> 16 -> 20 -> 25 -> 30 -> 36
+	-- Farm Level (FarmSize track): 20 levels, 4 plots at level 1 -> 36 at level 20
 	local farm = track("FarmSize")
 	local top = Progression.maxLevel(farm)
-	assert(top == 8, "farm size has 8 levels")
+	assert(top == 19, "farm levels 1..20")
+	assert(#(farm.levels :: { number }) == top, "a plot count for every farm level")
 	assert(Progression.plots(farm, 0, Economy.StartingPlots) == 4, "4 plots at start")
 	assert(Progression.plots(farm, top, Economy.StartingPlots) == Economy.MaxPlots, "36 plots at max")
 	assert(Progression.isMaxed(farm, top) and not Progression.isMaxed(farm, top - 1), "farm size max")

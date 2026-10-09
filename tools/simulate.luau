@@ -30,7 +30,8 @@ local Events = require("../src/shared/Config/Events")
 local RUNS = 24
 local DURATION = 4 * 3600
 local REACTION = 0.8
-local PLANT_TAP = 0.6 -- harvest no longer auto-replants: one more tap per plot
+-- Harvest no longer auto-replants, and you have to walk to each plot: harvest, plant, step on.
+local PLANT_TAP = 1.6
 -- Farm -> green circle -> Upgrade Shop -> farm at WalkSpeed 22: ~105 studs each way plus a few
 -- seconds on the plaza.
 local TRIP = 14
@@ -38,6 +39,7 @@ local TRIP = 14
 type Purchase = { t: number, track: string, level: number, cost: number }
 type RunResult = {
 	purchases: { Purchase },
+	buysPerTrip: { number }, -- upgrades bought on each market trip, first 15 minutes
 	incomeByMinute: { number },
 	firstRarity: { [string]: number },
 	levels: { [string]: number },
@@ -94,6 +96,7 @@ local function simulate(seed: number): RunResult
 	local purchases: { Purchase } = {}
 	local incomeByMinute: { number } = {}
 	local firstRarity: { [string]: number } = {}
+	local buysPerTrip: { number } = {}
 
 	local function growTime(plot: number): number
 		local factor = Economy.PlotGrowFactors[plot] or 1
@@ -224,7 +227,11 @@ local function simulate(seed: number): RunResult
 			local minute = math.floor(sellAt / 60) + 1
 			incomeByMinute[minute] = (incomeByMinute[minute] or 0) + basketValue
 			basketCount, basketValue = 0, 0
+			local before = #purchases
 			buyAll(sellAt)
+			if sellAt < 900 then
+				table.insert(buysPerTrip, #purchases - before)
+			end
 			busyUntil = t + TRIP
 			trips += 1
 		end
@@ -232,6 +239,7 @@ local function simulate(seed: number): RunResult
 
 	return {
 		purchases = purchases,
+		buysPerTrip = buysPerTrip,
 		incomeByMinute = incomeByMinute,
 		firstRarity = firstRarity,
 		levels = levels,
@@ -397,6 +405,31 @@ for level = 1, Progression.maxLevel(fs4) do
 	)
 end
 out("")
+
+do
+	-- What Philip felt: one full basket buying a pile of upgrades. A full-basket trip should buy 1-3.
+	local full, all = {}, {}
+	for _, r in results do
+		for _, n in r.buysPerTrip do
+			table.insert(all, n)
+		end
+	end
+	for _, r in results do
+		local worst = 0
+		for _, n in r.buysPerTrip do
+			worst = math.max(worst, n)
+		end
+		table.insert(full, worst)
+	end
+	out(
+		string.format(
+			"Upgrades bought per market trip, first 15 min: median %.1f, worst trip per run (median) %.0f",
+			median(all),
+			median(full)
+		)
+	)
+	out("")
+end
 
 do
 	local perHour = {}

@@ -22,6 +22,10 @@ export type FarmBuild = {
 	-- Legendary board by the gate (both faces): count text + fill bar, written by the server
 	pityTexts: { TextLabel },
 	pityFills: { Frame },
+	-- Farm Level board left of the gate (both faces) and the pad in front of it
+	levelTexts: { level: { TextLabel }, next: { TextLabel } },
+	levelPad: Vector3,
+	half: number,
 }
 
 export type LeaderboardRow = { name: TextLabel, value: TextLabel }
@@ -980,15 +984,15 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 	for _, x in { -gateHalf, gateHalf } do
 		part({
 			Name = "GatePost",
-			Size = Vector3.new(1.1, 10.5, 1.1),
-			CFrame = gateCF * CFrame.new(x, 5.25, 0),
+			Size = Vector3.new(1.1, 14.5, 1.1),
+			CFrame = gateCF * CFrame.new(x, 7.25, 0),
 			Material = Enum.Material.Wood,
 			Color = COLORS.darkWood,
 		}, model)
 		part({
 			Name = "GatePostCap",
 			Size = Vector3.new(1.5, 0.5, 1.5),
-			CFrame = gateCF * CFrame.new(x, 10.75, 0),
+			CFrame = gateCF * CFrame.new(x, 14.75, 0),
 			Material = Enum.Material.Wood,
 			Color = identity,
 		}, model)
@@ -996,21 +1000,22 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 	part({
 		Name = "GateBeam",
 		Size = Vector3.new(gateHalf * 2 + 1.6, 0.7, 0.9),
-		CFrame = gateCF * CFrame.new(0, 10.1, 0),
+		CFrame = gateCF * CFrame.new(0, 14.1, 0),
 		Material = Enum.Material.Wood,
 		Color = COLORS.darkWood,
 	}, model)
 	local board = part({
 		Name = "SignBoard",
 		Size = Vector3.new(gateHalf * 2 - 1.4, 3.2, 0.5),
-		CFrame = gateCF * CFrame.new(0, 8, -0.1),
+		-- High over the path: the camera behind you (spawn, walking in) looks under it.
+		CFrame = gateCF * CFrame.new(0, 12, -0.1),
 		Material = Enum.Material.SmoothPlastic,
 		Color = identity,
 	}, model)
 	part({
 		Name = "SignFrame",
 		Size = Vector3.new(gateHalf * 2 - 0.8, 3.8, 0.35),
-		CFrame = gateCF * CFrame.new(0, 8, 0.15),
+		CFrame = gateCF * CFrame.new(0, 12, 0.15),
 		Material = Enum.Material.Wood,
 		Color = COLORS.cream,
 	}, model)
@@ -1124,6 +1129,117 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 		table.insert(pityTexts, text)
 		table.insert(pityFills, fill)
 	end
+
+	-- Farm Level board left of the gate (mirror of the Legendary board): everyone can read how far
+	-- this farm has come. Standing on the pad in front of it opens the Farm Level panel (owner).
+	local levelCF = gateCF * CFrame.new(-(gateHalf + 6.5), 0, -1.2)
+	for _, x in { -2.8, 2.8 } do
+		part({
+			Name = "LevelPost",
+			Size = Vector3.new(0.6, 6.6, 0.6),
+			CFrame = levelCF * CFrame.new(x, 3.3, 0),
+			Material = Enum.Material.Wood,
+			Color = COLORS.darkWood,
+		}, model)
+	end
+	local levelBoard = part({
+		Name = "LevelBoard",
+		Size = Vector3.new(6.4, 3.8, 0.4),
+		CFrame = levelCF * CFrame.new(0, 4.6, 0),
+		Material = Enum.Material.WoodPlanks,
+		Color = COLORS.wood,
+	}, model)
+	part({
+		Name = "LevelRoof",
+		Size = Vector3.new(7.2, 0.4, 1.2),
+		CFrame = levelCF * CFrame.new(0, 6.7, 0),
+		Material = Enum.Material.Wood,
+		Color = identity,
+	}, model)
+	local levelTexts = { level = {} :: { TextLabel }, next = {} :: { TextLabel } }
+	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = face
+		gui.CanvasSize = Vector2.new(320, 190)
+		gui.LightInfluence = 0.3
+		gui.MaxDistance = 140
+		gui.Parent = levelBoard
+		label(gui, {
+			Name = "Title",
+			Size = UDim2.new(1, -20, 0, 36),
+			Position = UDim2.fromOffset(10, 6),
+			Text = "🏡 FARM LEVEL",
+			Font = Enum.Font.LuckiestGuy,
+			TextColor3 = Color3.fromRGB(255, 230, 150),
+			TextStrokeColor3 = Color3.fromRGB(80, 45, 10),
+			TextStrokeTransparency = 0,
+		})
+		table.insert(
+			levelTexts.level,
+			label(gui, {
+				Name = "Level",
+				Size = UDim2.new(1, -20, 0, 76),
+				Position = UDim2.fromOffset(10, 42),
+				Text = "1",
+				Font = Enum.Font.LuckiestGuy,
+				TextColor3 = COLORS.white,
+				TextStrokeColor3 = Color3.fromRGB(80, 45, 10),
+				TextStrokeTransparency = 0,
+			})
+		)
+		table.insert(
+			levelTexts.next,
+			label(gui, {
+				Name = "Next",
+				Size = UDim2.new(1, -20, 0, 56),
+				Position = UDim2.fromOffset(10, 124),
+				Text = "",
+				TextColor3 = Color3.fromRGB(255, 240, 210),
+				TextStrokeColor3 = Color3.fromRGB(80, 45, 10),
+				TextStrokeTransparency = 0.2,
+			})
+		)
+	end
+	-- The pad: a round wooden step with a hammer sign, in front of the board
+	local levelPadPos = (levelCF * CFrame.new(0, 0, -World.FarmLevelPadOffset)).Position
+	local levelPad =
+		disc("LevelPad", levelPadPos + Vector3.new(0, 0.24, 0), World.FarmLevelPadRadius * 2, 0.24, {
+			Material = Enum.Material.SmoothPlastic,
+			Color = COLORS.gold,
+			CanCollide = false,
+			CastShadow = false,
+		}, model)
+	levelPad:SetAttribute("FarmId", id)
+	disc("LevelPadInner", levelPadPos + Vector3.new(0, 0.3, 0), World.FarmLevelPadRadius * 2 - 0.9, 0.26, {
+		Material = Enum.Material.SmoothPlastic,
+		Color = identity,
+		CanCollide = false,
+		CastShadow = false,
+	}, model)
+	local padSign = part({
+		Name = "LevelPadPlate",
+		Size = Vector3.new(World.FarmLevelPadRadius * 1.5, 0.05, World.FarmLevelPadRadius * 1.5),
+		CFrame = CFrame.lookAt(
+			levelPadPos + Vector3.new(0, 0.36, 0),
+			levelPadPos + Vector3.new(0, 0.36, 0) + gateCF.LookVector
+		) * CFrame.Angles(0, math.pi, 0),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+	}, model)
+	local padGui = Instance.new("SurfaceGui")
+	padGui.Face = Enum.NormalId.Top
+	padGui.CanvasSize = Vector2.new(200, 200)
+	padGui.LightInfluence = 0.2
+	padGui.Parent = padSign
+	label(padGui, {
+		Size = UDim2.fromScale(1, 1),
+		Text = "⬆\nLEVEL UP",
+		Font = Enum.Font.LuckiestGuy,
+		TextColor3 = COLORS.white,
+		TextStrokeColor3 = Color3.fromRGB(60, 40, 10),
+		TextStrokeTransparency = 0,
+	})
 
 	-- Pedestal for the owner's best carrot, in the front corner where passers-by see it
 	local pedestalCF = center * CFrame.new(half - 3.6, 0, -half + 3.6)
@@ -1243,6 +1359,9 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 		pedestalTop = pedestalTop,
 		pityTexts = pityTexts,
 		pityFills = pityFills,
+		levelTexts = levelTexts,
+		levelPad = levelPadPos,
+		half = half,
 	}
 end
 

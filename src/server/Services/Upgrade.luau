@@ -55,6 +55,11 @@ function Upgrade.sizeLuck(player: Player): number
 	return Progression.multiplier(Upgrade.track("HarvestPower"), Upgrade.level(player, "HarvestPower"))
 end
 
+-- Farm level (1 = a fresh farm) = FarmSize track level + 1.
+function Upgrade.farmLevel(player: Player): number
+	return Upgrade.level(player, "FarmSize") + 1
+end
+
 function Upgrade.plots(player: Player): number
 	local n = Progression.plots(
 		Upgrade.track("FarmSize"),
@@ -112,13 +117,29 @@ function Upgrade.setLevel(player: Player, id: string, level: number)
 	end
 end
 
+-- Farm Level is bought at the player's own farm sign; the Farm service tells us where that is.
+local atFarmSign: (player: Player) -> boolean = function(_player: Player)
+	return false
+end
+function Upgrade.setFarmSignCheck(fn: (player: Player) -> boolean)
+	atFarmSign = fn
+end
+
 function Upgrade.buy(player: Player, id: string): boolean
 	local data = Data.get(player)
 	local track = trackById[id]
 	if not data or not track or not track.enabled then
 		return false
 	end
-	if not Upgrade.atShop(player) then
+	if track.soldAt == "farm" then
+		if not atFarmSign(player) then
+			Remotes.get(Remotes.Names.Notice):FireClient(player, {
+				text = "Level up your farm at the sign by your farm gate 🏡",
+				kind = "info",
+			})
+			return false
+		end
+	elseif not Upgrade.atShop(player) then
 		Remotes.get(Remotes.Names.Notice):FireClient(player, {
 			text = "Upgrades are sold at the Upgrade Shop by the market ⬆",
 			kind = "info",
@@ -141,7 +162,7 @@ function Upgrade.buy(player: Player, id: string): boolean
 	Upgrade.sync(player)
 	local text = string.format("%s upgraded to level %d!", track.name, level + 1)
 	if id == "FarmSize" then
-		text = string.format("Your farm grew to %d plots!", Upgrade.plots(player))
+		text = string.format("Farm level %d! %d plots", level + 2, Upgrade.plots(player))
 	end
 	Remotes.get(Remotes.Names.Notice):FireClient(player, { text = text, kind = "good" })
 	for _, cb in purchasedCallbacks do

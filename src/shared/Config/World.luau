@@ -61,6 +61,13 @@ local World = {
 	UpgradePadOffset = 6.5, -- the pad sits this far in front of the stall (toward the market)
 	UpgradePadRadius = 4.5, -- standing on the pad opens the Upgrades panel
 	UpgradeServerSlack = 5, -- extra distance the server accepts (lag)
+	-- Farm Level board left of each farm gate; stand on its pad to open the Farm Level panel.
+	FarmLevelPadOffset = 4.2, -- pad center in front of the board (toward the plaza)
+	FarmLevelPadRadius = 2.6,
+	FarmLevelServerSlack = 4,
+	-- Plots: you walk to a plot to plant or harvest it (flat distance from you to the plot center).
+	PlotReach = 9,
+	PlotReachSlack = 4, -- extra the server accepts (lag)
 	WalkSpeed = 22, -- a bit faster than Roblox's 16: trips to the market feel snappy
 
 	TreeCount = 46,

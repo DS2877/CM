@@ -34,6 +34,10 @@ local Announce = require(script.Parent.Announce)
 local Launch = require(script.Parent.Launch)
 local Daily = require(script.Parent.Daily)
 local WorldBuilder = require(script.Parent.WorldBuilder)
+local FarmDecor = require(script.Parent.FarmDecor)
+local FarmLevels = require(Config.FarmLevels)
+local World = require(Config.World)
+local Format = require(Shared.Format)
 local RateLimit = require(script.Parent.Parent.Util.RateLimit)
 
 type PlotRuntime = {
@@ -118,6 +122,19 @@ end
 
 function Farm.unlockedPlots(player: Player): number
 	return Upgrade.plots(player)
+end
+
+-- Can the player reach this plot from where they stand? (you walk to each plot)
+local function inReach(player: Player, plot: PlotRuntime): boolean
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return false
+	end
+	local p = (root :: BasePart).Position
+	local q = plot.part.Position
+	local d = Vector3.new(p.X - q.X, 0, p.Z - q.Z).Magnitude
+	return d <= World.PlotReach + World.PlotReachSlack
 end
 
 -- The farm's Legendary board (a physical sign everyone can read). Written only when the count
@@ -393,7 +410,7 @@ local function onPlotAction(player: Player, index: number)
 		return
 	end
 	local plot = farm.plots[index]
-	if not plot then
+	if not plot or not inReach(player, plot) then
 		return
 	end
 	if plot.state == "Empty" then
@@ -530,6 +547,47 @@ local function onWater(player: Player, farmId: number)
 	Daily.progress(player, "water")
 end
 
+-- Farm Level: the decor everyone sees, the level board left of the gate and the gate subtitle.
+local function applyLevel(farm: FarmRuntime)
+	local build = farm.build
+	local owner = farm.owner
+	local level = if owner then Upgrade.farmLevel(owner) else 1
+	FarmDecor.apply(build.model, build.center, build.half, level)
+	local nextText = "Free farm"
+	if owner then
+		local track = Upgrade.track("FarmSize")
+		local trackLevel = level - 1
+		if Progression.isMaxed(track, trackLevel) then
+			nextText = "MAX LEVEL! 👑"
+		else
+			local unlock = FarmLevels.at(level + 1)[1]
+			local what = if unlock then unlock.emoji .. " " .. unlock.name else "more plots"
+			nextText = string.format("Next: %s\n%s", what, Format.cash(Progression.cost(track, trackLevel)))
+		end
+		build.signSubtitle.Text = string.format("⭐ LV %d  ·  @%s", level, owner.Name)
+	end
+	for _, t in build.levelTexts.level do
+		t.Text = if owner then tostring(level) else "-"
+	end
+	for _, t in build.levelTexts.next do
+		t.Text = nextText
+	end
+end
+
+-- Is the player standing at their own farm's Farm Level pad? (server check for buying)
+function Farm.atLevelPad(player: Player): boolean
+	local farm = farmOf[player]
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not farm or not root or not root:IsA("BasePart") then
+		return false
+	end
+	local p = (root :: BasePart).Position
+	local pad = farm.build.levelPad
+	local d = Vector3.new(p.X - pad.X, 0, p.Z - pad.Z).Magnitude
+	return d <= World.FarmLevelPadRadius + World.FarmLevelServerSlack
+end
+
 local function applyUnlocked(farm: FarmRuntime, count: number)
 	for i, plot in farm.plots do
 		local unlocked = i <= count
@@ -566,6 +624,7 @@ function Farm.onPlayerReady(player: Player)
 	farm.build.signTitle.Text = player.DisplayName .. "'s Farm"
 	farm.build.signSubtitle.Text = "@" .. player.Name
 	applyUnlocked(farm, Farm.unlockedPlots(player))
+	applyLevel(farm)
 	player:SetAttribute("FarmId", farm.build.id)
 	Farm.syncPity(player)
 	refreshShowcase(farm)
@@ -620,6 +679,7 @@ function Farm.refresh(player: Player)
 		clearPlot(plot)
 	end
 	applyUnlocked(farm, Farm.unlockedPlots(player))
+	applyLevel(farm)
 	refreshShowcase(farm)
 	Farm.syncPity(player)
 end
@@ -729,7 +789,9 @@ function Farm.release(player: Player)
 	model:SetAttribute("OwnerName", "")
 	writePityBoard(farm.build, nil)
 	farm.build.signTitle.Text = "Free Farm"
+	farm.build.signSubtitle.Text = ""
 	applyUnlocked(farm, 0)
+	applyLevel(farm)
 	refreshShowcase(farm)
 end
 
@@ -749,7 +811,9 @@ function Farm.start(world: WorldBuilder.WorldBuild)
 		end
 		writePityBoard(build, nil)
 		table.insert(farms, runtime)
+		applyLevel(runtime)
 	end
+	Upgrade.setFarmSignCheck(Farm.atLevelPad)
 
 	for _, farm in farms do
 		farm.build.likePrompt.Triggered:Connect(function(liker)
@@ -774,11 +838,12 @@ function Farm.start(world: WorldBuilder.WorldBuild)
 		end
 	end)
 
-	-- Farm Size upgrade: open the new plots right away (growing plots are kept).
+	-- Farm Level: open the new plots right away (growing plots are kept) and grow the decor.
 	Upgrade.onPurchased(function(player, trackId)
 		local farm = farmOf[player]
 		if farm and trackId == "FarmSize" then
 			applyUnlocked(farm, Farm.unlockedPlots(player))
+			applyLevel(farm)
 		end
 	end)
 

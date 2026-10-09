@@ -19,6 +19,7 @@ local UI = require(script.Parent.Parent.Util.UI)
 local Sound = require(script.Parent.Parent.Util.Sound)
 local CarrotModel = require(script.Parent.Parent.Util.CarrotModel)
 local RevealFX = require(script.Parent.RevealFX)
+local HUD = require(script.Parent.HUD)
 
 local player = Players.LocalPlayer
 
@@ -43,6 +44,7 @@ type View = {
 	reveal: RevealFX.Handle,
 	dirt: ParticleEmitter?,
 	billboard: BillboardGui?,
+	inReach: boolean?,
 	barFill: Frame?,
 	barText: TextLabel?,
 	bobPhase: number,
@@ -175,6 +177,7 @@ local function ensureBillboard(view: View)
 		Parent = bg,
 	}, COLORS.outline, 2.5)
 	view.billboard = bb
+	view.inReach = nil
 	view.barFill = fill
 	view.barText = text
 end
@@ -331,6 +334,35 @@ local function addPlot(part: BasePart)
 	refresh(view)
 end
 
+local function myRootPosition(): Vector3?
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	return if root and root:IsA("BasePart") then root.Position else nil
+end
+
+-- You walk to a plot to plant or harvest it (the server checks the same distance).
+local function reachable(view: View, rootPos: Vector3?): boolean
+	if not rootPos then
+		return false
+	end
+	local q = view.part.Position
+	return Vector3.new(rootPos.X - q.X, 0, rootPos.Z - q.Z).Magnitude <= World.PlotReach
+end
+
+-- Plots in reach get a big, bright button; the rest a small, dimmer status pill.
+local function styleReach(view: View, inReach: boolean)
+	local bb = view.billboard
+	if not bb or view.inReach == inReach then
+		return
+	end
+	view.inReach = inReach
+	bb.Size = if inReach then UDim2.new(4.2, 0, 1.15, 0) else UDim2.new(2.8, 0, 0.7, 0)
+	local button = bb:FindFirstChildOfClass("TextButton")
+	if button then
+		button.BackgroundTransparency = if inReach then 0 else 0.35
+	end
+end
+
 local function backOut(t: number): number
 	local c1 = 1.70158
 	local c3 = c1 + 1
@@ -342,10 +374,14 @@ local function update()
 	local clock = os.clock()
 	local camera = workspace.CurrentCamera
 	local camPos = if camera then camera.CFrame.Position else Vector3.zero
+	local rootPos = myRootPosition()
 
 	for _, view in views do
 		if not view.unlocked then
 			continue
+		end
+		if view.billboard then
+			styleReach(view, reachable(view, rootPos))
 		end
 		local near = (view.part.Position - camPos).Magnitude < 220
 
@@ -489,6 +525,11 @@ function actOn(view: View)
 		return
 	end
 	lastTap = clock
+	if not reachable(view, myRootPosition()) then
+		Sound.play("Denied")
+		pcall(HUD.toast, "Walk over to that plot first! 🚶", nil, 1.5)
+		return
+	end
 	if view.state == "Empty" then
 		Sound.play("Plant")
 		dirtPuff(view, 8)

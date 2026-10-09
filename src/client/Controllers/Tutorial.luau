@@ -139,14 +139,24 @@ local function build()
 		Parent = playerGui,
 	})
 	UI.autoScale(hintGui)
+	-- A dark-glass pill at the bottom center (free on phones: thumbstick left, jump right), so the
+	-- hint never sits on top of signs or the farm.
+	local pill = UI.new("Frame", {
+		Name = "HintPill",
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -14),
+		Size = UDim2.fromOffset(400, 40),
+		BackgroundColor3 = Color3.fromRGB(25, 30, 45),
+		BackgroundTransparency = 0.2,
+		Parent = hintGui,
+	}, { UI.corner(20), UI.stroke(Color3.fromRGB(255, 220, 90), 2) })
 	hint = UI.bigText({
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 56),
-		Size = UDim2.fromOffset(520, 30),
+		Position = UDim2.fromOffset(14, 7),
+		Size = UDim2.new(1, -28, 1, -14),
 		Text = "",
 		TextColor3 = Color3.fromRGB(255, 240, 120),
-		Parent = hintGui,
-	}, Color3.fromRGB(40, 25, 0), 3)
+		Parent = pill,
+	}, Color3.fromRGB(40, 25, 0), 2)
 
 	-- Bouncing arrow in the world, over the plot to tap
 	worldArrow = UI.new("BillboardGui", {
@@ -254,12 +264,12 @@ local function update()
 		pointAtHud(nil)
 	elseif ready then
 		step = 2
-		say("It's ready! Tap it to harvest!")
+		say("It's ready! Walk to it and tap to harvest!")
 		pointAtPlot(ready, "HARVEST!")
 		pointAtHud(nil)
 	elseif empty then
 		step = 1
-		say("Tap a dirt plot to plant – Basic Seeds are free!")
+		say("Walk to a dirt plot and tap it to plant – seeds are free!")
 		pointAtPlot(empty, "TAP!")
 		pointAtHud(nil)
 	else

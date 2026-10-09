@@ -5,7 +5,7 @@
 --   GrowthSpeed  grow time * perLevel ^ level (floor Economy.MinGrowTime)
 --   Luck         luck = 1 + perLevel * level (non-Common rarity weights and mutation chance)
 --   Value        value bonus = perLevel * level, i.e. value * (1 + bonus)
---   FarmSize     plots = levels[level] (level 0 = Economy.StartingPlots)
+--   FarmSize     farm level - 1; plots = levels[level] (level 0 = Economy.StartingPlots)
 --   HarvestPower size luck = 1 + perLevel * level (Large/Huge/Giant weights)
 --   BasketSize   basket capacity = levels[level] (level 0 = Economy.BasketCapacity)
 
@@ -20,6 +20,7 @@ export type UpgradeDef = {
 	perLevel: number,
 	costs: { number }?,
 	levels: { number }?,
+	soldAt: string?, -- "farm" = bought at your farm's Farm Level sign, not in the Upgrade Shop
 	emoji: string,
 	color: { number },
 }
@@ -30,7 +31,7 @@ local Upgrades: { UpgradeDef } = {
 		name = "Growth Speed",
 		description = "Carrots grow faster",
 		enabled = true,
-		baseCost = 50,
+		baseCost = 600,
 		costGrowth = 1.65,
 		maxLevel = 25,
 		perLevel = 0.95,
@@ -42,7 +43,7 @@ local Upgrades: { UpgradeDef } = {
 		name = "Luck",
 		description = "Rarer carrots and more mutations",
 		enabled = true,
-		baseCost = 500,
+		baseCost = 3000,
 		costGrowth = 1.65,
 		maxLevel = 40,
 		perLevel = 0.05,
@@ -54,7 +55,7 @@ local Upgrades: { UpgradeDef } = {
 		name = "Value",
 		description = "Carrots sell for more",
 		enabled = true,
-		baseCost = 250,
+		baseCost = 1500,
 		costGrowth = 1.5,
 		maxLevel = 100,
 		perLevel = 0.10,
@@ -62,19 +63,44 @@ local Upgrades: { UpgradeDef } = {
 		color = { 255, 205, 50 },
 	},
 	{
+		-- FARM LEVEL. Bought at the sign by your own farm gate (not in the Upgrade Shop).
+		-- Farm level = this track's level + 1 (level 1 = a fresh farm). Each level adds plots
+		-- (`levels`) and makes the farm look more alive (Config/FarmLevels). 20 levels now; to
+		-- add levels 21-40, append to `costs`/`levels` (plots can stay at 36) and add decor there.
 		id = "FarmSize",
-		name = "Farm Size",
-		description = "More plots on your farm",
+		name = "Farm Level",
+		description = "More plots and a livelier farm",
 		enabled = true,
 		baseCost = 0,
 		costGrowth = 1,
-		maxLevel = 8,
+		maxLevel = 19,
 		perLevel = 0,
-		-- 4 -> 36 plots. The first four steps are the early game; the last four make the farm HUGE
-		-- (a long-term goal you can see from across the map).
-		costs = { 1500, 20000, 200000, 1500000, 6000000, 40000000, 250000000, 1500000000 },
-		levels = { 6, 9, 12, 16, 20, 25, 30, 36 },
-		emoji = "🌱",
+		-- price to reach farm level 2, 3, ... 20
+		costs = {
+			1500,
+			4000,
+			9000,
+			20000,
+			45000,
+			100000,
+			220000,
+			480000,
+			1000000,
+			2200000,
+			5000000,
+			11000000,
+			25000000,
+			55000000,
+			120000000,
+			260000000,
+			560000000,
+			1200000000,
+			2600000000,
+		},
+		-- plots at farm level 2, 3, ... 20 (level 1 = Economy.StartingPlots)
+		levels = { 5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 18, 20, 22, 24, 26, 28, 30, 33, 36 },
+		soldAt = "farm",
+		emoji = "🏡",
 		color = { 255, 140, 60 },
 	},
 	{
@@ -82,7 +108,7 @@ local Upgrades: { UpgradeDef } = {
 		name = "Harvest Power",
 		description = "Bigger carrots",
 		enabled = true,
-		baseCost = 800,
+		baseCost = 5000,
 		costGrowth = 1.6,
 		maxLevel = 40,
 		perLevel = 0.08,
@@ -98,7 +124,7 @@ local Upgrades: { UpgradeDef } = {
 		costGrowth = 1,
 		maxLevel = 5,
 		perLevel = 0,
-		costs = { 1200, 12000, 120000, 1200000, 12000000 },
+		costs = { 4000, 30000, 250000, 2000000, 16000000 },
 		levels = { 80, 160, 320, 640, 1280 },
 		emoji = "🧺",
 		color = { 200, 140, 90 },

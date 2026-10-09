@@ -4,7 +4,7 @@
 local Economy = {
 	-- DataStore name. CM_Dev_v1 during development, CM_Live_v1 at soft launch.
 	DataStoreName = "CM_Dev_v2",
-	ProfileVersion = 6,
+	ProfileVersion = 7,
 
 	StartingCash = 20,
 

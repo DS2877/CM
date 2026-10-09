@@ -89,13 +89,14 @@ local function attrNumber(name: string): number
 	return if typeof(v) == "number" then v else 0
 end
 
--- Cheapest enabled upgrade the player can work toward right now.
+-- Cheapest Upgrade Shop upgrade the player can work toward right now (Farm Level has its own
+-- sign at the farm and isn't the goal bar's job).
 function HUD.nextGoal(): (Upgrades.UpgradeDef?, number, number)
 	local best: Upgrades.UpgradeDef? = nil
 	local bestCost = math.huge
 	local bestLevel = 0
 	for _, track in Upgrades do
-		if track.enabled then
+		if track.enabled and track.soldAt == nil then
 			local level = attrNumber("Upg_" .. track.id)
 			if not Progression.isMaxed(track, level) then
 				local cost = Progression.cost(track, level)

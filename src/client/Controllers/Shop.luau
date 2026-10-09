@@ -148,7 +148,8 @@ local function build()
 	})
 
 	for i, track in Upgrades do
-		if not track.enabled then
+		-- Farm Level is bought at your farm's sign, not here
+		if not track.enabled or track.soldAt ~= nil then
 			continue
 		end
 		local color = UI.rgb(track.color)
