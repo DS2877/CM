@@ -19,6 +19,9 @@ export type FarmBuild = {
 	signSubtitle: TextLabel,
 	likePrompt: ProximityPrompt,
 	pedestalTop: BasePart,
+	-- Legendary board by the gate (both faces): count text + fill bar, written by the server
+	pityTexts: { TextLabel },
+	pityFills: { Frame },
 }
 
 export type LeaderboardRow = { name: TextLabel, value: TextLabel }
@@ -997,6 +1000,80 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 	likePrompt.Enabled = false
 	likePrompt.Parent = board
 
+	-- Legendary board: a wooden notice board right of the gate, readable from the path and from
+	-- inside the farm. Shows how many plantings until this farm's guaranteed Legendary.
+	local luckyCF = gateCF * CFrame.new(gateHalf + 6.5, 0, -1.2)
+	for _, x in { -2.6, 2.6 } do
+		part({
+			Name = "LuckyPost",
+			Size = Vector3.new(0.6, 6.2, 0.6),
+			CFrame = luckyCF * CFrame.new(x, 3.1, 0),
+			Material = Enum.Material.Wood,
+			Color = COLORS.darkWood,
+		}, model)
+	end
+	local luckyBoard = part({
+		Name = "LuckyBoard",
+		Size = Vector3.new(6, 3.4, 0.4),
+		CFrame = luckyCF * CFrame.new(0, 4.4, 0),
+		Material = Enum.Material.WoodPlanks,
+		Color = COLORS.wood,
+	}, model)
+	part({
+		Name = "LuckyRoof",
+		Size = Vector3.new(6.8, 0.4, 1.2),
+		CFrame = luckyCF * CFrame.new(0, 6.3, 0),
+		Material = Enum.Material.Wood,
+		Color = COLORS.darkWood,
+	}, model)
+	local pityTexts: { TextLabel } = {}
+	local pityFills: { Frame } = {}
+	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = face
+		gui.CanvasSize = Vector2.new(300, 170)
+		gui.LightInfluence = 0.3
+		gui.MaxDistance = 120
+		gui.Parent = luckyBoard
+		label(gui, {
+			Name = "Title",
+			Size = UDim2.new(1, -20, 0, 44),
+			Position = UDim2.fromOffset(10, 6),
+			Text = "👑 LEGENDARY",
+			Font = Enum.Font.LuckiestGuy,
+			TextColor3 = Color3.fromRGB(255, 215, 80),
+			TextStrokeColor3 = Color3.fromRGB(80, 45, 10),
+			TextStrokeTransparency = 0,
+		})
+		local text = label(gui, {
+			Name = "Count",
+			Size = UDim2.new(1, -20, 0, 52),
+			Position = UDim2.fromOffset(10, 52),
+			Text = "",
+			Font = Enum.Font.LuckiestGuy,
+			TextColor3 = COLORS.white,
+			TextStrokeColor3 = Color3.fromRGB(80, 45, 10),
+			TextStrokeTransparency = 0,
+		})
+		local bar = Instance.new("Frame")
+		bar.Position = UDim2.fromOffset(20, 116)
+		bar.Size = UDim2.new(1, -40, 0, 34)
+		bar.BackgroundColor3 = Color3.fromRGB(70, 45, 25)
+		bar.BorderSizePixel = 0
+		bar.Parent = gui
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, 12)
+		corner.Parent = bar
+		local fill = Instance.new("Frame")
+		fill.Size = UDim2.fromScale(0, 1)
+		fill.BackgroundColor3 = Color3.fromRGB(255, 200, 40)
+		fill.BorderSizePixel = 0
+		fill.Parent = bar
+		corner:Clone().Parent = fill
+		table.insert(pityTexts, text)
+		table.insert(pityFills, fill)
+	end
+
 	-- Pedestal for the owner's best carrot, in the front corner where passers-by see it
 	local pedestalCF = center * CFrame.new(half - 3.6, 0, -half + 3.6)
 	part({
@@ -1113,6 +1190,8 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 		signSubtitle = subtitle,
 		likePrompt = likePrompt,
 		pedestalTop = pedestalTop,
+		pityTexts = pityTexts,
+		pityFills = pityFills,
 	}
 end
 

@@ -120,11 +120,34 @@ function Farm.unlockedPlots(player: Player): number
 	return Upgrade.plots(player)
 end
 
+-- The farm's Legendary board (a physical sign everyone can read). Written only when the count
+-- changes – a static board, not a ticking timer.
+local function writePityBoard(build: WorldBuilder.FarmBuild, pity: number?)
+	local max = EconomyConfig.PityLegendary
+	local text = "Free farm"
+	local fraction = 0
+	if pity then
+		local left = math.max(1, max - pity)
+		text = if left == 1 then "NEXT PLANT!" else string.format("in %d plants", left)
+		fraction = math.clamp(pity / max, 0, 1)
+	end
+	for _, label in build.pityTexts do
+		label.Text = text
+	end
+	for _, fill in build.pityFills do
+		fill.Size = UDim2.fromScale(fraction, 1)
+	end
+end
+
 function Farm.syncPity(player: Player)
 	local data = Data.get(player)
 	if data then
 		player:SetAttribute("Pity", data.Pity)
 		player:SetAttribute("PityMax", EconomyConfig.PityLegendary)
+		local farm = farmOf[player]
+		if farm then
+			writePityBoard(farm.build, data.Pity)
+		end
 	end
 end
 
@@ -624,6 +647,7 @@ function Farm.release(player: Player)
 	local model = farm.build.model
 	model:SetAttribute("OwnerUserId", 0)
 	model:SetAttribute("OwnerName", "")
+	writePityBoard(farm.build, nil)
 	farm.build.signTitle.Text = "Free Farm"
 	applyUnlocked(farm, 0)
 	refreshShowcase(farm)
@@ -643,6 +667,7 @@ function Farm.start(world: WorldBuilder.WorldBuild)
 			}
 			setVisible(part, false)
 		end
+		writePityBoard(build, nil)
 		table.insert(farms, runtime)
 	end
 

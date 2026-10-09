@@ -2,6 +2,13 @@
 
 Senast uppdaterad: 8 okt 2026 (kväll). Aktuell fas: **Fas 5 – soft launch (förberedd, väntar på Philips steg nedan)**. Fas 1–4 publicerade.
 
+## Fixar efter test (9 okt)
+
+| Del | Status | Hur det testas |
+|---|---|---|
+| "Like"-prompten på egen farm | Fixad | Gilla-prompten vid din egen grind visas inte längre för dig, bara för andra spelare. Servern nekar fortfarande självgillning. |
+| Legendary-räknaren | Omgjord | Ingen nedräkning på skärmen längre. Varje farm har en träskylt med tak till höger om grinden ("👑 LEGENDARY – in 123 plants" + gul stapel), läsbar från stigen och inifrån farmen, för alla spelare. Den ändras bara när du planterar (statisk skylt, ingen tickande timer). |
+
 ## Ny spelloop 8 okt (kväll): sälj och uppgradera på fasta platser i världen
 
 Philips feedback: "inga knappar för att sälja eller uppgradera, det ska vara fasta platser i världen". Byggt:

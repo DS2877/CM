@@ -29,6 +29,7 @@ type FarmView = {
 	carrotKey: string,
 	label: Instance?,
 	waterHint: BillboardGui?,
+	likePrompt: ProximityPrompt?,
 	center: Vector3,
 }
 
@@ -204,8 +205,13 @@ function Farms.start()
 				carrotKey = "",
 				label = nil,
 				waterHint = nil,
+				likePrompt = nil,
 				center = model:GetPivot().Position,
 			}
+			local prompt = model:FindFirstChild("LikePrompt", true)
+			if prompt and prompt:IsA("ProximityPrompt") then
+				view.likePrompt = prompt
+			end
 			local ground = model:FindFirstChild("FarmGround")
 			if ground and ground:IsA("BasePart") then
 				view.center = ground.Position
@@ -246,6 +252,11 @@ function Farms.start()
 			local hint = view.waterHint
 			if hint then
 				hint.Enabled = view.id ~= myFarm and num(view.model, "OwnerUserId") ~= 0
+			end
+			-- Never offer to like your own farm (local only; the server also refuses it).
+			local prompt = view.likePrompt
+			if prompt and view.id == myFarm and prompt.Enabled then
+				prompt.Enabled = false
 			end
 		end
 	end)

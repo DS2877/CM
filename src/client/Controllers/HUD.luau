@@ -74,8 +74,6 @@ local tileHandlers: { [string]: () -> () } = {}
 local oddsHandler: (() -> ())? = nil
 local goalTapHandler: (() -> ())? = nil
 local tileBadges: { [string]: { frame: Frame, label: TextLabel } } = {}
-local pityFill: Frame
-local pityLabel: TextLabel
 local buffLabel: TextLabel
 local toastList: Frame
 local bannerLabel: TextLabel
@@ -490,19 +488,7 @@ local function build()
 	}, 20, C.cashDark, 2)
 	basketFill = meter(basketPill, C.carrot)
 
-	-- Legendary meter: guaranteed Legendary within N plantings
-	local pityPill, pityRow = pill(stack, "Pity", 28, 3)
-	local crown = UI.icon("Crown", "👑")
-	crown.Size = UDim2.fromOffset(22, 22)
-	crown.LayoutOrder = 1
-	crown.Parent = pityRow
-	pityLabel = fitText({
-		Text = "",
-		TextColor3 = Color3.fromRGB(255, 215, 90),
-		LayoutOrder = 2,
-		Parent = pityRow,
-	}, 15, C.goalDark, 1.5)
-	pityFill = meter(pityPill, Color3.fromRGB(255, 200, 40))
+	-- (The Legendary meter lives on a wooden board at each farm's gate, not on screen.)
 
 	-- Active buffs: friend bonus, watered, boosts
 	buffLabel = fitText({
@@ -699,17 +685,7 @@ local function refreshGoal()
 	goalWasReady = cash >= cost
 end
 
-local function refreshPity()
-	local pity = attrNumber("Pity")
-	local max = attrNumber("PityMax")
-	if max <= 0 then
-		pityLabel.Text = ""
-		return
-	end
-	local left = math.max(1, max - pity)
-	pityLabel.Text = string.format("Legendary in %d", left)
-	UI.tween(pityFill, 0.2, { Size = UDim2.fromScale(math.clamp(pity / max, 0, 1), 1) })
-end
+local function refreshPity() end
 
 local function refreshSeedTile()
 	local selected = player:GetAttribute("SelectedSeed")
