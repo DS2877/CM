@@ -134,16 +134,13 @@ local function roundTree(parent: Instance, pos: Vector3, scale: number)
 	cyl(parent, "Trunk", 7 * scale, 1.4 * scale, CFrame.new(pos + Vector3.new(0, 3.5 * scale, 0)), C.trunk).Material =
 		Enum.Material.Wood
 	local top = pos + Vector3.new(0, 9 * scale, 0)
-	part(
-		parent,
-		{
-			Name = "Leaves",
-			Shape = Enum.PartType.Ball,
-			Size = Vector3.one * 9 * scale,
-			CFrame = CFrame.new(top),
-			Color = C.leaf,
-		}
-	)
+	part(parent, {
+		Name = "Leaves",
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.one * 9 * scale,
+		CFrame = CFrame.new(top),
+		Color = C.leaf,
+	})
 	part(parent, {
 		Name = "Leaves",
 		Shape = Enum.PartType.Ball,
@@ -175,28 +172,22 @@ local function buildTrails(parent: Instance)
 		local mid = (from + to) / 2
 		local len = (to - from).Magnitude
 		local cf = CFrame.lookAt(mid, mid + dir)
-		part(
-			f,
-			{
-				Name = "TrailEdge",
-				Size = Vector3.new(6.6, 0.12, len),
-				CFrame = cf * CFrame.new(0, 0.06, 0),
-				Color = C.dirtEdge,
-				Material = Enum.Material.Ground,
-				CanCollide = false,
-			}
-		)
-		part(
-			f,
-			{
-				Name = "Trail",
-				Size = Vector3.new(5.4, 0.16, len),
-				CFrame = cf * CFrame.new(0, 0.08, 0),
-				Color = C.dirt,
-				Material = Enum.Material.Ground,
-				CanCollide = false,
-			}
-		)
+		part(f, {
+			Name = "TrailEdge",
+			Size = Vector3.new(6.6, 0.12, len),
+			CFrame = cf * CFrame.new(0, 0.06, 0),
+			Color = C.dirtEdge,
+			Material = Enum.Material.Ground,
+			CanCollide = false,
+		})
+		part(f, {
+			Name = "Trail",
+			Size = Vector3.new(5.4, 0.16, len),
+			CFrame = cf * CFrame.new(0, 0.08, 0),
+			Color = C.dirt,
+			Material = Enum.Material.Ground,
+			CanCollide = false,
+		})
 		-- stepping stones along the trail
 		for d = 6, len - 4, 7 do
 			local p = from
@@ -214,16 +205,13 @@ local function buildTrails(parent: Instance)
 		end
 		-- signpost at the square's edge
 		local postPos = from + dir * 4 + Vector3.new(-dir.Z, 0, dir.X) * 5
-		part(
-			f,
-			{
-				Name = "SignPost",
-				Size = Vector3.new(0.6, 7, 0.6),
-				CFrame = CFrame.new(postPos + Vector3.new(0, 3.5, 0)),
-				Color = C.darkWood,
-				Material = Enum.Material.Wood,
-			}
-		)
+		part(f, {
+			Name = "SignPost",
+			Size = Vector3.new(0.6, 7, 0.6),
+			CFrame = CFrame.new(postPos + Vector3.new(0, 3.5, 0)),
+			Color = C.darkWood,
+			Material = Enum.Material.Wood,
+		})
 		local board = part(f, {
 			Name = "SignBoard",
 			Size = Vector3.new(8, 1.8, 0.3),
@@ -278,17 +266,14 @@ local function buildMushroomForest(parent: Instance)
 		)
 	end
 	-- floating sparkles (fairy dust) over the forest
-	local dust = part(
-		f,
-		{
-			Name = "FairyDust",
-			Size = Vector3.new(60, 1, 60),
-			CFrame = CFrame.new(center + Vector3.new(0, 4, 0)),
-			Transparency = 1,
-			CanCollide = false,
-			CanQuery = false,
-		}
-	)
+	local dust = part(f, {
+		Name = "FairyDust",
+		Size = Vector3.new(60, 1, 60),
+		CFrame = CFrame.new(center + Vector3.new(0, 4, 0)),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+	})
 	local e = Instance.new("ParticleEmitter")
 	e.Color = ColorSequence.new(Color3.fromRGB(255, 240, 160), Color3.fromRGB(200, 160, 255))
 	e.LightEmission = 1
@@ -322,16 +307,13 @@ local function buildLakeIsland(parent: Instance)
 	local p = base
 	for k = 0, 5 do
 		local nextP = p + Vector3.new(0.35, 1.6, 0.15)
-		part(
-			f,
-			{
-				Name = "PalmTrunk",
-				Size = Vector3.new(0.9 - k * 0.06, 1.75, 0.9 - k * 0.06),
-				CFrame = CFrame.lookAt((p + nextP) / 2, nextP) * CFrame.Angles(math.rad(90), 0, 0),
-				Color = C.trunk,
-				Material = Enum.Material.Wood,
-			}
-		)
+		part(f, {
+			Name = "PalmTrunk",
+			Size = Vector3.new(0.9 - k * 0.06, 1.75, 0.9 - k * 0.06),
+			CFrame = CFrame.lookAt((p + nextP) / 2, nextP) * CFrame.Angles(math.rad(90), 0, 0),
+			Color = C.trunk,
+			Material = Enum.Material.Wood,
+		})
 		p = nextP
 	end
 	for k = 0, 5 do
@@ -387,49 +369,37 @@ local function buildLakeIsland(parent: Instance)
 	-- a rowboat with oars
 	local boat = c + side * (World.LakeSize / 2 - 8)
 	local bcf = CFrame.lookAt(boat + Vector3.new(0, 0.55, 0), boat + Vector3.new(0, 0.55, 0) + dir)
-	part(
-		f,
-		{
-			Name = "BoatHull",
-			Size = Vector3.new(3, 0.9, 6.5),
-			CFrame = bcf,
-			Color = Color3.fromRGB(235, 90, 80),
-			Material = Enum.Material.WoodPlanks,
-		}
-	)
-	part(
-		f,
-		{
-			Name = "BoatInside",
-			Size = Vector3.new(2.4, 0.3, 5.8),
-			CFrame = bcf * CFrame.new(0, 0.35, 0),
-			Color = C.wood,
-			Material = Enum.Material.WoodPlanks,
-		}
-	)
-	part(
-		f,
-		{
-			Name = "BoatSeat",
-			Size = Vector3.new(2.6, 0.25, 0.8),
-			CFrame = bcf * CFrame.new(0, 0.7, 0),
-			Color = C.darkWood,
-		}
-	)
+	part(f, {
+		Name = "BoatHull",
+		Size = Vector3.new(3, 0.9, 6.5),
+		CFrame = bcf,
+		Color = Color3.fromRGB(235, 90, 80),
+		Material = Enum.Material.WoodPlanks,
+	})
+	part(f, {
+		Name = "BoatInside",
+		Size = Vector3.new(2.4, 0.3, 5.8),
+		CFrame = bcf * CFrame.new(0, 0.35, 0),
+		Color = C.wood,
+		Material = Enum.Material.WoodPlanks,
+	})
+	part(f, {
+		Name = "BoatSeat",
+		Size = Vector3.new(2.6, 0.25, 0.8),
+		CFrame = bcf * CFrame.new(0, 0.7, 0),
+		Color = C.darkWood,
+	})
 	for _, sx in { -1, 1 } do
-		part(
-			f,
-			{
-				Name = "Oar",
-				Size = Vector3.new(0.2, 0.2, 4),
-				CFrame = bcf
-					* CFrame.new(sx * 2.4, 0.7, 0)
-					* CFrame.Angles(0, sx * 0.6, 0)
-					* CFrame.Angles(-0.2, 0, 0),
-				Color = C.darkWood,
-				CanCollide = false,
-			}
-		)
+		part(f, {
+			Name = "Oar",
+			Size = Vector3.new(0.2, 0.2, 4),
+			CFrame = bcf
+				* CFrame.new(sx * 2.4, 0.7, 0)
+				* CFrame.Angles(0, sx * 0.6, 0)
+				* CFrame.Angles(-0.2, 0, 0),
+			Color = C.darkWood,
+			CanCollide = false,
+		})
 	end
 end
 
@@ -470,27 +440,21 @@ local function buildCampForest(parent: Instance)
 	local stump = c + side * 11 - dir * 3
 	cyl(f, "Stump", 1.6, 2.4, CFrame.new(stump + Vector3.new(0, 0.8, 0)), C.trunk).Material =
 		Enum.Material.Wood
-	part(
-		f,
-		{
-			Name = "AxeHandle",
-			Size = Vector3.new(0.25, 2.4, 0.25),
-			CFrame = CFrame.new(stump + Vector3.new(0.2, 2.4, 0)) * CFrame.Angles(0, 0, 0.3),
-			Color = C.wood,
-			CanCollide = false,
-		}
-	)
-	part(
-		f,
-		{
-			Name = "AxeHead",
-			Size = Vector3.new(0.9, 0.6, 0.15),
-			CFrame = CFrame.new(stump + Vector3.new(-0.15, 1.7, 0)),
-			Color = Color3.fromRGB(170, 170, 180),
-			Material = Enum.Material.Metal,
-			CanCollide = false,
-		}
-	)
+	part(f, {
+		Name = "AxeHandle",
+		Size = Vector3.new(0.25, 2.4, 0.25),
+		CFrame = CFrame.new(stump + Vector3.new(0.2, 2.4, 0)) * CFrame.Angles(0, 0, 0.3),
+		Color = C.wood,
+		CanCollide = false,
+	})
+	part(f, {
+		Name = "AxeHead",
+		Size = Vector3.new(0.9, 0.6, 0.15),
+		CFrame = CFrame.new(stump + Vector3.new(-0.15, 1.7, 0)),
+		Color = Color3.fromRGB(170, 170, 180),
+		Material = Enum.Material.Metal,
+		CanCollide = false,
+	})
 end
 
 -- Waterfall hill with a slide ---------------------------------------------------------------
@@ -502,40 +466,31 @@ local function buildWaterfall(parent: Instance)
 	local cf = CFrame.lookAt(c, c - dir) -- -Z faces the square
 	local W, H, D = 44, 26, 26
 	-- the cliff: a big rock block with rounded boulders around it and a grass top
-	part(
-		f,
-		{
-			Name = "Cliff",
-			Size = Vector3.new(W, H, D),
-			CFrame = cf * CFrame.new(0, H / 2, 0),
-			Color = C.rock,
-			Material = Enum.Material.Slate,
-		}
-	)
-	part(
-		f,
-		{
-			Name = "CliffTop",
-			Size = Vector3.new(W + 1, 1.2, D + 1),
-			CFrame = cf * CFrame.new(0, H + 0.6, 0),
-			Color = C.grass,
-			Material = Enum.Material.Grass,
-		}
-	)
+	part(f, {
+		Name = "Cliff",
+		Size = Vector3.new(W, H, D),
+		CFrame = cf * CFrame.new(0, H / 2, 0),
+		Color = C.rock,
+		Material = Enum.Material.Slate,
+	})
+	part(f, {
+		Name = "CliffTop",
+		Size = Vector3.new(W + 1, 1.2, D + 1),
+		CFrame = cf * CFrame.new(0, H + 0.6, 0),
+		Color = C.grass,
+		Material = Enum.Material.Grass,
+	})
 	for k = 0, 9 do
 		local x = -W / 2 + k * W / 9
 		local s = 6 + rng:NextNumber() * 6
-		part(
-			f,
-			{
-				Name = "Boulder",
-				Shape = Enum.PartType.Ball,
-				Size = Vector3.one * s,
-				CFrame = cf * CFrame.new(x, s * 0.3, -D / 2 + 1),
-				Color = C.rockDark,
-				Material = Enum.Material.Slate,
-			}
-		)
+		part(f, {
+			Name = "Boulder",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.one * s,
+			CFrame = cf * CFrame.new(x, s * 0.3, -D / 2 + 1),
+			Color = C.rockDark,
+			Material = Enum.Material.Slate,
+		})
 	end
 	-- trees on top
 	for _, x in { -14, -4, 12 } do
@@ -565,17 +520,14 @@ local function buildWaterfall(parent: Instance)
 	pool.Transparency = 0.2
 	pool.CanCollide = false
 	cyl(f, "PoolRim", 0.4, 24, cf * CFrame.new(-6, 0.2, -D / 2 - 10), C.sand).Material = Enum.Material.Sand
-	local mist = part(
-		f,
-		{
-			Name = "Mist",
-			Size = Vector3.new(10, 1, 4),
-			CFrame = cf * CFrame.new(-6, 1, -D / 2 - 2),
-			Transparency = 1,
-			CanCollide = false,
-			CanQuery = false,
-		}
-	)
+	local mist = part(f, {
+		Name = "Mist",
+		Size = Vector3.new(10, 1, 4),
+		CFrame = cf * CFrame.new(-6, 1, -D / 2 - 2),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+	})
 	local m = Instance.new("ParticleEmitter")
 	m.Color = ColorSequence.new(C.foam)
 	m.Transparency = NumberSequence.new(0.4, 1)
@@ -618,28 +570,22 @@ local function buildWaterfall(parent: Instance)
 			part(slides, { Name = "Slide", Size = Vector3.new(4, 0.4, len), CFrame = scf, Color = C.slide })
 		chute:SetAttribute("SlideDir", (b - a).Unit)
 		for _, sx in { -1, 1 } do
-			part(
-				slides,
-				{
-					Name = "SlideRail",
-					Size = Vector3.new(0.4, 1.2, len),
-					CFrame = scf * CFrame.new(sx * 2.1, 0.6, 0),
-					Color = Color3.fromRGB(255, 220, 60),
-					CanCollide = true,
-				}
-			)
+			part(slides, {
+				Name = "SlideRail",
+				Size = Vector3.new(0.4, 1.2, len),
+				CFrame = scf * CFrame.new(sx * 2.1, 0.6, 0),
+				Color = Color3.fromRGB(255, 220, 60),
+				CanCollide = true,
+			})
 		end
 	end
 	-- sign on the cliff
-	local board = part(
-		f,
-		{
-			Name = "SlideSign",
-			Size = Vector3.new(10, 2.4, 0.4),
-			CFrame = cf * CFrame.new(W / 2 - 6, H + 4, -D / 2 + 1),
-			Color = C.slide,
-		}
-	)
+	local board = part(f, {
+		Name = "SlideSign",
+		Size = Vector3.new(10, 2.4, 0.4),
+		CFrame = cf * CFrame.new(W / 2 - 6, H + 4, -D / 2 + 1),
+		Color = C.slide,
+	})
 	signText(board, Enum.NormalId.Front, "🌊 SUPER SLIDE!", Color3.fromRGB(10, 50, 110))
 end
 
@@ -660,17 +606,14 @@ local function buildFlowerFields(parent: Instance)
 				0,
 				-rows * 1.5 + r * 3
 			)).Position
-			part(
-				f,
-				{
-					Name = "Stem",
-					Size = Vector3.new(0.18, 1.5, 0.18),
-					CFrame = CFrame.new(pos + Vector3.new(0, 0.75, 0)),
-					Color = C.leaf,
-					CanCollide = false,
-					CanQuery = false,
-				}
-			)
+			part(f, {
+				Name = "Stem",
+				Size = Vector3.new(0.18, 1.5, 0.18),
+				CFrame = CFrame.new(pos + Vector3.new(0, 0.75, 0)),
+				Color = C.leaf,
+				CanCollide = false,
+				CanQuery = false,
+			})
 			ball(f, "Bloom", Vector3.new(1, 0.7, 1), CFrame.new(pos + Vector3.new(0, 1.6, 0)), color)
 		end
 	end
@@ -679,49 +622,37 @@ local function buildFlowerFields(parent: Instance)
 	for _, side in
 		{ { 0, -d / 2, w, 0.3 }, { 0, d / 2, w, 0.3 }, { -w / 2, 0, 0.3, d }, { w / 2, 0, 0.3, d } }
 	do
-		part(
-			f,
-			{
-				Name = "FieldFence",
-				Size = Vector3.new(side[3], 1.2, side[4]),
-				CFrame = cf * CFrame.new(side[1], 0.9, side[2]),
-				Color = C.white,
-				CanCollide = false,
-			}
-		)
+		part(f, {
+			Name = "FieldFence",
+			Size = Vector3.new(side[3], 1.2, side[4]),
+			CFrame = cf * CFrame.new(side[1], 0.9, side[2]),
+			Color = C.white,
+			CanCollide = false,
+		})
 	end
 	-- beehives with bees
 	for k = 0, 2 do
 		local hcf = cf * CFrame.new(w / 2 + 6, 0, -6 + k * 6)
-		part(
-			f,
-			{
-				Name = "HiveStand",
-				Size = Vector3.new(2.6, 1, 2.6),
-				CFrame = hcf * CFrame.new(0, 0.5, 0),
-				Color = C.darkWood,
-			}
-		)
+		part(f, {
+			Name = "HiveStand",
+			Size = Vector3.new(2.6, 1, 2.6),
+			CFrame = hcf * CFrame.new(0, 0.5, 0),
+			Color = C.darkWood,
+		})
 		for j = 0, 2 do
-			part(
-				f,
-				{
-					Name = "Hive",
-					Size = Vector3.new(2.4, 0.9, 2.4),
-					CFrame = hcf * CFrame.new(0, 1.45 + j * 0.95, 0),
-					Color = if j % 2 == 0 then C.white else C.yellow,
-				}
-			)
+			part(f, {
+				Name = "Hive",
+				Size = Vector3.new(2.4, 0.9, 2.4),
+				CFrame = hcf * CFrame.new(0, 1.45 + j * 0.95, 0),
+				Color = if j % 2 == 0 then C.white else C.yellow,
+			})
 		end
-		local hiveTop = part(
-			f,
-			{
-				Name = "HiveRoof",
-				Size = Vector3.new(2.8, 0.3, 2.8),
-				CFrame = hcf * CFrame.new(0, 4.4, 0),
-				Color = C.darkWood,
-			}
-		)
+		local hiveTop = part(f, {
+			Name = "HiveRoof",
+			Size = Vector3.new(2.8, 0.3, 2.8),
+			CFrame = hcf * CFrame.new(0, 4.4, 0),
+			Color = C.darkWood,
+		})
 		local bees = Instance.new("ParticleEmitter")
 		bees.Color = ColorSequence.new(C.yellow)
 		bees.Size = NumberSequence.new(0.25)
@@ -736,16 +667,13 @@ local function buildFlowerFields(parent: Instance)
 	local sun = (cf * CFrame.new(-w / 2 - 7, 0, 0)).Position
 	cyl(f, "SunflowerStem", 14, 0.8, CFrame.new(sun + Vector3.new(0, 7, 0)), C.leaf)
 	for _, s in { -1, 1 } do
-		part(
-			f,
-			{
-				Name = "SunflowerLeaf",
-				Size = Vector3.new(3, 0.2, 1.4),
-				CFrame = CFrame.new(sun + Vector3.new(s * 1.5, 6 + s, 0)) * CFrame.Angles(0, 0, s * 0.4),
-				Color = C.leaf,
-				CanCollide = false,
-			}
-		)
+		part(f, {
+			Name = "SunflowerLeaf",
+			Size = Vector3.new(3, 0.2, 1.4),
+			CFrame = CFrame.new(sun + Vector3.new(s * 1.5, 6 + s, 0)) * CFrame.Angles(0, 0, s * 0.4),
+			Color = C.leaf,
+			CanCollide = false,
+		})
 	end
 	local face = CFrame.lookAt(sun + Vector3.new(0, 14.5, 0), sun + Vector3.new(0, 14.5, 0) - dir)
 	cyl(f, "SunflowerCenter", 0.6, 4, face * CFrame.Angles(math.rad(90), 0, 0), Color3.fromRGB(120, 75, 35))

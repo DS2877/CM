@@ -552,11 +552,11 @@ local function onWater(player: Player, farmId: number)
 end
 
 -- Farm Level: the decor everyone sees, the level board left of the gate and the gate subtitle.
-local function applyLevel(farm: FarmRuntime)
+local function applyLevel(farm: FarmRuntime, show: boolean?)
 	local build = farm.build
 	local owner = farm.owner
 	local level = if owner then Upgrade.farmLevel(owner) else 1
-	FarmDecor.apply(build.model, build.center, build.half, level)
+	FarmDecor.apply(build.model, build.center, build.half, level, if show then level else nil)
 	local nextText = "Free farm"
 	if owner then
 		local track = Upgrade.track("FarmSize")
@@ -858,11 +858,25 @@ function Farm.start(world: WorldBuilder.WorldBuild)
 		local farm = farmOf[player]
 		if farm and trackId == "FarmSize" then
 			applyUnlocked(farm, Farm.unlockedPlots(player))
-			applyLevel(farm)
+			applyLevel(farm, true)
 			local level = Upgrade.farmLevel(player)
 			FarmDecor.celebrate(farm.build.center)
-			-- Big levels are news for the whole server
-			if table.find(FarmLevels.Milestones, level) then
+			-- Entering a new tier (Country Estate, Carrot Kingdom, Sky Farm, Carrot Cosmos) is the
+			-- biggest news there is
+			local newTier: string? = nil
+			for _, t in FarmLevels.Tiers do
+				if t.from == level then
+					newTier = t.name
+				end
+			end
+			if newTier then
+				task.delay(0.6, FarmDecor.celebrate, farm.build.center)
+				task.delay(1.2, FarmDecor.celebrate, farm.build.center)
+				Remotes.get(Remotes.Names.Notice):FireAllClients({
+					text = string.format("✨ %s's farm became a %s! ✨", player.DisplayName, newTier),
+					kind = "good",
+				})
+			elseif table.find(FarmLevels.Milestones, level) then
 				Remotes.get(Remotes.Names.Notice):FireAllClients({
 					text = string.format("🏡 %s reached FARM LEVEL %d! 🎉", player.DisplayName, level),
 					kind = "good",
