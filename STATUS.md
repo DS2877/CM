@@ -6,6 +6,7 @@ Senast uppdaterad: 8 okt 2026 (kväll). Aktuell fas: **Fas 5 – soft launch (f�
 
 | Del | Status | Hur det testas |
 |---|---|---|
+| Startvyn | Utzoomad | När du spawnar startar kameran ~32 studs bort (i stället för Robloxs ~12) och tittar ned över farmen. Du kan fortfarande zooma in med två fingrar. |
 | Boom-pilen | Ersatt | Pilen och guide-linjen till marknaden under boom är borta. I stället en liten nedräkningspill under målraden: "⏰ Boom in 0:45" sista minuten innan, och "🔥 BOOM 2:31" medan den pågår. (Linjen till marknaden visas fortfarande när korgen är full.) |
 | Legendary-skylten klippt | Fixad | Stolparna stod i samma plan som skylten och täckte texten i kanterna ("LEGENDAR…"). Nu står de precis utanför skylten – samma fix för Farm Level-skylten. Odlingarnas små tidspiller (långt bort) är också lite större. |
 | Bottarna har sysslor | Ny | Ingen bott vandrar på torget längre – alla har något att göra utanför: 3 grillar marshmallows vid lägerelden, 1 fiskar vid sjön, 2 har picknick på en rödvit rutig filt med korg, tårta och muffins (ibland "😋"/"🍰" över huvudet), 1 flyger drake på en äng (draken svajar, loopar och snöret följer), 1 målar vid ett staffli – duken fylls sakta med himmel, gräs, sol och morötter och byts mot en ny tavla. Namnskyltarna är små och diskreta (syns bara på nära håll). |
