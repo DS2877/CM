@@ -20,6 +20,7 @@ local Events = require(Config.Events)
 local Upgrades = require(Config.Upgrades)
 local CarrotsConfig = require(Config.Carrots)
 local Products = require(Config.Products)
+local World = require(Config.World)
 local Remotes = require(Shared.Remotes)
 local Progression = require(Shared.Progression)
 
@@ -89,6 +90,12 @@ local function applyGlobal(message: { [string]: any })
 		workspace:SetAttribute("AdminDailyRarity", message.rarity)
 	elseif kind == "serverLuck" then
 		Product.serverLuck(tostring(message.name), message.mult, message.seconds)
+	elseif kind == "party" then
+		workspace:SetAttribute("AdminPartyUntil", message.untilTime)
+	elseif kind == "bunnyParty" then
+		workspace:SetAttribute("BunnyPartyUntil", message.untilTime)
+	elseif kind == "fx" then
+		Remotes.get(Remotes.Names.AdminFx):FireAllClients({ kind = message.fx })
 	end
 	-- Prices depend on events: resync every basket.
 	for _, p in Players:GetPlayers() do
@@ -314,6 +321,93 @@ local handlers: { [string]: Handler } = {
 			mult = num(args.mult) or Products.ServerLuckMult,
 			seconds = num(args.seconds) or Products.ServerLuckSeconds,
 		}, str(args.scope) or "server")
+	end,
+
+	-- Fun (cosmetic, nothing touches the economy)
+	Party = function(admin, _target, args)
+		local seconds = num(args.seconds) or AdminConfig.PartySeconds
+		broadcast(
+			{ kind = "party", untilTime = workspace:GetServerTimeNow() + seconds },
+			str(args.scope) or "server"
+		)
+		notice(admin, "🎉 Sky party!")
+	end,
+	StopParty = function(_admin, _target, args)
+		broadcast({ kind = "party", untilTime = 0 }, str(args.scope) or "server")
+	end,
+	BunnyParty = function(_admin, _target, args)
+		broadcast(
+			{ kind = "bunnyParty", untilTime = workspace:GetServerTimeNow() + AdminConfig.BunnyPartySeconds },
+			str(args.scope) or "server"
+		)
+	end,
+	CarrotRain = function(_admin, _target, args)
+		broadcast({ kind = "fx", fx = "carrotRain" }, str(args.scope) or "server")
+	end,
+	Confetti = function(_admin, _target, args)
+		broadcast({ kind = "fx", fx = "confetti" }, str(args.scope) or "server")
+	end,
+	SetBody = function(_admin, target, args)
+		local mode = str(args.mode)
+		local character = target.Character
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if not humanoid then
+			return
+		end
+		local scale = if mode == "giant"
+			then AdminConfig.GiantScale
+			elseif mode == "tiny" then AdminConfig.TinyScale
+			else 1
+		if character and (mode == "giant" or mode == "tiny" or mode == "normal") then
+			pcall(function()
+				(character :: Model):ScaleTo(scale)
+			end)
+		end
+		if mode == "speed" then
+			humanoid.WalkSpeed = AdminConfig.SuperSpeed
+		elseif mode == "moon" then
+			humanoid.UseJumpPower = true
+			humanoid.JumpPower = AdminConfig.MoonJumpPower
+		elseif mode == "normal" then
+			humanoid.WalkSpeed = World.WalkSpeed
+			humanoid.UseJumpPower = true
+			humanoid.JumpPower = 50
+		end
+	end,
+	Teleport = function(admin, target, args)
+		local where = str(args.where)
+		local adminRoot = admin.Character and admin.Character:FindFirstChild("HumanoidRootPart")
+		local targetChar = target.Character
+		local targetRoot = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+		if
+			not adminRoot
+			or not adminRoot:IsA("BasePart")
+			or not targetRoot
+			or not targetRoot:IsA("BasePart")
+		then
+			return
+		end
+		local adminCF = (adminRoot :: BasePart).CFrame
+		local targetCF = (targetRoot :: BasePart).CFrame
+		if where == "toTarget" and admin.Character then
+			admin.Character:PivotTo(targetCF * CFrame.new(3, 0, 0))
+		elseif where == "bring" and targetChar then
+			targetChar:PivotTo(adminCF * CFrame.new(3, 0, 0))
+		elseif where == "market" and targetChar then
+			targetChar:PivotTo(CFrame.new(17, 5, 17))
+		elseif where == "farm" then
+			Farm.sendHome(target)
+		end
+	end,
+	FillFarm = function(admin, target, args)
+		local spec = { rarity = str(args.rarity), size = str(args.size), mutation = str(args.mutation) }
+		local n = 0
+		for _ = 1, Farm.unlockedPlots(target) do
+			if Farm.spawnCarrot(target, spec) then
+				n += 1
+			end
+		end
+		notice(admin, string.format("Filled %d plots ✔", n))
 	end,
 
 	-- Messages

@@ -623,8 +623,8 @@ local function build()
 	toastList = UI.new("Frame", {
 		Name = "Toasts",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -24),
-		Size = UDim2.fromOffset(420, 130),
+		Position = UDim2.new(0.5, 0, 1, -20),
+		Size = UDim2.fromOffset(340, 60),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
@@ -640,12 +640,12 @@ local function build()
 	bannerLabel = bigText({
 		Name = "Banner",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.27),
-		Size = UDim2.fromOffset(480, 36),
+		Position = UDim2.fromScale(0.5, 0.25),
+		Size = UDim2.fromOffset(380, 24),
 		Text = "",
 		TextTransparency = 1,
 		Parent = gui,
-	}, Color3.new(0, 0, 0), 3.5)
+	}, Color3.new(0, 0, 0), 2.5)
 	local bannerStroke = bannerLabel:FindFirstChildOfClass("UIStroke") :: UIStroke
 	bannerStroke.Name = "Stroke"
 	bannerStroke.Transparency = 1
@@ -775,20 +775,20 @@ end
 
 function HUD.toast(text: string, color: Color3?, seconds: number?)
 	local l = bigText({
-		Size = UDim2.fromOffset(420, 22),
+		Size = UDim2.fromOffset(340, 15),
 		Text = text,
 		TextColor3 = color or C.info,
 		LayoutOrder = math.floor(os.clock() * 1000),
 		Parent = toastList,
-	}, Color3.new(0, 0, 0), 2.5)
-	UI.bump(l, 0.2)
+	}, Color3.new(0, 0, 0), 1.8)
+	UI.bump(l, 0.12)
 	local labels = {}
 	for _, c in toastList:GetChildren() do
 		if c:IsA("TextLabel") then
 			table.insert(labels, c)
 		end
 	end
-	if #labels > 4 then
+	if #labels > 3 then
 		table.sort(labels, function(a, b)
 			return a.LayoutOrder < b.LayoutOrder
 		end)
@@ -816,7 +816,7 @@ function HUD.banner(text: string, color: Color3, seconds: number?)
 	bannerLabel.TextTransparency = 0
 	local stroke = bannerLabel:FindFirstChild("Stroke") :: UIStroke
 	stroke.Transparency = 0
-	UI.bump(bannerLabel, 0.35)
+	UI.bump(bannerLabel, 0.2)
 	task.delay(seconds or 4, function()
 		if token == bannerToken then
 			UI.tween(bannerLabel, 0.5, { TextTransparency = 1 })

@@ -642,6 +642,14 @@ function Farm.onPlayerReady(player: Player)
 	task.spawn(pivotCharacter, player, farm)
 end
 
+-- Admin: back to your own farm's spawn pad.
+function Farm.sendHome(player: Player)
+	local farm = farmOf[player]
+	if farm then
+		task.spawn(pivotCharacter, player, farm)
+	end
+end
+
 -- Admin: put a specific carrot, fully grown, on one of the player's plots right now
 -- (the plot whose carrot is least far along, so you see the reveal immediately).
 function Farm.spawnCarrot(player: Player, spec: CarrotSpec): boolean

@@ -290,12 +290,7 @@ local function onHarvest(r: Types.HarvestResult)
 	if r.isNewType then
 		local def = CarrotInfo.type(r.type)
 		HUD.toast(
-			string.format(
-				"NEW CARROT! %s  (%d/%d found)",
-				if def then def.name else r.type,
-				r.found,
-				r.totalTypes
-			),
+			string.format("NEW! %s (%d/%d)", if def then def.name else r.type, r.found, r.totalTypes),
 			color,
 			4
 		)
@@ -305,7 +300,7 @@ local function onHarvest(r: Types.HarvestResult)
 		local mut = CarrotInfo.mutation(r.mutations[1])
 		if mut then
 			HUD.toast(
-				string.format("MUTATION! %s  (x%s value)", mut.name, Format.number(mut.mult)),
+				string.format("✨ %s x%s", mut.name, Format.number(mut.mult)),
 				CarrotInfo.color(mut.color),
 				3.5
 			)
@@ -316,10 +311,10 @@ end
 
 local function onSell(r: Types.SellResult)
 	local boom = r.boom == true and r.bonus > 1.001
-	local coins = math.clamp(math.floor(3 + math.log10(math.max(1, r.total)) * 2.5), 3, 18)
+	local coins = math.clamp(math.floor(2 + math.log10(math.max(1, r.total)) * 1.5), 3, 10)
 	if boom then
 		-- "Sell All under a boom should feel like a jackpot"
-		coins = math.min(30, coins * 2)
+		coins = math.min(14, coins + 4)
 		HUD.banner(
 			string.format("BOOM SALE! x%s", tostring(math.floor(r.bonus * 10 + 0.5) / 10)),
 			Color3.fromRGB(255, 170, 40),
@@ -342,7 +337,7 @@ local function onSell(r: Types.SellResult)
 	local root = HUD.fxRoot()
 	local s = HUD.scale()
 	local center = root.AbsoluteSize * Vector2.new(0.5, 0.42)
-	local height = math.floor(math.clamp(44 + math.log10(math.max(1, r.total)) * 4, 48, 80) * s)
+	local height = math.floor(math.clamp(26 + math.log10(math.max(1, r.total)) * 2.5, 28, 44) * s)
 	local popup: Frame = UI.new("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromOffset(center.X, center.Y),
@@ -408,7 +403,7 @@ local function onAnnounce(a: Types.Announcement)
 		return
 	end
 	if a.scope <= 1 then
-		HUD.toast(string.format("%s! %s  (%s)", rarityName, name, Format.cash(a.value)), color, 4)
+		HUD.toast(string.format("%s! %s %s", rarityName, name, Format.cash(a.value)), color, 3)
 		return
 	end
 	if isMe then

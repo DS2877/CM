@@ -32,6 +32,7 @@ Remotes.Names = {
 	Watered = "Watered", -- (farmId: number, byName: string)
 	Offer = "Offer", -- (productId: string) show a contextual offer once
 	AdminMessage = "AdminMessage", -- ({ text, userId, name }) dev message bubble, all servers
+	AdminFx = "AdminFx", -- ({ kind: string }) cosmetic admin fun (carrot rain …), all clients
 	PromptFavorite = "PromptFavorite", -- () ask the client to show the favorite prompt (once)
 	DailySync = "DailySync", -- (Daily.DailyState)
 }

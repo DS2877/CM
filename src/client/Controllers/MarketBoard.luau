@@ -211,17 +211,17 @@ local function addBunny(stall: Instance)
 		if m then
 			local bb = Instance.new("BillboardGui")
 			bb.Adornee = m
-			bb.Size = UDim2.new(8, 0, 2, 0)
+			bb.Size = UDim2.new(5, 0, 1.2, 0)
 			bb.StudsOffsetWorldSpace = Vector3.new(0, 7, 0)
-			bb.AlwaysOnTop = true
+			bb.AlwaysOnTop = false
 			bb.LightInfluence = 0
-			bb.MaxDistance = 90
+			bb.MaxDistance = 60
 			local l = UI.bigText({
 				Size = UDim2.fromScale(1, 1),
-				Text = if n >= 30 then "NOM NOM NOM!! 😋" else "NOM NOM! 😋",
+				Text = if n >= 30 then "NOM NOM NOM! 😋" else "NOM NOM! 😋",
 				TextColor3 = Color3.fromRGB(255, 230, 120),
 				Parent = bb,
-			}, Color3.fromRGB(90, 40, 0), 2.5)
+			}, Color3.fromRGB(90, 40, 0), 1.5)
 			bb.Parent = player:WaitForChild("PlayerGui")
 			UI.tween(bb, 1.4, { StudsOffsetWorldSpace = Vector3.new(0, 10, 0) })
 			UI.tween(l, 1.4, { TextTransparency = 1 })
@@ -357,7 +357,9 @@ end
 local function update(state: EventSchedule.State)
 	local t = now()
 	local pulse = 0.5 + 0.5 * math.sin(os.clock() * 5)
-	boomOn = state.boomActive
+	-- Bunnies party in a boom, or when an admin starts a bunny dance
+	local dance = workspace:GetAttribute("BunnyPartyUntil")
+	boomOn = state.boomActive or (typeof(dance) == "number" and dance > t)
 	local daily = string.format("TODAY: %s x%s", string.upper(state.dailyRarity), tostring(state.dailyMult))
 	if state.boomActive then
 		local left = Format.duration(state.boomEnd - t)
@@ -423,7 +425,7 @@ local function update(state: EventSchedule.State)
 	end
 	for _, b in bunnies do
 		for _, p in b.hat do
-			p.Transparency = if state.boomActive then 0 else 1
+			p.Transparency = if boomOn then 0 else 1
 		end
 	end
 end
