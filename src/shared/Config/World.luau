@@ -61,13 +61,14 @@ local World = {
 	LeaderboardRadius = 74,
 	LeaderboardSpread = 15, -- degrees between neighbouring boards
 
-	-- Bunny Launchers: one at each farm gate (to the square) and one at the square's end of each
-	-- farm path (to that farm). Flights are client-side movement only.
+	-- Bunny Launchers: one beside each farm gate (to the square) and one beside the square's end of
+	-- each farm road (to that farm). Flights are client-side movement only.
 	LauncherRadius = 4,
 	LaunchSeconds = 3.2,
 	LaunchHeight = 70, -- peak height of the arc
-	LauncherGateOffset = 12, -- farm launcher: this far outside the gate
-	LauncherPlazaInset = 8, -- square launcher: this far inside the square's edge
+	LauncherGateOffset = 14, -- farm launcher: this far outside the gate
+	LauncherPlazaOutset = 12, -- road-end launcher: this far outside the square's edge
+	LauncherSideOffset = 14, -- launchers stand beside the road, never on it (no accidental launches)
 	-- "HOME" launchers right next to the market and the workshop: always fly you to your own farm
 	HomeLaunchers = { { angle = 47, distance = 44 }, { angle = 73, distance = 44 } },
 
@@ -269,8 +270,10 @@ function World.launchers(): { Launcher }
 	local half = World.farmHalf()
 	for id = 1, World.FarmCount do
 		local dir = dirOf(World.farmAngle(id))
-		local gate = dir * (World.FarmRingRadius - half - World.LauncherGateOffset)
-		local plazaEnd = dir * (World.PlazaRadius - World.LauncherPlazaInset)
+		-- beside the road (the right-hand side when you face the square), on the grass
+		local beside = Vector3.new(dir.Z, 0, -dir.X) * World.LauncherSideOffset
+		local gate = dir * (World.FarmRingRadius - half - World.LauncherGateOffset) + beside
+		local plazaEnd = dir * (World.PlazaRadius + World.LauncherPlazaOutset) + beside
 		-- farm -> square: land on the open ring in front of the Bunny Market
 		local market = dirOf(World.MarketAngle) * (World.MarketDistance - World.SellMatOffset - 14)
 		local side = Vector3.new(-dir.Z, 0, dir.X) * ((id % 3) - 1) * 6

@@ -374,10 +374,16 @@ end
 
 -- Is a point inside (or right next to) a farm, its barn, the plaza or a path? Decor stays out.
 local FARM_KEEP_OUT = World.farmHalf() * 1.5 + 12
+local LAUNCHERS = World.launchers()
 local function blocked(pos: Vector3): boolean
 	local flat = Vector3.new(pos.X, 0, pos.Z)
 	if flat.Magnitude < World.PlazaRadius + 10 then
 		return true -- the town square
+	end
+	for _, l in LAUNCHERS do
+		if (flat - l.from).Magnitude < 9 then
+			return true -- a Bunny Launcher stands here
+		end
 	end
 	if WorldFun.blocked(flat) or Wilds.blocked(flat) then
 		return true -- bouncy mushrooms
