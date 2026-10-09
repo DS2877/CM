@@ -239,6 +239,19 @@ function Economy.sellAll(player: Player): (number, number)
 		boom = Economy.eventState().boomActive,
 	}
 	Remotes.get(Remotes.Names.SellResult):FireClient(player, result)
+	-- The bunny at this stall celebrates for everyone (clients watch these attributes)
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	local world = workspace:FindFirstChild("World")
+	local market = world and world:FindFirstChild("Market")
+	if root and root:IsA("BasePart") and market then
+		local index = World.nearestSellPadIndex((root :: BasePart).Position - marketPosition)
+		local stall = market:FindFirstChild("Stall_" .. index)
+		if stall then
+			stall:SetAttribute("SaleCount", count)
+			stall:SetAttribute("SaleAt", workspace:GetServerTimeNow())
+		end
+	end
 	for _, cb in saleCallbacks do
 		task.spawn(cb, player, total, count, atMarket, atMarket and Economy.eventState().boomActive)
 	end

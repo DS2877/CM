@@ -88,6 +88,13 @@ local Assets = {
 		Scanner = "",
 		Icon = "",
 	},
+	-- Roblox's built-in R15 animations (owned by Roblox, usable in every experience), for the
+	-- plaza bots. Empty = the bots glide without animation.
+	Animations = {
+		BotWalk = "rbxassetid://913402848",
+		BotIdle = "rbxassetid://507766388",
+		BotJump = "rbxassetid://507765000",
+	},
 }
 
 return Assets

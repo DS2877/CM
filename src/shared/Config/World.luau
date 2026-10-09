@@ -52,17 +52,27 @@ local World = {
 	-- Fixed places in the world (design: selling and upgrading are trips, not HUD buttons).
 	-- Sell: step onto one of the SELL pads in front of the market counters (one per side, so
 	-- every farm path leads to one) and the whole basket sells. Walking across the plaza doesn't.
-	SellPadAngles = { 0, 90, 180, 270 }, -- degrees around the market, one pad per counter side
-	SellPadDistance = 17, -- pad center from the market center (just off the wooden deck)
-	SellPadRadius = 3.8,
-	-- The market board (boom timer chalkboard): between the two spawn-side SELL pads.
-	MarketBoardAngle = 45,
-	MarketBoardDistance = 19,
+	-- The Bunny Market: four farmers-market stalls around the BOOM EXCHANGE tower in the middle,
+	-- each with a giant bunny buyer. You sell by stepping on the mat in front of a stall.
+	SellPadAngles = { 0, 90, 180, 270 }, -- degrees around the plaza, one stall + mat per side
+	SellPadDistance = 25, -- mat center from the plaza center
+	SellPadRadius = 4,
+	BunnyStallDistance = 18, -- stall center from the plaza center (the mat is in front of it)
+	BunnyNames = { "Mr. Fluff", "Bun-Bun", "Clover", "Sir Hops" }, -- one per stall, same order
+	-- Mega Bunny: a huge bunny hopping in a big circle around the plaza (client renders it from
+	-- the server clock, so everyone sees it in the same spot). Land on its back to get launched.
+	MegaBunnyRadius = 80,
+	MegaBunnyLapSeconds = 240,
+	MegaBunnyScale = 9,
+	MegaBunnyBounce = 130,
+	-- Bots: Roblox-style farmers walking around the plaza and the paths (server, just for life).
+	Bots = 8,
+	BotWalkSpeed = 12,
 	-- Upgrade Shops on the plaza, facing the market, so "sell, then upgrade" is two steps.
 	UpgradeStallAngles = { 112.5, 292.5 }, -- degrees around the market (between farm paths)
-	UpgradeStallDistance = 27, -- stall center from the market center
-	UpgradePadOffset = 6.5, -- the pad sits this far in front of the stall (toward the market)
-	UpgradePadRadius = 4.5, -- standing on the pad opens the Upgrades panel
+	UpgradeStallDistance = 33, -- stall center from the market center (at the plaza edge)
+	UpgradePadOffset = 6, -- the pad sits this far in front of the stall (toward the market)
+	UpgradePadRadius = 4, -- standing on the pad opens the Upgrades panel
 	UpgradeServerSlack = 5, -- extra distance the server accepts (lag)
 	-- Farm Level board left of each farm gate; stand on its pad to open the Farm Level panel.
 	FarmLevelPadOffset = 4.2, -- pad center in front of the board (toward the plaza)
@@ -96,6 +106,18 @@ function World.sellPads(): { Vector3 }
 		table.insert(out, Vector3.new(math.sin(a), 0, math.cos(a)) * World.SellPadDistance)
 	end
 	return out
+end
+
+-- Index (1..#SellPadAngles) of the SELL pad nearest to a position.
+function World.nearestSellPadIndex(pos: Vector3): number
+	local best, bestDist = 1, math.huge
+	for i, pad in World.sellPads() do
+		local d = Vector3.new(pos.X - pad.X, 0, pos.Z - pad.Z).Magnitude
+		if d < bestDist then
+			best, bestDist = i, d
+		end
+	end
+	return best
 end
 
 -- Nearest SELL pad to a position (flat distance), and how far it is.

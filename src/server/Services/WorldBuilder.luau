@@ -9,6 +9,7 @@ local Config = ReplicatedStorage.Shared.Config
 local World = require(Config.World)
 local Economy = require(Config.Economy)
 local WorldFun = require(script.Parent.WorldFun)
+local BunnyMarket = require(script.Parent.BunnyMarket)
 
 export type FarmBuild = {
 	id: number,
@@ -251,8 +252,7 @@ local function buildGround(world: Folder)
 		}, world)
 	end
 
-	-- Plaza: terracotta rim, warm cream stone, and a compass of orange spokes that point at the
-	-- eight farms, so the map explains itself from the spawn.
+	-- Plaza: terracotta rim and warm cream stone (the Bunny Market stands on it).
 	disc("PlazaRing", Vector3.new(0, 0.2, 0), 70, 0.4, {
 		Material = Enum.Material.Brick,
 		Color = COLORS.terracotta,
@@ -263,19 +263,6 @@ local function buildGround(world: Folder)
 		Color = COLORS.plaza,
 		CastShadow = false,
 	}, world)
-	for i = 0, World.FarmCount - 1 do
-		local a = i * (2 * math.pi / World.FarmCount)
-		local dir = Vector3.new(math.sin(a), 0, math.cos(a))
-		part({
-			Name = "Spoke",
-			Size = Vector3.new(2.2, 0.1, 13),
-			CFrame = CFrame.lookAt(dir * 25 + Vector3.new(0, 0.33, 0), dir * 40 + Vector3.new(0, 0.33, 0)),
-			Material = Enum.Material.Slate,
-			Color = COLORS.orange,
-			CastShadow = false,
-			CanCollide = false,
-		}, world)
-	end
 end
 
 -- A big decorative carrot (tip down) made of primitives, used on top of the market.
@@ -326,253 +313,6 @@ local function boardText(board: BasePart, face: Enum.NormalId, canvas: Vector2, 
 	surface.MaxDistance = 220
 	surface.Parent = board
 	label(surface, props)
-end
-
--- The market: the map's hero landmark, readable from every farm. Raised deck, red posts, four
--- counters with carrot crates, a tiered striped tent roof with a scalloped edge, a name board on
--- every side, and a giant carrot on top. Its price sign is a chalkboard on the spawn side; the
--- client draws the live board on it (PriceBoard) and a small boom timer above the roof.
-local function buildMarket(world: Folder): CFrame
-	local market = Instance.new("Model")
-	market.Name = "Market"
-
-	disc("Deck", Vector3.new(0, 0.9, 0), 26, 0.6, {
-		Material = Enum.Material.WoodPlanks,
-		Color = COLORS.wood,
-	}, market)
-	disc("DeckRim", Vector3.new(0, 0.55, 0), 27.5, 0.4, {
-		Material = Enum.Material.Wood,
-		Color = COLORS.darkWood,
-	}, market)
-
-	local size = 18
-	local h = size / 2
-	for _, sx in { -1, 1 } do
-		for _, sz in { -1, 1 } do
-			pillar("Post", Vector3.new(sx * (h - 0.7), 0.9, sz * (h - 0.7)), 9.2, 1.3, {
-				Color = COLORS.red,
-				Material = Enum.Material.SmoothPlastic,
-			}, market)
-		end
-	end
-	-- Counters with crates of carrots (the crates sit on the counters, carrots poke out)
-	for i = 0, 3 do
-		local rot = CFrame.Angles(0, i * math.pi / 2, 0)
-		part({
-			Name = "Counter",
-			Size = Vector3.new(size - 3, 3, 2.4),
-			CFrame = rot * CFrame.new(0, 2.4, h - 1.2),
-			Material = Enum.Material.WoodPlanks,
-			Color = COLORS.wood,
-		}, market)
-		part({
-			Name = "CounterTop",
-			Size = Vector3.new(size - 2.4, 0.3, 2.8),
-			CFrame = rot * CFrame.new(0, 4.05, h - 1.2),
-			Material = Enum.Material.Wood,
-			Color = COLORS.darkWood,
-		}, market)
-		for c = -1, 1 do
-			local crate = part({
-				Name = "Crate",
-				Size = Vector3.new(3.2, 1.1, 1.9),
-				CFrame = rot * CFrame.new(c * 4.6, 4.75, h - 1.2) * CFrame.Angles(0, (c * 0.07), 0),
-				Material = Enum.Material.WoodPlanks,
-				Color = COLORS.wood,
-			}, market)
-			for k = -1, 1 do
-				for j = -1, 1, 2 do
-					part({
-						Name = "CrateCarrot",
-						Size = Vector3.new(0.6, 1.2, 0.6),
-						CFrame = crate.CFrame
-							* CFrame.new(k * 0.95, 0.75, j * 0.42)
-							* CFrame.Angles(math.rad(12 * j), 0, math.rad(10 * k)),
-						Color = COLORS.orange,
-						CastShadow = false,
-						CanCollide = false,
-					}, market)
-				end
-			end
-		end
-	end
-
-	-- Tiered tent roof: alternating orange/cream tiers read as "market stall" from far away.
-	local tiers = { { 22, 10.6 }, { 17, 11.8 }, { 12, 13 }, { 7, 14.2 } }
-	for i, t in tiers do
-		part({
-			Name = "RoofTier",
-			Size = Vector3.new(t[1], 1.2, t[1]),
-			CFrame = CFrame.new(0, t[2], 0),
-			Material = Enum.Material.Fabric,
-			Color = if i % 2 == 1 then COLORS.orange else COLORS.cream,
-		}, market)
-	end
-	-- Scalloped valance around the roof edge
-	local edge = 11
-	local step = 1.6
-	local n = math.floor(edge * 2 / step)
-	for side = 0, 3 do
-		local rot = CFrame.Angles(0, side * math.pi / 2, 0)
-		for k = 0, n - 1 do
-			local x = -edge + step * (k + 0.5)
-			part({
-				Name = "Scallop",
-				Shape = Enum.PartType.Ball,
-				Size = Vector3.new(1.3, 1.3, 1.3),
-				CFrame = rot * CFrame.new(x, 10, edge - 0.2),
-				Material = Enum.Material.SmoothPlastic,
-				Color = if k % 2 == 0 then COLORS.white else COLORS.orange,
-				CastShadow = false,
-				CanCollide = false,
-			}, market)
-		end
-	end
-
-	-- Name boards under the roof edge on all four sides
-	for side = 0, 3 do
-		local rot = CFrame.Angles(0, side * math.pi / 2, 0)
-		local board = part({
-			Name = "NameBoard",
-			Size = Vector3.new(15, 2.2, 0.5),
-			CFrame = rot * CFrame.new(0, 8.6, h + 0.2),
-			Material = Enum.Material.WoodPlanks,
-			Color = COLORS.darkWood,
-		}, market)
-		boardText(board, Enum.NormalId.Back, Vector2.new(600, 88), {
-			Size = UDim2.new(1, -24, 1, -12),
-			Position = UDim2.fromOffset(12, 6),
-			Text = "CARROT MARKET",
-			Font = Enum.Font.LuckiestGuy,
-			TextColor3 = Color3.fromRGB(255, 196, 80),
-			TextStrokeColor3 = Color3.fromRGB(60, 25, 5),
-			TextStrokeTransparency = 0,
-		})
-	end
-
-	-- Giant carrot on top, slightly tilted for charm (tip resting on the roof)
-	statueCarrot(market, Vector3.new(0, 26, 0), 1.6)
-	for _, d in market:GetChildren() do
-		if d:IsA("Model") and d.Name == "CarrotStatue" then
-			d:PivotTo(CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.rad(8)) * d:GetPivot())
-		end
-	end
-
-	-- Market board (chalkboard) between the two spawn-side SELL pads, facing outward, big enough
-	-- to read from the plaza. The client draws the live boom info on it (PriceBoard, Back face).
-	local boardDir =
-		Vector3.new(math.sin(math.rad(World.MarketBoardAngle)), 0, math.cos(math.rad(World.MarketBoardAngle)))
-	local boardPos = boardDir * World.MarketBoardDistance
-	local boardCF = CFrame.lookAt(boardPos, boardPos - boardDir)
-	for _, x in { -6.4, 6.4 } do
-		part({
-			Name = "BoardPost",
-			Size = Vector3.new(0.7, 10.5, 0.7),
-			CFrame = boardCF * CFrame.new(x, 5.25, 0),
-			Material = Enum.Material.Wood,
-			Color = COLORS.darkWood,
-		}, market)
-	end
-	part({
-		Name = "PriceBoardFrame",
-		Size = Vector3.new(12.8, 8.6, 0.4),
-		CFrame = boardCF * CFrame.new(0, 6, 0),
-		Material = Enum.Material.Wood,
-		Color = COLORS.darkWood,
-	}, market)
-	part({
-		Name = "PriceBoardRoof",
-		Size = Vector3.new(14, 0.5, 1.6),
-		CFrame = boardCF * CFrame.new(0, 10.6, 0),
-		Material = Enum.Material.SmoothPlastic,
-		Color = COLORS.orange,
-	}, market)
-	part({
-		Name = "PriceBoard",
-		Size = Vector3.new(12, 7.8, 0.2),
-		CFrame = boardCF * CFrame.new(0, 6, 0.25),
-		Material = Enum.Material.SmoothPlastic,
-		Color = COLORS.chalk,
-		CastShadow = false,
-	}, market)
-
-	-- Anchor for the market's ambience sound (client Music controller)
-	part({
-		Name = "SellPoint",
-		Size = Vector3.new(1, 1, 1),
-		CFrame = CFrame.new(0, 3, 0),
-		Transparency = 1,
-		CanCollide = false,
-		CanQuery = false,
-		CastShadow = false,
-	}, market)
-
-	-- SELL pads: one in front of each counter. Gold rim, green pad with "SELL" painted on it
-	-- (reads upright as you walk in toward the market) and a SELL sign hanging over the counter.
-	for _, pad in World.sellPads() do
-		local dir = pad.Unit
-		disc("SellPadRim", pad + Vector3.new(0, 0.42, 0), World.SellPadRadius * 2 + 1.2, 0.3, {
-			Material = Enum.Material.SmoothPlastic,
-			Color = COLORS.gold,
-			CastShadow = false,
-		}, market)
-		local green = disc("SellPad", pad + Vector3.new(0, 0.48, 0), World.SellPadRadius * 2, 0.3, {
-			Material = Enum.Material.SmoothPlastic,
-			Color = COLORS.sellGreen,
-			CastShadow = false,
-		}, market)
-		local coins = Instance.new("ParticleEmitter")
-		coins.Texture = "rbxasset://textures/particles/sparkles_main.dds"
-		coins.Rate = 4
-		coins.Lifetime = NumberRange.new(0.8, 1.4)
-		coins.Speed = NumberRange.new(1, 2)
-		coins.SpreadAngle = Vector2.new(20, 20)
-		coins.EmissionDirection = Enum.NormalId.Right -- the disc's axis points up
-		coins.Size = NumberSequence.new(0.35, 0)
-		coins.Color = ColorSequence.new(Color3.fromRGB(255, 225, 90))
-		coins.LightEmission = 0.6
-		coins.Parent = green
-		local plate = part({
-			Name = "SellPlate",
-			Size = Vector3.new(World.SellPadRadius * 1.3, 0.05, World.SellPadRadius * 0.7),
-			CFrame = CFrame.lookAt(pad + Vector3.new(0, 0.66, 0), pad + Vector3.new(0, 0.66, 0) - dir),
-			Transparency = 1,
-			CanCollide = false,
-			CanQuery = false,
-			CastShadow = false,
-		}, market)
-		boardText(plate, Enum.NormalId.Top, Vector2.new(260, 140), {
-			Size = UDim2.fromScale(1, 1),
-			Text = "💰 SELL",
-			Font = Enum.Font.LuckiestGuy,
-			TextColor3 = COLORS.white,
-			TextStrokeColor3 = Color3.fromRGB(20, 80, 30),
-			TextStrokeTransparency = 0,
-		})
-		-- "SELL HERE" painted on the counter right behind the pad (no extra sign in the air)
-		local counterFront = Vector3.new(dir.X * (h - 0.0), 2.4, dir.Z * (h - 0.0))
-		local banner = part({
-			Name = "SellBanner",
-			Size = Vector3.new(12, 2.4, 0.15),
-			CFrame = CFrame.lookAt(counterFront + dir * 0.05, counterFront + dir * 2),
-			Material = Enum.Material.SmoothPlastic,
-			Color = COLORS.sellGreen,
-			CanCollide = false,
-			CanQuery = false,
-		}, market)
-		boardText(banner, Enum.NormalId.Front, Vector2.new(500, 100), {
-			Size = UDim2.new(1, -16, 1, -8),
-			Position = UDim2.fromOffset(8, 4),
-			Text = "💰 SELL HERE 💰",
-			Font = Enum.Font.LuckiestGuy,
-			TextColor3 = COLORS.white,
-			TextStrokeColor3 = Color3.fromRGB(20, 80, 30),
-			TextStrokeTransparency = 0,
-		})
-	end
-
-	market.Parent = world
-	return CFrame.new(0, 0, 0)
 end
 
 -- Upgrade Shop: a small teal-roofed stall on the plaza facing the market. Standing on its pad
@@ -1614,7 +1354,8 @@ function WorldBuilder.build(): WorldBuild
 
 	local world = folder("World", workspace)
 	buildGround(world)
-	local marketCFrame = buildMarket(world)
+	BunnyMarket.build(world)
+	local marketCFrame = CFrame.new(0, 0, 0)
 	for _, deg in World.UpgradeStallAngles do
 		buildUpgradeStall(world, deg)
 	end
@@ -1627,7 +1368,7 @@ function WorldBuilder.build(): WorldBuild
 	spawn.Neutral = true
 	spawn.Duration = 0
 	spawn.Size = Vector3.new(8, 0.4, 8)
-	spawn.CFrame = CFrame.new(0, 0.5, 24)
+	spawn.CFrame = CFrame.new(17, 0.5, 17) -- between two stalls, not on a SELL mat
 	spawn.Material = Enum.Material.Cobblestone
 	spawn.Color = COLORS.plaza
 	spawn.TopSurface = Enum.SurfaceType.Smooth
@@ -1644,7 +1385,7 @@ function WorldBuilder.build(): WorldBuild
 	part({
 		Name = "PriceBoardAnchor",
 		Size = Vector3.new(1, 1, 1),
-		CFrame = CFrame.new(0, 34, 0),
+		CFrame = CFrame.new(0, 40, 0),
 		Transparency = 1,
 		CanCollide = false,
 		CanQuery = false,

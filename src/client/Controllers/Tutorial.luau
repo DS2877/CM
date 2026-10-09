@@ -295,7 +295,7 @@ local function update()
 		-- 3. Sell: everything planted, carrots in the basket -> to the market
 		step = 3
 		Guide.setOverride("market")
-		say("Follow the line to the market and step on a SELL pad to sell!")
+		say("Follow the line and step on a SELL mat – the bunnies buy carrots! 🐰")
 		pointAtPlot(nil, "")
 		pointAtHud(nil)
 	elseif ready then
