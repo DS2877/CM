@@ -1,4 +1,4 @@
-# Creator Hub setup – 2026-10-08 19:16 UTC
+# Creator Hub setup – 2026-10-09 20:42 UTC
 
 Catalog: 15 entries in Products.luau
 
@@ -24,6 +24,6 @@ Catalog: 15 entries in Products.luau
   -> MarketTycoon: product 3717302136
 
 ## Max Players
-- PATCH serverSize=8: HTTP 200 {"path":"universes/10769879996/places/87874194731556","createTime":"2026-10-08T16:01:43.971Z","updateTime":"2026-10-08T19:01:31.016Z","displayName":"Carrot Market \uD83E\uDD55","description":"","serverSize":8,"root":true,"universeRuntimeCreation":false,"templatePlace":""}
+- PATCH serverSize=6: HTTP 200 {"path":"universes/10769879996/places/87874194731556","createTime":"2026-10-08T16:01:43.971Z","updateTime":"2026-10-09T09:40:39.047Z","displayName":"Carrot Market \uD83E\uDD55","description":"","serverSize":6,"root":true,"universeRuntimeCreation":false,"templatePlace":""}
 
 Result: ALL OK
