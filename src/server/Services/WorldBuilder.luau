@@ -419,10 +419,10 @@ local function buildMarket(world: Folder): CFrame
 			part({
 				Name = "Scallop",
 				Shape = Enum.PartType.Ball,
-				Size = Vector3.new(1.5, 1.5, 1.5),
-				CFrame = rot * CFrame.new(x, 9.95, edge - 0.2),
-				Material = Enum.Material.Fabric,
-				Color = if k % 2 == 0 then COLORS.cream else COLORS.orange,
+				Size = Vector3.new(1.3, 1.3, 1.3),
+				CFrame = rot * CFrame.new(x, 10, edge - 0.2),
+				Material = Enum.Material.SmoothPlastic,
+				Color = if k % 2 == 0 then COLORS.white else COLORS.orange,
 				CastShadow = false,
 				CanCollide = false,
 			}, market)
@@ -458,28 +458,39 @@ local function buildMarket(world: Folder): CFrame
 		end
 	end
 
-	-- Chalkboard price sign on an easel, on the spawn side, angled toward arriving players
-	local boardCF = CFrame.new(0, 0, 16.5) * CFrame.Angles(0, 0, 0)
-	for _, x in { -4.2, 4.2 } do
+	-- Market board (chalkboard) between the two spawn-side SELL pads, facing outward, big enough
+	-- to read from the plaza. The client draws the live boom info on it (PriceBoard, Back face).
+	local boardDir =
+		Vector3.new(math.sin(math.rad(World.MarketBoardAngle)), 0, math.cos(math.rad(World.MarketBoardAngle)))
+	local boardPos = boardDir * World.MarketBoardDistance
+	local boardCF = CFrame.lookAt(boardPos, boardPos - boardDir)
+	for _, x in { -6.4, 6.4 } do
 		part({
-			Name = "EaselLeg",
-			Size = Vector3.new(0.5, 9, 0.5),
-			CFrame = boardCF * CFrame.new(x, 4.3, -0.4) * CFrame.Angles(math.rad(-6), 0, 0),
+			Name = "BoardPost",
+			Size = Vector3.new(0.7, 10.5, 0.7),
+			CFrame = boardCF * CFrame.new(x, 5.25, 0),
 			Material = Enum.Material.Wood,
 			Color = COLORS.darkWood,
 		}, market)
 	end
 	part({
 		Name = "PriceBoardFrame",
-		Size = Vector3.new(9.6, 6.6, 0.4),
-		CFrame = boardCF * CFrame.new(0, 5.2, -0.1),
+		Size = Vector3.new(12.8, 8.6, 0.4),
+		CFrame = boardCF * CFrame.new(0, 6, 0),
 		Material = Enum.Material.Wood,
 		Color = COLORS.darkWood,
 	}, market)
 	part({
+		Name = "PriceBoardRoof",
+		Size = Vector3.new(14, 0.5, 1.6),
+		CFrame = boardCF * CFrame.new(0, 10.6, 0),
+		Material = Enum.Material.SmoothPlastic,
+		Color = COLORS.orange,
+	}, market)
+	part({
 		Name = "PriceBoard",
-		Size = Vector3.new(8.8, 5.8, 0.2),
-		CFrame = boardCF * CFrame.new(0, 5.2, 0.15),
+		Size = Vector3.new(12, 7.8, 0.2),
+		CFrame = boardCF * CFrame.new(0, 6, 0.25),
 		Material = Enum.Material.SmoothPlastic,
 		Color = COLORS.chalk,
 		CastShadow = false,
@@ -538,19 +549,21 @@ local function buildMarket(world: Folder): CFrame
 			TextStrokeColor3 = Color3.fromRGB(20, 80, 30),
 			TextStrokeTransparency = 0,
 		})
-		-- Hanging sign over this side's counter
-		local signPos = Vector3.new(dir.X * (h + 0.4), 8.4, dir.Z * (h + 0.4))
-		local sign = part({
-			Name = "SellSign",
-			Size = Vector3.new(7, 1.8, 0.3),
-			CFrame = CFrame.lookAt(signPos, signPos + dir),
-			Material = Enum.Material.WoodPlanks,
+		-- "SELL HERE" painted on the counter right behind the pad (no extra sign in the air)
+		local counterFront = Vector3.new(dir.X * (h - 0.0), 2.4, dir.Z * (h - 0.0))
+		local banner = part({
+			Name = "SellBanner",
+			Size = Vector3.new(12, 2.4, 0.15),
+			CFrame = CFrame.lookAt(counterFront + dir * 0.05, counterFront + dir * 2),
+			Material = Enum.Material.SmoothPlastic,
 			Color = COLORS.sellGreen,
+			CanCollide = false,
+			CanQuery = false,
 		}, market)
-		boardText(sign, Enum.NormalId.Front, Vector2.new(320, 82), {
+		boardText(banner, Enum.NormalId.Front, Vector2.new(500, 100), {
 			Size = UDim2.new(1, -16, 1, -8),
 			Position = UDim2.fromOffset(8, 4),
-			Text = "SELL HERE",
+			Text = "💰 SELL HERE 💰",
 			Font = Enum.Font.LuckiestGuy,
 			TextColor3 = COLORS.white,
 			TextStrokeColor3 = Color3.fromRGB(20, 80, 30),
@@ -675,6 +688,23 @@ local function buildUpgradeStall(world: Folder, deg: number)
 		CanCollide = false,
 		CastShadow = false,
 	}, model)
+	local plate = part({
+		Name = "UpgradePlate",
+		Size = Vector3.new(World.UpgradePadRadius * 1.6, 0.05, World.UpgradePadRadius * 0.9),
+		CFrame = CFrame.lookAt(padPos + Vector3.new(0, 0.6, 0), padPos + Vector3.new(0, 0.6, 0) + dir),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		CastShadow = false,
+	}, model)
+	boardText(plate, Enum.NormalId.Top, Vector2.new(300, 160), {
+		Size = UDim2.fromScale(1, 1),
+		Text = "⬆ UPGRADES",
+		Font = Enum.Font.LuckiestGuy,
+		TextColor3 = COLORS.white,
+		TextStrokeColor3 = Color3.fromRGB(10, 50, 70),
+		TextStrokeTransparency = 0,
+	})
 	model.Parent = world
 end
 

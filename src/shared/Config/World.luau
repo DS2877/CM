@@ -55,6 +55,9 @@ local World = {
 	SellPadAngles = { 0, 90, 180, 270 }, -- degrees around the market, one pad per counter side
 	SellPadDistance = 17, -- pad center from the market center (just off the wooden deck)
 	SellPadRadius = 3.8,
+	-- The market board (boom timer chalkboard): between the two spawn-side SELL pads.
+	MarketBoardAngle = 45,
+	MarketBoardDistance = 19,
 	-- Upgrade Shops on the plaza, facing the market, so "sell, then upgrade" is two steps.
 	UpgradeStallAngles = { 112.5, 292.5 }, -- degrees around the market (between farm paths)
 	UpgradeStallDistance = 27, -- stall center from the market center

@@ -1,8 +1,9 @@
 --!strict
 -- The market's public face (design doc §5). Two pieces, each answering one question:
---   * the chalkboard on the market's easel (read up close): what's on now, when the next boom
---     comes, and today's hot rarity. No price table: a player's question is "when do I sell?",
---     not "what is the base price of an Epic?".
+--   * the big chalkboard next to the market: BOOM NOW / NEXT BOOM IN, a huge timer, what the
+--     boom does and today's hot rarity. No price table: a player's question is "when do I sell?",
+--     not "what is the base price of an Epic?". During a boom the board glows orange, the SELL
+--     pads turn gold ("🔥 SELL!") and confetti pops over the roof.
 --   * a compact floating timer above the market statue (read from every farm): "BOOM 4:38", or
 --     "BOOM! 2:31" in orange while it runs.
 -- Plus the market bell when a boom starts and a small pill that points the way while it's on.
@@ -41,6 +42,12 @@ local timerFrame: Frame
 local arrow: TextLabel
 local pointer: Frame
 local pointerText: TextLabel
+local boardBg: Frame
+local sellPads: { BasePart } = {}
+local padLabels: { TextLabel } = {}
+local confetti: ParticleEmitter? = nil
+local PAD_GREEN = Color3.fromRGB(110, 200, 95)
+local PAD_BOOM = Color3.fromRGB(255, 160, 40)
 local marketPos = Vector3.new(0, 4, 0)
 
 local function now(): number
@@ -66,75 +73,103 @@ local function build()
 	marketPos = Vector3.new(anchor.Position.X, 4, anchor.Position.Z)
 	local playerGui = player:WaitForChild("PlayerGui") :: PlayerGui
 
-	-- Chalkboard on the easel (Market.PriceBoard, text on its back face = the spawn side)
+	-- Chalkboard next to the market (Market.PriceBoard, text on its back face = facing the plaza).
+	-- Few, big lines: what's happening, how long, what it means for you.
 	local market = world:WaitForChild("Market")
 	local board = market:WaitForChild("PriceBoard") :: BasePart
 	local sg: SurfaceGui = UI.new("SurfaceGui", {
 		Name = "PriceBoard",
 		Adornee = board,
 		Face = Enum.NormalId.Back,
-		CanvasSize = Vector2.new(440, 290),
-		LightInfluence = 0.15,
-		MaxDistance = 120,
+		CanvasSize = Vector2.new(480, 312),
+		LightInfluence = 0.1,
+		MaxDistance = 150,
 		ResetOnSpawn = false,
 		Parent = playerGui,
 	})
+	boardBg = UI.new("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Color3.fromRGB(40, 66, 54),
+		BorderSizePixel = 0,
+		Parent = sg,
+	})
 	local pad = UI.new("Frame", {
-		Position = UDim2.fromOffset(22, 14),
-		Size = UDim2.new(1, -44, 1, -28),
+		Position = UDim2.fromOffset(18, 10),
+		Size = UDim2.new(1, -36, 1, -20),
 		BackgroundTransparency = 1,
 		Parent = sg,
 	})
-	chalk({
-		Size = UDim2.new(1, 0, 0, 34),
-		Text = "🥕 CARROT MARKET",
-		Font = Enum.Font.LuckiestGuy,
-		TextColor3 = HOT,
-		Parent = pad,
-	})
-	UI.new("Frame", {
-		Position = UDim2.fromOffset(40, 42),
-		Size = UDim2.new(1, -80, 0, 2),
-		BackgroundColor3 = CHALK_DIM,
-		BackgroundTransparency = 0.4,
-		BorderSizePixel = 0,
-		Parent = pad,
-	})
 	kickerLabel = chalk({
-		Position = UDim2.fromOffset(0, 54),
-		Size = UDim2.new(1, 0, 0, 24),
+		Size = UDim2.new(1, 0, 0, 52),
 		Text = "NEXT BOOM IN",
-		TextColor3 = CHALK_DIM,
+		Font = Enum.Font.LuckiestGuy,
+		TextColor3 = CHALK,
 		Parent = pad,
 	})
 	timeLabel = chalk({
-		Position = UDim2.fromOffset(0, 78),
-		Size = UDim2.new(1, 0, 0, 70),
+		Position = UDim2.fromOffset(0, 56),
+		Size = UDim2.new(1, 0, 0, 100),
 		Text = "",
 		Font = Enum.Font.LuckiestGuy,
 		Parent = pad,
 	})
 	boomLabel = chalk({
-		Position = UDim2.fromOffset(0, 152),
-		Size = UDim2.new(1, 0, 0, 30),
+		Position = UDim2.fromOffset(0, 162),
+		Size = UDim2.new(1, 0, 0, 46),
 		Text = "",
+		Font = Enum.Font.LuckiestGuy,
 		TextColor3 = HOT,
 		Parent = pad,
 	})
-	dailyLabel = chalk({
-		Position = UDim2.fromOffset(0, 196),
-		Size = UDim2.new(1, 0, 0, 22),
-		Text = "",
-		TextColor3 = CHALK_DIM,
-		Parent = pad,
-	})
 	hintLabel = chalk({
-		Position = UDim2.fromOffset(0, 230),
-		Size = UDim2.new(1, 0, 0, 20),
+		Position = UDim2.fromOffset(0, 214),
+		Size = UDim2.new(1, 0, 0, 30),
 		Text = "",
-		TextColor3 = CHALK_DIM,
+		TextColor3 = CHALK,
 		Parent = pad,
 	})
+	dailyLabel = chalk({
+		Position = UDim2.fromOffset(0, 254),
+		Size = UDim2.new(1, 0, 0, 34),
+		Text = "",
+		TextColor3 = Color3.fromRGB(255, 225, 120),
+		Parent = pad,
+	})
+
+	-- SELL pads and their painted labels: they light up during a boom (local only)
+	for _, d in market:GetChildren() do
+		if d:IsA("BasePart") and d.Name == "SellPad" then
+			table.insert(sellPads, d)
+		elseif d:IsA("BasePart") and d.Name == "SellPlate" then
+			local label = d:FindFirstChildWhichIsA("SurfaceGui")
+			local text = label and label:FindFirstChildWhichIsA("TextLabel")
+			if text then
+				table.insert(padLabels, text)
+			end
+		end
+	end
+	-- Confetti over the market while a boom is on
+	local roof = market:FindFirstChild("RoofTier")
+	if roof and roof:IsA("BasePart") then
+		confetti = Instance.new("ParticleEmitter")
+		confetti.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 90, 140)),
+			ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 220, 60)),
+			ColorSequenceKeypoint.new(0.66, Color3.fromRGB(90, 200, 255)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 230, 100)),
+		})
+		confetti.Size = NumberSequence.new(0.45)
+		confetti.Lifetime = NumberRange.new(2, 3)
+		confetti.Rate = 0
+		confetti.Speed = NumberRange.new(10, 16)
+		confetti.SpreadAngle = Vector2.new(70, 70)
+		confetti.Acceleration = Vector3.new(0, -12, 0)
+		confetti.Rotation = NumberRange.new(0, 360)
+		confetti.RotSpeed = NumberRange.new(-200, 200)
+		confetti.EmissionDirection = Enum.NormalId.Top
+		confetti.LightEmission = 0.3
+		confetti.Parent = roof
+	end
 
 	-- Compact boom timer above the market statue, readable from every farm
 	local bb: BillboardGui = UI.new("BillboardGui", {
@@ -207,31 +242,53 @@ end
 
 local function update(state: EventSchedule.State)
 	local t = now()
+	local pulse = 0.5 + 0.5 * math.sin(os.clock() * 5)
 	if state.boomActive then
 		local left = Format.duration(state.boomEnd - t)
-		kickerLabel.Text = "BOOM ON NOW! ENDS IN"
+		kickerLabel.Text = "🔥 BOOM! SELL NOW! 🔥"
 		kickerLabel.TextColor3 = HOT
 		timeLabel.Text = left
-		timeLabel.TextColor3 = HOT
-		boomLabel.Text = string.format("%s · %s", state.boom.name, state.boom.description)
-		hintLabel.Text = "Stand on a SELL pad: boom prices now!"
+		timeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		boomLabel.Text = state.boom.description
+		boomLabel.TextColor3 = Color3.fromRGB(255, 230, 90)
+		hintLabel.Text = "Stand on a 💰 SELL pad – boom prices!"
+		boardBg.BackgroundColor3 = Color3.fromRGB(150, 60, 20):Lerp(Color3.fromRGB(190, 85, 25), pulse)
 		timerText.Text = "BOOM! " .. left
 		timerText.TextColor3 = HOT
 		timerFrame.BackgroundColor3 = Color3.fromRGB(150, 60, 10)
+		for _, p in sellPads do
+			p.Color = PAD_BOOM:Lerp(Color3.fromRGB(255, 220, 90), pulse)
+		end
+		for _, l in padLabels do
+			l.Text = "🔥 SELL!"
+		end
+		if confetti then
+			confetti.Rate = 25
+		end
 	else
 		local left = Format.duration(state.boomStart - t)
 		kickerLabel.Text = "NEXT BOOM IN"
 		kickerLabel.TextColor3 = CHALK_DIM
 		timeLabel.Text = left
 		timeLabel.TextColor3 = CHALK
-		boomLabel.Text = string.format("%s · %s", state.boom.name, state.boom.description)
-		hintLabel.Text = "Stand on a SELL pad to sell everything"
+		boomLabel.Text = "Next: " .. state.boom.description
+		boomLabel.TextColor3 = HOT
+		hintLabel.Text = "Save your carrots and sell in the boom!"
+		boardBg.BackgroundColor3 = Color3.fromRGB(40, 66, 54)
 		timerText.Text = "BOOM " .. left
 		timerText.TextColor3 = Color3.fromRGB(255, 255, 255)
 		timerFrame.BackgroundColor3 = Color3.fromRGB(30, 34, 48)
+		for _, p in sellPads do
+			p.Color = PAD_GREEN
+		end
+		for _, l in padLabels do
+			l.Text = "💰 SELL"
+		end
+		if confetti then
+			confetti.Rate = 0
+		end
 	end
-	dailyLabel.Text =
-		string.format("TODAY: %s carrots x%s everywhere", state.dailyRarity, tostring(state.dailyMult))
+	dailyLabel.Text = string.format("⭐ Today: %s carrots x%s", state.dailyRarity, tostring(state.dailyMult))
 end
 
 local function updateArrow(state: EventSchedule.State)
