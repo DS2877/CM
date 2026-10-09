@@ -96,6 +96,22 @@ function Upgrade.atShop(player: Player): boolean
 	return false
 end
 
+-- Admin: set a track's level directly (clamped), with the same side effects as buying.
+function Upgrade.setLevel(player: Player, id: string, level: number)
+	local data = Data.get(player)
+	local track = trackById[id]
+	if not data or not track then
+		return
+	end
+	local newLevel = math.clamp(math.floor(level), 0, Progression.maxLevel(track))
+	data.Upgrades[id] = newLevel
+	Economy.sync(player)
+	Upgrade.sync(player)
+	for _, cb in purchasedCallbacks do
+		task.spawn(cb, player, id, newLevel)
+	end
+end
+
 function Upgrade.buy(player: Player, id: string): boolean
 	local data = Data.get(player)
 	local track = trackById[id]

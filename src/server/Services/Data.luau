@@ -212,6 +212,30 @@ function Data.get(player: Player): PlayerData?
 	return if profile then profile.Data else nil
 end
 
+-- Admin: wipe the profile back to a brand-new player (purchase receipts are kept so a past
+-- purchase can never be granted twice).
+function Data.reset(player: Player): boolean
+	local profile = profiles[player]
+	if not profile then
+		return false
+	end
+	local receipts = profile.Data.Receipts
+	local function deep(t: any): any
+		if typeof(t) ~= "table" then
+			return t
+		end
+		local out = {}
+		for k, v in t do
+			out[k] = deep(v)
+		end
+		return out
+	end
+	local fresh = deep(TEMPLATE)
+	fresh.Receipts = receipts
+	profile.Data = fresh
+	return true
+end
+
 -- Saves now and waits until the DataStore write finished (for purchases). Returns success.
 function Data.saveAndWait(player: Player, timeout: number?): boolean
 	local profile = profiles[player]

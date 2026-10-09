@@ -71,6 +71,9 @@ local goalShine: Frame
 local goalStroke: UIStroke
 local tiles: { [string]: GuiButton } = {}
 local tileHandlers: { [string]: () -> () } = {}
+local cornerRow: Frame? = nil
+local makeRoundButton: ((name: string, emoji: string, color: Color3, dark: Color3) -> (TextButton, TextLabel))? =
+	nil
 local oddsHandler: (() -> ())? = nil
 local goalTapHandler: (() -> ())? = nil
 local tileBadges: { [string]: { frame: Frame, label: TextLabel } } = {}
@@ -601,6 +604,8 @@ local function build()
 		Sound.play("Click")
 		Music.toggle()
 	end)
+	cornerRow = corner
+	makeRoundButton = roundButton
 
 	-- Toasts: big stroked text at the bottom center, between thumbstick and jump button
 	toastList = UI.new("Frame", {
@@ -856,6 +861,23 @@ function HUD.scale(): number
 end
 
 -- What a tile does when tapped ("Daily", "Seeds", "Index", "Shop").
+-- Extra small round button in the top-right corner (e.g. the admin dashboard).
+function HUD.addCornerButton(name: string, emoji: string, color: Color3, dark: Color3, fn: () -> ())
+	local row, make = cornerRow, makeRoundButton
+	if not row or not make or row:FindFirstChild(name) then
+		return
+	end
+	local button = make(name, emoji, color, dark)
+	button.Name = name
+	button.LayoutOrder = 0
+	button.Parent = row
+	row.Size = UDim2.fromOffset(row.Size.X.Offset + 56, row.Size.Y.Offset)
+	button.Activated:Connect(function()
+		Sound.play("Click")
+		fn()
+	end)
+end
+
 function HUD.setTileHandler(name: string, fn: () -> ())
 	tileHandlers[name] = fn
 end

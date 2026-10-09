@@ -8,6 +8,17 @@ Senast uppdaterad: 8 okt 2026 (kväll). Aktuell fas: **Fas 5 – soft launch (f�
 |---|---|---|
 | "Like"-prompten på egen farm | Fixad | Gilla-prompten vid din egen grind visas inte längre för dig, bara för andra spelare. Servern nekar fortfarande självgillning. |
 | Legendary-räknaren | Omgjord | Ingen nedräkning på skärmen längre. Varje farm har en träskylt med tak till höger om grinden ("👑 LEGENDARY – in 123 plants" + gul stapel), läsbar från stigen och inifrån farmen, för alla spelare. Den ändras bara när du planterar (statisk skylt, ingen tickande timer). |
+| Admin-dashboard | Klar | Grå ⚙️-knapp uppe till höger (bredvid 🔍 och 🎵) – syns bara för admins (spelets ägare, `Config/Admin.UserIds`, alla i Studio). Allt kontrolleras på servern. |
+| – Mål & räckvidd | Klar | "Target" växlar mellan dig och spelarna i servern. "Scope" väljer This server / ALL servers för events. |
+| – Meddelande till alla servrar | Klar | Skriv text → "Send to ALL 💬": din avatars ansikte poppar upp överst hos alla spelare i alla servrar med en pratbubbla och klockljud. Texten filtreras av Roblox först (krav). |
+| – Events | Klar | Starta valfri boom nu (3 min), avsluta boom, events av/på, välj dagens rarity, Server Luck ×2/×5 – i denna server eller alla. Prisbrädan, nedräkningen och musiken följer med. |
+| – Spawns | Klar | Välj rarity/storlek/mutation → "Spawn now!" (färdig morot direkt på farmen med reveal), "Force next roll", "Instant grow", "Legendary next". |
+| – Pengar & saker | Klar | Belopp (5000, 2.5M, 1B…) → Add/Set, +1K…+1T, Cash → 0, +10 av varje frö. |
+| – Uppgraderingar | Klar | Max all, Reset all, +1 per spår. |
+| – Pass & boosts | Klar | Ge/ta varje gamepass (som gåva), ge varje boost 15 min. |
+| – Konto | Klar | "Complete Dex" och "Reset account" (tryck två gånger): profilen nollställs till en helt ny spelare (kvitton sparas så inget köp kan ges dubbelt) och du skickas automatiskt till en ny server – med tutorialen från början. I Studio kickas du i stället. |
+
+**Ser du inte ⚙️?** Ägaren av upplevelsen är admin automatiskt (grupp: rank ≥ 254). Annars: skicka ditt Roblox user id så läggs det i `Config/Admin.luau`.
 
 ## Ny spelloop 8 okt (kväll): sälj och uppgradera på fasta platser i världen
 

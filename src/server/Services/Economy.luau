@@ -15,6 +15,7 @@ local World = require(Config.World)
 local Upgrades = require(Config.Upgrades)
 local Progression = require(Shared.Progression)
 local EventSchedule = require(Shared.EventSchedule)
+local Market = require(Shared.Market)
 local CarrotInfo = require(Shared.CarrotInfo)
 local Remotes = require(Shared.Remotes)
 local Types = require(Shared.Types)
@@ -25,7 +26,6 @@ local ProductsConfig = require(Config.Products)
 
 local Economy = {}
 
-local eventsCfg: EventSchedule.EventsConfig = Events :: any
 local marketPosition = Vector3.zero
 
 local trackById: { [string]: Upgrades.UpgradeDef } = {}
@@ -60,7 +60,7 @@ function Economy.basketCapacity(player: Player): number
 end
 
 function Economy.eventState(): EventSchedule.State
-	return EventSchedule.at(os.time(), eventsCfg)
+	return Market.state()
 end
 
 -- Is the player standing at the market (where boom prices are paid)?

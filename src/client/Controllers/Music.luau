@@ -19,8 +19,7 @@ local Shared = ReplicatedStorage.Shared
 local Config = Shared.Config
 local Assets = require(Config.Assets)
 local Audio = require(Config.Audio)
-local Events = require(Config.Events)
-local EventSchedule = require(Shared.EventSchedule)
+local Market = require(Shared.Market)
 local Remotes = require(Shared.Remotes)
 
 local Sound = require(script.Parent.Parent.Util.Sound)
@@ -37,7 +36,6 @@ type Channel = {
 	fade: Tween?,
 }
 
-local cfg: EventSchedule.EventsConfig = Events :: any
 local channels: { [string]: Channel } = {}
 local current = ""
 
@@ -178,7 +176,7 @@ function Music.start()
 			return
 		end
 		acc = 0
-		local state = EventSchedule.at(workspace:GetServerTimeNow(), cfg)
+		local state = Market.state()
 		local want = if state.boomActive and channels.Boom then "Boom" else "Farm"
 		if channels[want] then
 			activate(want)

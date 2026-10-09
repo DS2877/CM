@@ -36,6 +36,15 @@ export type State = {
 	marketBonus: number, -- always paid at the market
 }
 
+-- Admin override (set from the admin dashboard, shared to all servers).
+export type Override = {
+	boomId: string?, -- force this boom between boomStart and boomEnd
+	boomStart: number?,
+	boomEnd: number?,
+	disabled: boolean?, -- no booms at all
+	dailyRarity: string?, -- replace today's featured rarity
+}
+
 export type CarrotFacts = {
 	rarity: string,
 	size: string,
@@ -67,14 +76,14 @@ local function pickBoom(cfg: EventsConfig, cycle: number): BoomDef
 	return cfg.Booms[#cfg.Booms]
 end
 
-function EventSchedule.at(t: number, cfg: EventsConfig): State
+function EventSchedule.at(t: number, cfg: EventsConfig, override: Override?): State
 	local cycle = math.floor(t / cfg.CycleSeconds)
 	local cycleStart = cycle * cfg.CycleSeconds
 	local boomStart = cycleStart + cfg.CycleSeconds - cfg.BoomSeconds
 	local boomEnd = cycleStart + cfg.CycleSeconds
 	local day = math.floor(t / 86400)
 	local dailyRarity = cfg.DailyRarities[hash(day + 31337) % #cfg.DailyRarities + 1]
-	return {
+	local state: State = {
 		cycle = cycle,
 		boomActive = cfg.Enabled and t >= boomStart and t < boomEnd,
 		boom = pickBoom(cfg, cycle),
@@ -86,6 +95,29 @@ function EventSchedule.at(t: number, cfg: EventsConfig): State
 		dailyMult = cfg.DailyMult,
 		marketBonus = math.max(1, cfg.MarketBonus or 1),
 	}
+	if override then
+		if override.dailyRarity then
+			state.dailyRarity = override.dailyRarity
+		end
+		if override.disabled then
+			state.boomActive = false
+		end
+		local forced = override.boomId
+		local fStart, fEnd = override.boomStart, override.boomEnd
+		if forced and fStart and fEnd and t >= fStart and t < fEnd then
+			for _, b in cfg.Booms do
+				if b.id == forced then
+					state.boom = b
+					state.boomActive = true
+					state.boomStart = fStart
+					state.boomEnd = fEnd
+					-- a distinct "cycle" so bells/offers fire for forced booms too
+					state.cycle = -math.floor(fStart)
+				end
+			end
+		end
+	end
+	return state
 end
 
 function EventSchedule.boomApplies(boom: BoomDef, carrot: CarrotFacts): boolean

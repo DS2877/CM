@@ -40,6 +40,10 @@ Roblox game built entirely from this repo (Rojo + Luau). The full design doc ("C
 - `tests/` Lune specs (`lune run tests`). Pure modules must not use Roblox APIs so Lune can test them.
 - Plot state is replicated via attributes on plot parts; clients render all plots from them.
 
+## Admin
+- Admin dashboard (⚙️ corner button) for admins only: `Config/Admin.luau` + experience owner (+ everyone in Studio). Every action is re-validated in `Services/Admin.luau`.
+- Event overrides live in workspace attributes (`AdminBoom*`, `AdminEventsOff`, `AdminDailyRarity`); read market state via `Shared/Market.luau` (`Market.state()`), never `EventSchedule.at` directly.
+
 ## Local checks
 ```
 ./tools/install-tools.sh        # or: rokit install

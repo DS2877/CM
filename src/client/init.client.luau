@@ -20,6 +20,8 @@ local Tutorial = require(Controllers.Tutorial)
 local Titles = require(Controllers.Titles)
 local Ambience = require(Controllers.Ambience)
 local Store = require(Controllers.Store)
+local Broadcast = require(Controllers.Broadcast)
+local AdminPanel = require(Controllers.AdminPanel)
 local Plot = require(Controllers.Plot)
 local HarvestFX = require(Controllers.HarvestFX)
 
@@ -45,6 +47,8 @@ Tutorial.start()
 Titles.start()
 Ambience.start()
 Store.start()
+Broadcast.start()
+AdminPanel.start()
 
 -- Market VIP: the lounge door lets VIPs through (collision changed locally only).
 local function vipDoor()

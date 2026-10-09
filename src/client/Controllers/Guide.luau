@@ -13,8 +13,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage.Shared
 local World = require(Shared.Config.World)
-local Events = require(Shared.Config.Events)
-local EventSchedule = require(Shared.EventSchedule)
+local Market = require(Shared.Market)
 
 local UI = require(script.Parent.Parent.Util.UI)
 local HUD = require(script.Parent.HUD)
@@ -31,7 +30,6 @@ local SHOP_COLOR = Color3.fromRGB(90, 210, 255)
 
 local override: Target? = nil
 local requestedUntil = 0
-local eventsCfg: EventSchedule.EventsConfig = Events :: any
 local pads = World.upgradePads()
 
 local anchor: Part
@@ -79,7 +77,7 @@ local function chooseTarget(): Target?
 	if HUD.basketFull() then
 		return "market"
 	end
-	local state = EventSchedule.at(workspace:GetServerTimeNow(), eventsCfg)
+	local state = Market.state()
 	if state.boomActive and attrNumber("BasketCount") > 0 then
 		return "market"
 	end

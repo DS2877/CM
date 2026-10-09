@@ -83,6 +83,7 @@ local Assets = {
 		Index = "",
 		Crown = "",
 		Shop = "",
+		Admin = "",
 		Scanner = "",
 		Icon = "",
 	},

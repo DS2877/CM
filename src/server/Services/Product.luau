@@ -169,23 +169,42 @@ function Product.addBoost(player: Player, boostId: string, seconds: number)
 	syncBoosts(player)
 end
 
-local function startServerLuck(buyer: Player)
+-- Server Luck for everyone in this server (from a purchase, or the admin dashboard).
+function Product.serverLuck(byName: string, mult: number?, seconds: number?)
 	local nowT = workspace:GetServerTimeNow()
 	local ends = workspace:GetAttribute("ServerLuckEnds")
 	local base = if typeof(ends) == "number" and ends > nowT then ends else nowT
-	workspace:SetAttribute("ServerLuck", Products.ServerLuckMult)
-	workspace:SetAttribute("ServerLuckEnds", base + Products.ServerLuckSeconds)
-	workspace:SetAttribute("ServerLuckBy", buyer.DisplayName)
+	local m = mult or Products.ServerLuckMult
+	workspace:SetAttribute("ServerLuck", m)
+	workspace:SetAttribute("ServerLuckEnds", base + (seconds or Products.ServerLuckSeconds))
+	workspace:SetAttribute("ServerLuckBy", byName)
 	for _, p in Players:GetPlayers() do
-		notice(
-			p,
-			string.format(
-				"🌍 %s bought SERVER LUCK! Everyone gets x%d luck!",
-				buyer.DisplayName,
-				Products.ServerLuckMult
-			)
-		)
+		notice(p, string.format("🌍 %s started SERVER LUCK! Everyone gets x%s luck!", byName, tostring(m)))
 	end
+end
+
+local function startServerLuck(buyer: Player)
+	Product.serverLuck(buyer.DisplayName)
+end
+
+-- Admin: give or take a pass (as a gift flag; a real Roblox purchase can't be taken back).
+function Product.setPassOwned(player: Player, passId: string, owned: boolean)
+	local data = Data.get(player)
+	if not data or not passById[passId] then
+		return
+	end
+	if owned then
+		data.GiftedPasses[passId] = true
+		setPass(player, passId)
+	else
+		data.GiftedPasses[passId] = nil
+		player:SetAttribute("Pass_" .. passId, nil)
+		Economy.sync(player)
+	end
+end
+
+function Product.syncBoosts(player: Player)
+	syncBoosts(player)
 end
 
 -- Grants ------------------------------------------------------------------

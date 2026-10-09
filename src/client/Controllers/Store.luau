@@ -20,7 +20,7 @@ local Events = require(Config.Events)
 local EconomyConfig = require(Config.Economy)
 local Roller = require(Shared.Roller)
 local Progression = require(Shared.Progression)
-local EventSchedule = require(Shared.EventSchedule)
+local Market = require(Shared.Market)
 local Format = require(Shared.Format)
 local Remotes = require(Shared.Remotes)
 
@@ -611,7 +611,7 @@ local function buildBoomOffer()
 			return
 		end
 		acc = 0
-		local state = EventSchedule.at(workspace:GetServerTimeNow(), Events :: any)
+		local state = Market.state()
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart")
 		local near = false

@@ -16,6 +16,7 @@ Remotes.Names = {
 	WaterFarm = "WaterFarm", -- (farmId: number)
 	SetGiftTarget = "SetGiftTarget", -- (targetUserId: number, passId: string)
 	Track = "Track", -- (event: string, detail: string) whitelisted analytics from UI
+	AdminAction = "AdminAction", -- (action: string, args: table) admins only, re-checked on the server
 	SetMusic = "SetMusic", -- (enabled: boolean) saved setting
 	RedeemCode = "RedeemCode", -- (code: string)
 	ClaimDaily = "ClaimDaily", -- () claim today's calendar reward
@@ -29,6 +30,7 @@ Remotes.Names = {
 	DexSync = "DexSync", -- (Types.DexState)
 	Watered = "Watered", -- (farmId: number, byName: string)
 	Offer = "Offer", -- (productId: string) show a contextual offer once
+	AdminMessage = "AdminMessage", -- ({ text, userId, name }) dev message bubble, all servers
 	PromptFavorite = "PromptFavorite", -- () ask the client to show the favorite prompt (once)
 	DailySync = "DailySync", -- (Daily.DailyState)
 }

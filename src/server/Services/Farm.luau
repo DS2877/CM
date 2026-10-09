@@ -154,12 +154,44 @@ end
 -- One server roll for this player with a seed's effect: upgrades, seed, pity and the scripted
 -- first mutation all apply. Updates pity/first-mutation bookkeeping. Used for planting and for
 -- offline growth.
+-- Admin: a specific carrot (rarity/size/mutation; the type is picked within the rarity).
+export type CarrotSpec = { rarity: string?, size: string?, mutation: string? }
+local forcedRolls: { [Player]: CarrotSpec } = setmetatable({}, { __mode = "k" }) :: any
+local CarrotsConfig = require(Config.Carrots)
+
+local function rollFromSpec(spec: CarrotSpec): Roller.RollResult
+	local rarity = spec.rarity or "Common"
+	if not CarrotInfo.rarity(rarity) then
+		rarity = "Common"
+	end
+	local carrot = Roller.rollType(CarrotsConfig :: any, rarity, Roll.number)
+	local size = if spec.size and CarrotInfo.size(spec.size) then spec.size else "Normal"
+	local mutation = spec.mutation
+	return {
+		rarity = rarity,
+		type = carrot.id,
+		size = size,
+		mutations = if mutation and CarrotInfo.mutation(mutation) then { mutation } else {},
+	}
+end
+
+-- Admin: the player's next planting rolls exactly this.
+function Farm.forceNextRoll(player: Player, spec: CarrotSpec)
+	forcedRolls[player] = spec
+end
+
 function Farm.rollFor(player: Player, seed: SeedsConfig.SeedDef): Roller.RollResult?
 	local maybeData = Data.get(player)
 	if not maybeData then
 		return nil
 	end
 	local data: Data.PlayerData = maybeData
+	local forced = forcedRolls[player]
+	if forced then
+		forcedRolls[player] = nil
+		data.Stats.Plantings += 1
+		return rollFromSpec(forced)
+	end
 
 	local ctx: Roller.RollContext = {
 		luck = Upgrade.luck(player)
@@ -542,6 +574,54 @@ function Farm.onPlayerReady(player: Player)
 		task.defer(pivotCharacter, player, farm)
 	end)
 	task.spawn(pivotCharacter, player, farm)
+end
+
+-- Admin: put a specific carrot, fully grown, on one of the player's plots right now
+-- (the plot whose carrot is least far along, so you see the reveal immediately).
+function Farm.spawnCarrot(player: Player, spec: CarrotSpec): boolean
+	local farm = farmOf[player]
+	if not farm then
+		return false
+	end
+	local target: PlotRuntime? = nil
+	for i = 1, Farm.unlockedPlots(player) do
+		local plot = farm.plots[i]
+		if plot and plot.state ~= "Ready" then
+			target = plot
+			break
+		end
+	end
+	target = target or farm.plots[1]
+	if not target then
+		return false
+	end
+	local plot: PlotRuntime = target
+	local roll = rollFromSpec(spec)
+	plot.roll = roll
+	plot.state = "Growing"
+	plot.plantedAt = now() - 0.05
+	plot.growTime = 0.05
+	local p = plot.part
+	p:SetAttribute("RevealTier", revealTier(roll))
+	p:SetAttribute("GrowTime", 0.05)
+	p:SetAttribute("PlantedAt", plot.plantedAt)
+	p:SetAttribute("State", "Growing")
+	makeReady(plot)
+	return true
+end
+
+-- Admin: rebuild a player's farm after an account reset or upgrade change.
+function Farm.refresh(player: Player)
+	local farm = farmOf[player]
+	if not farm then
+		return
+	end
+	for _, plot in farm.plots do
+		clearPlot(plot)
+	end
+	applyUnlocked(farm, Farm.unlockedPlots(player))
+	refreshShowcase(farm)
+	Farm.syncPity(player)
 end
 
 -- Instant Grow (developer product): every growing carrot on the player's farm is ready now.

@@ -16,6 +16,7 @@ local Shared = ReplicatedStorage.Shared
 local Config = Shared.Config
 local Events = require(Config.Events)
 local EventSchedule = require(Shared.EventSchedule)
+local Market = require(Shared.Market)
 local Format = require(Shared.Format)
 
 local UI = require(script.Parent.Parent.Util.UI)
@@ -25,8 +26,6 @@ local HUD = require(script.Parent.HUD)
 local player = Players.LocalPlayer
 
 local MarketBoard = {}
-
-local cfg: EventSchedule.EventsConfig = Events :: any
 
 local CHALK = Color3.fromRGB(245, 242, 230)
 local CHALK_DIM = Color3.fromRGB(190, 205, 195)
@@ -270,7 +269,7 @@ function MarketBoard.start()
 	local lastCycle = -1
 	local acc = 1
 	RunService.Heartbeat:Connect(function(dt)
-		local state = EventSchedule.at(now(), cfg)
+		local state = Market.state()
 		updateArrow(state)
 		acc += dt
 		if acc < 0.25 then
