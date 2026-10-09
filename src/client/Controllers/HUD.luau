@@ -366,31 +366,6 @@ local function pill(parent: Instance, name: string, height: number, order: numbe
 	return p, row
 end
 
--- Thin progress meter along the bottom of a pill.
-local function meter(parent: Frame, color: Color3): Frame
-	local track = UI.new("Frame", {
-		Name = "Meter",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 0, 1, -3),
-		Size = UDim2.new(1, -0, 0, 4),
-		BackgroundTransparency = 1,
-		Parent = parent,
-	}, {
-		UI.new("UIPadding", { PaddingLeft = UDim.new(0, 16), PaddingRight = UDim.new(0, 14) }),
-	})
-	local bg = UI.new("Frame", {
-		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Color3.new(1, 1, 1),
-		BackgroundTransparency = 0.82,
-		Parent = track,
-	}, { UI.corner(2) })
-	return UI.new("Frame", {
-		Size = UDim2.fromScale(0, 1),
-		BackgroundColor3 = color,
-		Parent = bg,
-	}, { UI.corner(2) })
-end
-
 local function build()
 	local playerGui = player:WaitForChild("PlayerGui") :: PlayerGui
 
@@ -469,8 +444,30 @@ local function build()
 	})
 
 	-- Basket: what you carry, how much room is left, and what it sells for at the market
-	local basketRow
-	basketPill, basketRow = pill(stack, "Basket", 34, 2)
+	-- Compact fixed-size card (an auto-sized pill with a full-width bar inside kept growing):
+	-- icon + count + value on top, a chunky fill bar underneath.
+	basketPill = UI.new("Frame", {
+		Name = "Basket",
+		Size = UDim2.fromOffset(196, 50),
+		BackgroundColor3 = C.glass,
+		BackgroundTransparency = 0.25,
+		LayoutOrder = 2,
+		Parent = stack,
+	}, { UI.corner(16) })
+	local basketRow: Frame = UI.new("Frame", {
+		Name = "Row",
+		Size = UDim2.new(1, 0, 0, 32),
+		BackgroundTransparency = 1,
+		Parent = basketPill,
+	}, {
+		UI.new("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+			Padding = UDim.new(0, 6),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+		UI.new("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 10) }),
+	})
 	basketStroke = UI.stroke(Color3.fromRGB(255, 255, 255), 1.5, 0.8)
 	basketStroke.Parent = basketPill
 	basketIcon = UI.icon("Basket", "🧺")
@@ -489,7 +486,20 @@ local function build()
 		LayoutOrder = 3,
 		Parent = basketRow,
 	}, 20, C.cashDark, 2)
-	basketFill = meter(basketPill, C.carrot)
+	local basketTrack = UI.new("Frame", {
+		Name = "Meter",
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -7),
+		Size = UDim2.new(1, -20, 0, 9),
+		BackgroundColor3 = Color3.fromRGB(30, 25, 20),
+		BackgroundTransparency = 0.2,
+		Parent = basketPill,
+	}, { UI.corner(5) })
+	basketFill = UI.new("Frame", {
+		Size = UDim2.fromScale(0, 1),
+		BackgroundColor3 = C.carrot,
+		Parent = basketTrack,
+	}, { UI.corner(5) })
 
 	-- (The Legendary meter lives on a wooden board at each farm's gate, not on screen.)
 
@@ -504,8 +514,9 @@ local function build()
 	-- Menu tiles: 2x2 on the left edge, under the pills and clear of the farm
 	local left = UI.new("Frame", {
 		Name = "Left",
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 14, 0.58, 0),
+		-- right under the status pills, well above the thumbstick's corner
+		AnchorPoint = Vector2.new(0, 0),
+		Position = UDim2.fromOffset(14, 138),
 		Size = UDim2.fromOffset(134, 134),
 		BackgroundTransparency = 1,
 		Parent = gui,

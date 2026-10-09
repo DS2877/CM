@@ -8,6 +8,7 @@ Senast uppdaterad: 8 okt 2026 (kväll). Aktuell fas: **Fas 5 – soft launch (f�
 |---|---|---|
 | "Like"-prompten på egen farm | Fixad | Gilla-prompten vid din egen grind visas inte längre för dig, bara för andra spelare. Servern nekar fortfarande självgillning. |
 | Legendary-räknaren | Omgjord | Ingen nedräkning på skärmen längre. Varje farm har en träskylt med tak till höger om grinden ("👑 LEGENDARY – in 123 plants" + gul stapel), läsbar från stigen och inifrån farmen, för alla spelare. Den ändras bara när du planterar (statisk skylt, ingen tickande timer). |
+| HUD: korg + knappar | Fixat | Korgmätaren var extremt lång (den växte av sig själv). Nu ett litet fast kort (🧺 81/120 $13.9K) med en tjock stapel under. Knapparna Daily/Seeds/Index/Shop ligger direkt under korgkortet, högre upp, så de inte krockar med tumspaken. |
 | Slå av/på köpta saker | Klar | Shop → "✅ My stuff" överst: varje gamepass du äger och varje aktiv boost har en knapp "ON ✔" / "OFF". Allt är PÅ som standard. Avstängt pass verkar inte (t.ex. Auto Harvest av = du skördar själv, VIP av = ingen VIP-skylt, Big Basket av = vanlig korg). En avstängd boost står på PAUSED – tiden räknas inte ner, så inget går förlorat. Valet sparas i profilen. |
 | Admin-dashboard | Klar | Grå ⚙️-knapp uppe till höger (bredvid 🔍 och 🎵) – syns bara för admins (spelets ägare, `Config/Admin.UserIds`, alla i Studio). Allt kontrolleras på servern. |
 | – Mål & räckvidd | Klar | "Target" växlar mellan dig och spelarna i servern. "Scope" väljer This server / ALL servers för events. |
