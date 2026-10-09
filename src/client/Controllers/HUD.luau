@@ -1,6 +1,6 @@
 --!strict
 -- Mobile-first HUD. Layout rule: the middle of the screen belongs to the farm, and there are NO
--- sell or upgrade buttons: you sell by walking onto the market's green circle and upgrade at an
+-- sell or upgrade buttons: you sell by walking onto the market's SELL pads and upgrade at an
 -- Upgrade Shop on the plaza (Guide draws the way). The HUD only tells you where you stand:
 --   * top center: next-upgrade goal bar in the Roblox top bar (tap = show me the way)
 --   * top-left: cash, basket (count/capacity + what it sells for) and the Legendary meter, as

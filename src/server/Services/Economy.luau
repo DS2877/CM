@@ -1,6 +1,6 @@
 --!strict
 -- Cash, basket and selling. The only place cash changes.
--- Selling happens in one fixed place: walk onto the green circle around the market and the whole
+-- Selling happens in one fixed place: walk onto one of the SELL pads around the market and the whole
 -- basket sells (no HUD button). Market prices (design doc §5) never go below base.
 
 local Players = game:GetService("Players")

@@ -1,5 +1,5 @@
 --!strict
--- The way to the fixed places in the world. Selling (the market's green circle) and upgrading
+-- The way to the fixed places in the world. Selling (the market's SELL pads) and upgrading
 -- (an Upgrade Shop pad) are trips, so when one is the next thing to do, a glowing line runs from
 -- your feet to it and a small bouncing marker sits on the spot:
 --   * basket full (or a boom while you carry carrots) -> the market

@@ -3,7 +3,7 @@
 -- to what the player actually does, never to timers, and points at the real thing:
 --   1. a bouncing arrow over an empty plot: "Tap to plant!"
 --   2. "Wait for it to grow…" then an arrow over the ready carrot: "Tap to harvest!"
---   3. the guide line to the market: "Walk onto the green circle to sell!"
+--   3. the guide line to the market: "Step on a SELL pad to sell!"
 --   4. the guide line to the Upgrade Shop: "Buy your first upgrade!"
 -- Then a celebration, and the server is told it's done (never shown again). Target: the whole
 -- core loop (farm -> market -> shop) understood inside a couple of minutes.
@@ -208,7 +208,7 @@ local function update()
 		-- 3. Sell: everything planted, carrots in the basket -> to the market
 		step = 3
 		Guide.setOverride("market")
-		say("Follow the line to the market and step on the green circle to sell!")
+		say("Follow the line to the market and step on a SELL pad to sell!")
 		pointAtPlot(nil, "")
 		pointAtHud(nil)
 	elseif ready then
