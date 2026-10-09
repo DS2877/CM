@@ -133,19 +133,36 @@ local function refresh()
 end
 
 local function build()
-	panel = Panel.new("Upgrades", "Upgrades", Color3.fromRGB(255, 170, 50), Color3.fromRGB(150, 70, 0))
+	-- Five upgrade cards side by side: you see at a glance that there are five, no scrolling.
+	panel = Panel.new(
+		"Upgrades",
+		"Upgrades",
+		Color3.fromRGB(255, 170, 50),
+		Color3.fromRGB(150, 70, 0),
+		Vector2.new(640, 320)
+	)
+	panel.body.ScrollingDirection = Enum.ScrollingDirection.X
+	panel.body.AutomaticCanvasSize = Enum.AutomaticSize.X
 	UI.new("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
 		Padding = UDim.new(0, 8),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = panel.body,
 	})
 	UI.new("UIPadding", {
 		PaddingTop = UDim.new(0, 4),
-		PaddingBottom = UDim.new(0, 8),
-		PaddingLeft = UDim.new(0, 2),
-		PaddingRight = UDim.new(0, 12),
+		PaddingBottom = UDim.new(0, 6),
 		Parent = panel.body,
 	})
+
+	local count = 0
+	for _, track in Upgrades do
+		if track.enabled and track.soldAt == nil then
+			count += 1
+		end
+	end
+	panel.subtitle.Text = string.format("%d upgrades", count)
 
 	for i, track in Upgrades do
 		-- Farm Level is bought at your farm's sign, not here
@@ -154,55 +171,53 @@ local function build()
 		end
 		local color = UI.rgb(track.color)
 		local darkColor = color:Lerp(Color3.new(0, 0, 0), 0.45)
-		local row = UI.new("Frame", {
-			Size = UDim2.new(1, 0, 0, 74),
+		local card = UI.new("Frame", {
+			Size = UDim2.new(0, 114, 1, -4),
 			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 			LayoutOrder = i,
 			Parent = panel.body,
 		}, { UI.corner(16), UI.stroke(darkColor, 3) })
-		-- Emoji badge
-		local badge = UI.new("Frame", {
-			Position = UDim2.fromOffset(8, 8),
-			Size = UDim2.fromOffset(58, 58),
+		-- Colored top with the big emoji
+		local top = UI.new("Frame", {
+			Size = UDim2.new(1, 0, 0, 64),
 			BackgroundColor3 = color,
-			Parent = row,
-		}, { UI.corner(14), UI.stroke(darkColor, 2.5) })
+			Parent = card,
+		}, { UI.corner(16) })
 		UI.label({
-			Position = UDim2.fromOffset(8, 8),
-			Size = UDim2.new(1, -16, 1, -16),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromOffset(48, 48),
 			Text = track.emoji,
 			Font = Enum.Font.GothamBold,
-			Parent = badge,
+			Parent = top,
 		})
 		UI.bigText({
-			Position = UDim2.fromOffset(76, 6),
-			Size = UDim2.new(1, -240, 0, 26),
+			Position = UDim2.fromOffset(6, 68),
+			Size = UDim2.new(1, -12, 0, 22),
 			Text = track.name,
 			TextColor3 = color,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Parent = row,
-		}, darkColor, 2.5)
+			Parent = card,
+		}, darkColor, 2)
 		local level = UI.label({
-			Position = UDim2.fromOffset(76, 33),
-			Size = UDim2.new(1, -240, 0, 17),
+			Position = UDim2.fromOffset(6, 92),
+			Size = UDim2.new(1, -12, 0, 16),
 			Text = "",
-			TextXAlignment = Enum.TextXAlignment.Left,
 			TextColor3 = Color3.fromRGB(120, 90, 60),
-			Parent = row,
+			Parent = card,
 		})
 		local effect = UI.label({
-			Position = UDim2.fromOffset(76, 51),
-			Size = UDim2.new(1, -240, 0, 17),
+			Position = UDim2.fromOffset(6, 110),
+			Size = UDim2.new(1, -12, 0, 34),
 			Text = "",
-			TextXAlignment = Enum.TextXAlignment.Left,
+			TextWrapped = true,
 			TextColor3 = Color3.fromRGB(70, 70, 90),
-			Parent = row,
+			Parent = card,
 		})
 		local buy, buyText = Panel.button({
-			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -8, 0.5, 0),
-			Size = UDim2.fromOffset(150, 58),
-			Parent = row,
+			AnchorPoint = Vector2.new(0.5, 1),
+			Position = UDim2.new(0.5, 0, 1, -6),
+			Size = UDim2.new(1, -12, 0, 46),
+			Parent = card,
 		}, GREEN, GREEN_DARK, "")
 		buy.Activated:Connect(function()
 			local lvl = attrNumber("Upg_" .. track.id)

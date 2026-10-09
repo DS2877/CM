@@ -1,5 +1,6 @@
 --!strict
--- A ladder: spending more buys more luck (Basic stays free and endless).
+-- A ladder: spending more buys more luck (Basic stays free and endless). Better seeds also
+-- grow slower (growMult), so a big farm is how you get many lucky carrots going at once.
 -- Seed types. The selected seed is used for the next planting (manual or auto-replant) while
 -- the player has any; otherwise Basic. Seeds are bought with in-game cash only, never Robux
 -- (design doc §11). Mystery Seeds turn into one of `mystery` when planted; odds are shown.
@@ -15,6 +16,7 @@ export type SeedDef = {
 	basePrice: number,
 	buyable: boolean,
 	luck: number, -- multiplies luck from upgrades
+	growMult: number, -- grow time multiplier: better seeds take longer (more plots = more of them)
 	mutationLuck: number,
 	minRarity: string?,
 	forceMutation: string?,
@@ -31,6 +33,7 @@ local Seeds: { SeedDef } = {
 		basePrice = 0,
 		buyable = false,
 		luck = 1,
+		growMult = 1,
 		mutationLuck = 1,
 		emoji = "🌱",
 		color = { 140, 210, 100 },
@@ -42,6 +45,7 @@ local Seeds: { SeedDef } = {
 		basePrice = 60,
 		buyable = true,
 		luck = 2,
+		growMult = 1.3,
 		mutationLuck = 1.2,
 		emoji = "🍀",
 		color = { 120, 220, 100 },
@@ -53,6 +57,7 @@ local Seeds: { SeedDef } = {
 		basePrice = 250,
 		buyable = true,
 		luck = 3,
+		growMult = 1.6,
 		mutationLuck = 1.5,
 		minRarity = "Uncommon",
 		emoji = "💎",
@@ -65,6 +70,7 @@ local Seeds: { SeedDef } = {
 		basePrice = 600,
 		buyable = true,
 		luck = 5,
+		growMult = 2,
 		mutationLuck = 1.6,
 		emoji = "✨",
 		color = { 255, 200, 70 },
@@ -76,6 +82,7 @@ local Seeds: { SeedDef } = {
 		basePrice = 2000,
 		buyable = true,
 		luck = 2,
+		growMult = 2,
 		mutationLuck = 1,
 		forceMutation = "Golden",
 		emoji = "⭐",
@@ -88,6 +95,7 @@ local Seeds: { SeedDef } = {
 		basePrice = 2500,
 		buyable = true,
 		luck = 8,
+		growMult = 2.6,
 		mutationLuck = 2,
 		minRarity = "Uncommon",
 		emoji = "🌟",
@@ -100,6 +108,7 @@ local Seeds: { SeedDef } = {
 		basePrice = 15000,
 		buyable = true,
 		luck = 15,
+		growMult = 3.2,
 		mutationLuck = 2.5,
 		minRarity = "Rare",
 		emoji = "💜",
@@ -112,6 +121,7 @@ local Seeds: { SeedDef } = {
 		basePrice = 700,
 		buyable = true,
 		luck = 1,
+		growMult = 1.5,
 		mutationLuck = 1,
 		mystery = {
 			{ seed = "Rare", weight = 60 },
@@ -128,6 +138,7 @@ local Seeds: { SeedDef } = {
 		basePrice = 90000,
 		buyable = true,
 		luck = 30,
+		growMult = 4,
 		mutationLuck = 3,
 		minRarity = "Epic",
 		emoji = "🌠",
@@ -140,6 +151,7 @@ local Seeds: { SeedDef } = {
 		basePrice = 0,
 		buyable = false,
 		luck = 20,
+		growMult = 5,
 		mutationLuck = 3,
 		minRarity = "Legendary",
 		emoji = "🌌",

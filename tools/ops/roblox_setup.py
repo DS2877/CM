@@ -3,6 +3,7 @@
 
 - Creates every game pass, gift developer product and developer product listed in
   src/shared/Config/Products.luau that doesn't exist yet (matched by name, so re-running is safe).
+- Updates the price of existing ones when Products.luau says something else (price changes).
 - Writes the resulting Roblox IDs back into Products.luau (passId / giftProductId / productId).
 - Sets the start place's Max Players (serverSize).
 - Writes a sanitized log to tools/ops/ops-log.md (status codes + response bodies, never the key).
@@ -28,6 +29,7 @@ API = "https://apis.roblox.com"
 
 KEY = os.environ.get("ROBLOX_KEY", "")
 log_lines = []
+current_price = {}  # (kind, name) -> Robux price on Roblox right now
 
 
 def log(line):
@@ -124,6 +126,10 @@ def list_existing(kind):
             i = find_id(it)
             if i:
                 found[it["name"]] = i
+                info = it.get("priceInformation") or {}
+                price = info.get("defaultPriceInRobux") if isinstance(info, dict) else None
+                if isinstance(price, int):
+                    current_price[(kind, it["name"])] = price
         token = data.get("nextPageToken") if isinstance(data, dict) else None
         if not token:
             break
@@ -147,6 +153,23 @@ def create(kind, name, description, price):
         return find_id(json.loads(text))
     except json.JSONDecodeError:
         return None
+
+
+def update_price(kind, item_id, name, price):
+    """Bring an existing pass/product's price in line with Products.luau."""
+    if current_price.get((kind, name)) == price:
+        return True
+    path = (
+        f"/game-passes/v1/universes/{UNIVERSE}/game-passes/{item_id}"
+        if kind == "pass"
+        else f"/developer-products/v2/universes/{UNIVERSE}/developer-products/{item_id}"
+    )
+    body, ctype = multipart({"price": str(price), "isForSale": "true"})
+    status, text = request("PATCH", API + path, body, ctype)
+    log(
+        f"- PRICE {kind} '{name}': {current_price.get((kind, name))} -> {price} R$: HTTP {status} {short(text, 300)}"
+    )
+    return status in (200, 204)
 
 
 def parse_catalog(src):
@@ -190,24 +213,33 @@ def main():
     ok = True
     for entry_id, name, desc, price, is_pass in catalog:
         if is_pass:
-            pid = (passes or {}).get(name) or create("pass", name, desc, price)
+            existing = (passes or {}).get(name)
+            pid = existing or create("pass", name, desc, price)
             if pid:
                 src = set_field(src, entry_id, "passId", pid)
+                if existing:
+                    ok = update_price("pass", pid, name, price) and ok
             else:
                 ok = False
             gift_name = f"Gift: {name}"
-            gid = (products or {}).get(gift_name) or create(
+            existing_gift = (products or {}).get(gift_name)
+            gid = existing_gift or create(
                 "product", gift_name, f"Gift the {name} pass to a friend. {desc}", price
             )
             if gid:
                 src = set_field(src, entry_id, "giftProductId", gid)
+                if existing_gift:
+                    ok = update_price("product", gid, gift_name, price) and ok
             else:
                 ok = False
             log(f"  -> {entry_id}: pass {pid}, gift {gid}")
         else:
-            pid = (products or {}).get(name) or create("product", name, desc, price)
+            existing = (products or {}).get(name)
+            pid = existing or create("product", name, desc, price)
             if pid:
                 src = set_field(src, entry_id, "productId", pid)
+                if existing:
+                    ok = update_price("product", pid, name, price) and ok
             else:
                 ok = False
             log(f"  -> {entry_id}: product {pid}")

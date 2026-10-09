@@ -118,6 +118,9 @@ end
 local function oddsText(seed: SeedsConfig.SeedDef): string
 	local mystery = seed.mystery
 	if not mystery then
+		if seed.growMult > 1 then
+			return string.format("%s · ⏱ %sx grow time", seed.description, tostring(seed.growMult))
+		end
 		return seed.description
 	end
 	local total = 0

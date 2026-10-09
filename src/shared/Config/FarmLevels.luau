@@ -18,6 +18,9 @@ local FarmLevels = {}
 
 FarmLevels.MaxLevel = 20
 
+-- Reaching these levels is announced to the whole server (and the barn changes).
+FarmLevels.Milestones = { 5, 10, 15, 18, 20 }
+
 FarmLevels.Unlocks = {
 	{ level = 2, id = "Flowers", name = "Flower boxes", emoji = "🌷" },
 	{ level = 3, id = "Scarecrow", name = "Scarecrow", emoji = "🎃" },
@@ -38,7 +41,38 @@ FarmLevels.Unlocks = {
 	{ level = 18, id = "GoldTrim", name = "Gold gate & lamp posts", emoji = "✨" },
 	{ level = 19, id = "Rainbow", name = "Rainbow arch", emoji = "🌈" },
 	{ level = 20, id = "GoldenCarrot", name = "Giant golden carrot", emoji = "🥕" },
+	-- The big "wow" steps: the barn grows and changes, and the farm starts to glow
+	{ level = 5, id = "Barn", name = "Painted barn", emoji = "🛖" },
+	{ level = 10, id = "Barn", name = "BIG barn", emoji = "🏠" },
+	{ level = 12, id = "StringLights", name = "String lights", emoji = "💡" },
+	{ level = 15, id = "Barn", name = "Farmhouse with gold roof", emoji = "🏡" },
+	{ level = 16, id = "GlowBorder", name = "Glowing farm border", emoji = "✨" },
+	{ level = 18, id = "SkyBeams", name = "Sky beams (seen from everywhere!)", emoji = "🔦" },
+	{ level = 20, id = "Barn", name = "GOLDEN MANOR", emoji = "🏰" },
+	{ level = 20, id = "Fireworks", name = "Fireworks", emoji = "🎆" },
 } :: { Unlock }
+
+-- The barn behind the farm grows with the level (sizes in studs at scale 1: 12 x 7 x 8).
+-- style: "plain" (bare wood shed), "painted" (farm color), "trim" (white trim + windows),
+-- "gold" (gold roof, glowing windows), "golden" (gold everything + towers).
+export type BarnTier = { from: number, name: string, scale: number, style: string }
+FarmLevels.BarnTiers = {
+	{ from = 1, name = "Shed", scale = 0.75, style = "plain" },
+	{ from = 5, name = "Barn", scale = 1.0, style = "painted" },
+	{ from = 10, name = "Big Barn", scale = 1.3, style = "trim" },
+	{ from = 15, name = "Farmhouse", scale = 1.6, style = "gold" },
+	{ from = 20, name = "Golden Manor", scale = 1.9, style = "golden" },
+} :: { BarnTier }
+
+function FarmLevels.barnTier(level: number): BarnTier
+	local best = FarmLevels.BarnTiers[1]
+	for _, t in FarmLevels.BarnTiers do
+		if level >= t.from then
+			best = t
+		end
+	end
+	return best
+end
 
 -- Everything a farm at `level` has (in unlock order).
 function FarmLevels.unlocked(level: number): { Unlock }

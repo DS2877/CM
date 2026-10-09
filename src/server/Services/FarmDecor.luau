@@ -7,6 +7,7 @@
 --
 -- Farm-local coordinates: origin = farm center, -Z = the gate (toward the market), +Z = barn.
 
+local Debris = game:GetService("Debris")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -19,6 +20,13 @@ type Ctx = {
 	half: number,
 	folder: Folder,
 	identity: Color3,
+	level: number,
+	-- the barn for this level (farm-local): center z, half width, depth, wall height, roof top
+	barnZ: number,
+	barnHalfW: number,
+	barnDepth: number,
+	barnH: number,
+	barnTop: number,
 }
 
 local C = {
@@ -295,7 +303,7 @@ builders.Windmill = function(ctx)
 end
 
 builders.Silo = function(ctx)
-	local x, z = 11.5, ctx.half + 9
+	local x, z = ctx.barnHalfW + 7.5, ctx.barnZ
 	column(ctx, x, 0, z, 13, 6, Color3.fromRGB(200, 205, 215), Enum.Material.Metal)
 	ball(ctx, x, 13, z, 6, ctx.identity)
 	for y = 3, 11, 4 do
@@ -340,7 +348,7 @@ builders.Cow = function(ctx)
 end
 
 builders.Greenhouse = function(ctx)
-	local x, z = -22, ctx.half + 9
+	local x, z = -(ctx.barnHalfW + 12), ctx.barnZ
 	block(ctx, x, 0.2, z, Vector3.new(9, 0.4, 7), C.stone, Enum.Material.Concrete)
 	local glass = part(ctx, {
 		Size = Vector3.new(8.6, 4.4, 6.6),
@@ -379,7 +387,7 @@ builders.Banners = function(ctx)
 end
 
 builders.Tractor = function(ctx)
-	local x, z = -11.5, ctx.half + 4
+	local x, z = -(ctx.barnHalfW + 3.5), ctx.half + 4
 	block(ctx, x, 2, z, Vector3.new(2.6, 1.6, 4.4), C.red)
 	block(ctx, x, 3.4, z + 0.8, Vector3.new(2.4, 1.6, 1.8), C.glass, Enum.Material.Glass)
 	column(ctx, x - 0.4, 2.8, z - 1.6, 1.4, 0.3, C.black, Enum.Material.Metal)
@@ -429,7 +437,7 @@ end
 
 builders.Rainbow = function(ctx)
 	-- An arch of colored bands over the barn
-	local cx, cz, baseR = 0, ctx.half + 9, 13
+	local cx, cz, baseR = 0, ctx.barnZ + ctx.barnDepth / 2 + 1, ctx.barnTop + 6
 	for band, color in RAINBOW do
 		local r = baseR - (band - 1) * 0.9
 		local segments = 14
@@ -442,7 +450,7 @@ builders.Rainbow = function(ctx)
 			local len = (p1 - p0).Magnitude + 0.1
 			part(ctx, {
 				Size = Vector3.new(len, 0.9, 0.6),
-				CFrame = at(ctx, cx + mid.X, mid.Y, cz + 4.5)
+				CFrame = at(ctx, cx + mid.X, mid.Y, cz)
 					* CFrame.Angles(0, 0, math.atan2(p1.Y - p0.Y, p1.X - p0.X)),
 				Color = color,
 				Material = Enum.Material.SmoothPlastic,
@@ -454,21 +462,22 @@ end
 
 builders.GoldenCarrot = function(ctx)
 	-- A giant golden carrot on the barn roof, sparkling: the max-level landmark
-	local x, z = 0, ctx.half + 9
+	local x, z = 0, ctx.barnZ
+	local y0 = ctx.barnTop + 3
 	local root = part(ctx, {
 		Name = "GoldenCarrot",
 		Shape = Enum.PartType.Cylinder,
 		Size = Vector3.new(6, 2.2, 2.2),
-		CFrame = at(ctx, x, 14.5, z) * CFrame.Angles(0, 0, math.rad(90)),
+		CFrame = at(ctx, x, y0, z) * CFrame.Angles(0, 0, math.rad(90)),
 		Color = C.gold,
 		Material = Enum.Material.Foil,
 		CanCollide = false,
 	})
-	ball(ctx, x, 17.4, z, 2.4, C.gold, Enum.Material.Foil)
+	ball(ctx, x, y0 + 2.9, z, 2.4, C.gold, Enum.Material.Foil)
 	for k = -1, 1 do
 		part(ctx, {
 			Size = Vector3.new(0.5, 2.6, 0.5),
-			CFrame = at(ctx, x + k * 0.6, 19.4, z) * CFrame.Angles(0, 0, math.rad(k * 20)),
+			CFrame = at(ctx, x + k * 0.6, y0 + 4.9, z) * CFrame.Angles(0, 0, math.rad(k * 20)),
 			Color = C.leafLight,
 			CanCollide = false,
 		})
@@ -489,6 +498,261 @@ builders.GoldenCarrot = function(ctx)
 	light.Parent = root
 end
 
+-- The barn ---------------------------------------------------------------------
+-- Grows and changes with the level (Config/FarmLevels.BarnTiers): bare wood shed -> painted
+-- barn -> big barn with white trim and windows -> farmhouse with a gold roof -> golden manor
+-- with towers. The first thing you see when you look at someone's farm.
+local function buildBarn(ctx: Ctx, tier: FarmLevels.BarnTier)
+	local k = tier.scale
+	local w, h, d = 12 * k, 7 * k, 8 * k
+	local z = ctx.barnZ
+	local style = tier.style
+	local wall = if style == "plain" then Color3.fromRGB(176, 124, 76) else ctx.identity
+	if style == "golden" then
+		wall = ctx.identity:Lerp(C.white, 0.15)
+	end
+	local roofColor = if style == "gold" or style == "golden"
+		then C.gold
+		elseif style == "trim" then ctx.identity:Lerp(Color3.new(0, 0, 0), 0.35)
+		else C.darkWood
+	local roofMat = if style == "gold" or style == "golden"
+		then Enum.Material.Foil
+		else Enum.Material.WoodPlanks
+	local trim = if style == "golden" then C.gold else C.white
+
+	block(ctx, 0, h / 2, z, Vector3.new(w, h, d), wall, Enum.Material.WoodPlanks).Name = "Barn"
+	-- Roof: two slopes + a gable
+	for _, sx in { -1, 1 } do
+		part(ctx, {
+			Name = "BarnRoof",
+			Size = Vector3.new(w * 0.62, 0.6 * k, d + 1),
+			CFrame = at(ctx, sx * w * 0.26, h + 1.6 * k, z) * CFrame.Angles(0, 0, math.rad(-sx * 38)),
+			Color = roofColor,
+			Material = roofMat,
+		})
+	end
+	block(ctx, 0, h + 1.1 * k, z, Vector3.new(w * 0.42, 2.2 * k, d - 0.2), wall, Enum.Material.WoodPlanks)
+	-- Door on the farm side (-Z face)
+	local front = z - d / 2
+	block(ctx, 0, 2.5 * k, front - 0.05, Vector3.new(4.6 * k, 5 * k, 0.2), C.white, Enum.Material.Wood)
+	if style ~= "plain" then
+		for _, dd in { 1, -1 } do
+			part(ctx, {
+				Size = Vector3.new(0.4 * k, 6.4 * k, 0.25),
+				CFrame = at(ctx, 0, 2.5 * k, front - 0.2) * CFrame.Angles(0, 0, math.rad(dd * 42)),
+				Color = wall:Lerp(Color3.new(0, 0, 0), 0.25),
+				Material = Enum.Material.Wood,
+				CanCollide = false,
+			})
+		end
+	end
+	if style == "trim" or style == "gold" or style == "golden" then
+		-- White (or gold) corner trim and a trimmed roof edge
+		for _, sx in { -1, 1 } do
+			for _, sz in { -1, 1 } do
+				block(ctx, sx * (w / 2), h / 2, z + sz * (d / 2), Vector3.new(0.6 * k, h, 0.6 * k), trim)
+			end
+		end
+		block(ctx, 0, h, front - 0.1, Vector3.new(w + 0.4, 0.5 * k, 0.4), trim)
+		-- Windows either side of the door; they glow warm from the farmhouse tier up
+		for _, sx in { -1, 1 } do
+			local glow = style ~= "trim"
+			local win = block(
+				ctx,
+				sx * w * 0.32,
+				h * 0.6,
+				front - 0.12,
+				Vector3.new(2 * k, 1.8 * k, 0.2),
+				if glow then Color3.fromRGB(255, 225, 140) else Color3.fromRGB(150, 210, 255),
+				if glow then Enum.Material.Neon else Enum.Material.Glass
+			)
+			win.Name = "BarnWindow"
+			block(ctx, sx * w * 0.32, h * 0.6, front - 0.16, Vector3.new(2.4 * k, 0.25 * k, 0.15), trim)
+			block(ctx, sx * w * 0.32, h * 0.6, front - 0.16, Vector3.new(0.25 * k, 2.2 * k, 0.15), trim)
+		end
+		-- Hay-loft door in the gable
+		block(ctx, 0, h + 1.1 * k, front - 0.12, Vector3.new(1.8 * k, 1.6 * k, 0.2), trim)
+	end
+	if style == "gold" or style == "golden" then
+		-- Weathervane on the ridge
+		column(ctx, 0, h + 3.2 * k, z, 2.5 * k, 0.25, C.gold, Enum.Material.Metal)
+		block(ctx, 0, h + 5.3 * k, z, Vector3.new(2.2 * k, 0.6 * k, 0.15), C.gold, Enum.Material.Foil)
+	end
+	if style == "golden" then
+		-- Two round towers with pointed tops and flags: a manor, not a barn
+		for _, sx in { -1, 1 } do
+			local tx = sx * (w / 2 + 2.2)
+			column(ctx, tx, 0, z, h * 1.35, 4.2, C.white, Enum.Material.Marble)
+			column(ctx, tx, h * 1.35, z, 0.6, 4.8, C.gold, Enum.Material.Foil)
+			part(ctx, {
+				Size = Vector3.new(4, 4.5, 4),
+				CFrame = at(ctx, tx, h * 1.35 + 2.85, z) * CFrame.Angles(0, math.rad(45), 0),
+				Color = ctx.identity,
+				Material = Enum.Material.SmoothPlastic,
+			}).Shape =
+				Enum.PartType.Ball
+			column(ctx, tx, h * 1.35 + 4.5, z, 3.5, 0.2, C.white, Enum.Material.Metal)
+			block(ctx, tx + 0.9, h * 1.35 + 7.4, z, Vector3.new(1.8, 1.1, 0.1), C.gold, Enum.Material.Fabric)
+		end
+		local sparkle = Instance.new("ParticleEmitter")
+		sparkle.Color = ColorSequence.new(Color3.fromRGB(255, 235, 140))
+		sparkle.LightEmission = 1
+		sparkle.Size = NumberSequence.new(0.6, 0)
+		sparkle.Lifetime = NumberRange.new(1, 2)
+		sparkle.Rate = 18
+		sparkle.Speed = NumberRange.new(0.5, 2)
+		sparkle.SpreadAngle = Vector2.new(180, 180)
+		local emitterPart = block(ctx, 0, h / 2, z, Vector3.new(w, h, d), wall)
+		emitterPart.Transparency = 1
+		emitterPart.CanCollide = false
+		emitterPart.CanQuery = false
+		sparkle.Parent = emitterPart
+	end
+	-- Level badge on the barn front: big, readable from the path and the plaza
+	if ctx.level >= 2 then
+		local badge = block(ctx, 0, h + 1.1 * k, front - 0.3, Vector3.new(w * 0.4, 1.8 * k, 0.1), wall)
+		badge.Transparency = 1
+		badge.CanCollide = false
+		badge.CanQuery = false
+		if style == "trim" or style == "gold" or style == "golden" then
+			-- the loft door sits there; put the badge above the door instead
+			badge.CFrame = at(ctx, 0, 5.7 * k, front - 0.3)
+		end
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = Enum.NormalId.Front
+		gui.CanvasSize = Vector2.new(260, 90)
+		gui.LightInfluence = 0
+		gui.MaxDistance = 400
+		gui.Parent = badge
+		local l = Instance.new("TextLabel")
+		l.BackgroundTransparency = 1
+		l.Size = UDim2.fromScale(1, 1)
+		l.Font = Enum.Font.LuckiestGuy
+		l.TextScaled = true
+		l.Text = "LV " .. ctx.level
+		l.TextColor3 = if ctx.level >= 15 then Color3.fromRGB(255, 215, 80) else Color3.fromRGB(255, 255, 255)
+		l.TextStrokeColor3 = Color3.fromRGB(40, 25, 10)
+		l.TextStrokeTransparency = 0
+		l.Parent = gui
+	end
+end
+
+-- Glow & spectacle ---------------------------------------------------------------
+
+builders.StringLights = function(ctx)
+	-- Colored bulbs along the top fence rail all the way around
+	local h = ctx.half
+	local colors = {
+		Color3.fromRGB(255, 90, 110),
+		Color3.fromRGB(255, 210, 80),
+		Color3.fromRGB(110, 220, 120),
+		Color3.fromRGB(100, 180, 255),
+	}
+	local i = 0
+	for _, side in { { -h, -h, h, -h }, { h, -h, h, h }, { h, h, -h, h }, { -h, h, -h, -h } } do
+		local x0, z0, x1, z1 = side[1], side[2], side[3], side[4]
+		local len = math.max(math.abs(x1 - x0), math.abs(z1 - z0))
+		for t = 0, len, 3 do
+			local f = t / len
+			local x, z = x0 + (x1 - x0) * f, z0 + (z1 - z0) * f
+			-- leave the gate opening clear
+			if not (z0 == -h and z1 == -h and math.abs(x) < 7) then
+				i += 1
+				ball(ctx, x, 3.15, z, 0.55, colors[(i % #colors) + 1], Enum.Material.Neon)
+			end
+		end
+	end
+end
+
+builders.GlowBorder = function(ctx)
+	-- A glowing strip in the farm color just inside the fence
+	local h = ctx.half - 0.8
+	local color = ctx.identity:Lerp(C.white, 0.35)
+	for _, side in
+		{ { 0, -h, h * 2, 0.6 }, { 0, h, h * 2, 0.6 }, { -h, 0, 0.6, h * 2 }, { h, 0, 0.6, h * 2 } }
+	do
+		local strip =
+			block(ctx, side[1], 0.25, side[2], Vector3.new(side[3], 0.12, side[4]), color, Enum.Material.Neon)
+		strip.CanCollide = false
+		strip.CanQuery = false
+	end
+end
+
+builders.SkyBeams = function(ctx)
+	-- Two sweeping searchlight beams from beside the barn, visible from anywhere on the map
+	for _, sx in { -1, 1 } do
+		local baseX = sx * (ctx.barnHalfW + 1.5)
+		local baseZ = ctx.barnZ
+		block(ctx, baseX, 0.6, baseZ, Vector3.new(2, 1.2, 2), C.black, Enum.Material.Metal)
+		local pivot = part(ctx, {
+			Name = "BeamPivot",
+			Size = Vector3.new(0.5, 0.5, 0.5),
+			CFrame = at(ctx, baseX, 1.3, baseZ) * CFrame.Angles(0, 0, math.rad(sx * 14)),
+			Transparency = 1,
+			CanCollide = false,
+			CanQuery = false,
+		})
+		local beam = part(ctx, {
+			Name = "SkyBeam",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(160, 2.4, 2.4),
+			CFrame = pivot.CFrame * CFrame.new(0, 80, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			Color = ctx.identity:Lerp(C.white, 0.5),
+			Material = Enum.Material.Neon,
+			Transparency = 0.55,
+			CanCollide = false,
+			CanQuery = false,
+			Anchored = false,
+			Massless = true,
+		})
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = pivot
+		weld.Part1 = beam
+		weld.Parent = beam
+		TweenService:Create(
+			pivot,
+			TweenInfo.new(3.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+			{ CFrame = pivot.CFrame * CFrame.Angles(0, 0, math.rad(-sx * 28)) }
+		):Play()
+	end
+end
+
+builders.Fireworks = function(ctx)
+	-- Bursts of colored sparks over the barn, all the time
+	for _, sx in { -1, 1 } do
+		local p = part(ctx, {
+			Name = "Fireworks",
+			Size = Vector3.new(1, 1, 1),
+			CFrame = at(ctx, sx * 8, ctx.barnTop + 22, ctx.barnZ),
+			Transparency = 1,
+			CanCollide = false,
+			CanQuery = false,
+		})
+		local e = Instance.new("ParticleEmitter")
+		e.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 120)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 220, 80)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 200, 255)),
+		})
+		e.LightEmission = 1
+		e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.9), NumberSequenceKeypoint.new(1, 0) })
+		e.Lifetime = NumberRange.new(1.2, 1.8)
+		e.Speed = NumberRange.new(16, 22)
+		e.SpreadAngle = Vector2.new(180, 180)
+		e.Drag = 2.5
+		e.Acceleration = Vector3.new(0, -6, 0)
+		e.Rate = 0
+		e.Parent = p
+		-- a burst every couple of seconds (server loop, stops when the decor is rebuilt)
+		task.spawn(function()
+			while p.Parent and p:IsDescendantOf(game) do
+				e:Emit(70)
+				task.wait(2.2 + sx * 0.4)
+			end
+		end)
+	end
+end
+
 -- Looks that change rather than add (applied every time, so a level-down restores them)
 local FENCE_PLAIN = Color3.fromRGB(176, 124, 76)
 local FENCE_WHITE = Color3.fromRGB(246, 238, 222)
@@ -502,6 +766,38 @@ local function has(level: number, id: string): boolean
 	return false
 end
 
+-- A burst of confetti and sparkles over the farm when it levels up.
+function FarmDecor.celebrate(center: CFrame)
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.Transparency = 1
+	p.Size = Vector3.one
+	p.CFrame = center * CFrame.new(0, 14, 0)
+	p.Parent = workspace
+	local e = Instance.new("ParticleEmitter")
+	e.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 90, 140)),
+		ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 220, 60)),
+		ColorSequenceKeypoint.new(0.66, Color3.fromRGB(90, 200, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 230, 100)),
+	})
+	e.LightEmission = 0.6
+	e.Size = NumberSequence.new(0.8, 0.2)
+	e.Lifetime = NumberRange.new(2, 3)
+	e.Speed = NumberRange.new(25, 40)
+	e.SpreadAngle = Vector2.new(60, 60)
+	e.Acceleration = Vector3.new(0, -20, 0)
+	e.Rotation = NumberRange.new(0, 360)
+	e.RotSpeed = NumberRange.new(-200, 200)
+	e.Rate = 0
+	e.EmissionDirection = Enum.NormalId.Top
+	e.Parent = p
+	e:Emit(250)
+	Debris:AddItem(p, 4)
+end
+
 -- Rebuild the farm's decor for `level` (0 or 1 = a plain fresh farm).
 function FarmDecor.apply(model: Model, center: CFrame, half: number, level: number)
 	local old = model:FindFirstChild("Decor")
@@ -511,12 +807,30 @@ function FarmDecor.apply(model: Model, center: CFrame, half: number, level: numb
 	local folder = Instance.new("Folder")
 	folder.Name = "Decor"
 	local barn = model:FindFirstChild("BarnBody")
+	local tier = FarmLevels.barnTier(level)
+	local k = tier.scale
+	local depth = 8 * k
 	local ctx: Ctx = {
 		center = center,
 		half = half,
 		folder = folder,
 		identity = if barn and barn:IsA("BasePart") then barn.Color else C.red,
+		level = math.max(1, level),
+		barnZ = half + 4 + depth / 2,
+		barnHalfW = 6 * k,
+		barnDepth = depth,
+		barnH = 7 * k,
+		barnTop = 7 * k + 3.4 * k,
 	}
+	-- The built-in barn from WorldBuilder is replaced by the level barn
+	for _, child in model:GetChildren() do
+		if child:IsA("BasePart") and string.sub(child.Name, 1, 4) == "Barn" then
+			child.Transparency = 1
+			child.CanCollide = false
+			child.CanQuery = false
+		end
+	end
+	buildBarn(ctx, tier)
 	for _, u in FarmLevels.unlocked(level) do
 		local build = builders[u.id]
 		if build then

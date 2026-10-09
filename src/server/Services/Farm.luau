@@ -301,7 +301,11 @@ local function plant(player: Player, plot: PlotRuntime)
 		return
 	end
 	local jitter = 1 + (Roll.number() * 2 - 1) * EconomyConfig.GrowJitter
+	-- Better seeds grow slower (Config/Seeds growMult; the seed you used, not what a Mystery became)
+	local used = Seeds.def(seedId)
+	local seedMult = if used then used.growMult else seed.growMult
 	local growTime = math.max(EconomyConfig.MinGrowTime, Farm.growTimeFor(player, plot.index) * jitter)
+		* seedMult
 	setGrowing(plot, maybeRoll, growTime, now(), seedId)
 	Telemetry.funnel(player, "FirstPlant")
 	Daily.progress(player, "plant")
@@ -560,8 +564,11 @@ local function applyLevel(farm: FarmRuntime)
 		if Progression.isMaxed(track, trackLevel) then
 			nextText = "MAX LEVEL! 👑"
 		else
-			local unlock = FarmLevels.at(level + 1)[1]
-			local what = if unlock then unlock.emoji .. " " .. unlock.name else "more plots"
+			local parts = {}
+			for _, u in FarmLevels.at(level + 1) do
+				table.insert(parts, u.emoji .. " " .. u.name)
+			end
+			local what = if #parts > 0 then table.concat(parts, " + ") else "more plots"
 			nextText = string.format("Next: %s\n%s", what, Format.cash(Progression.cost(track, trackLevel)))
 		end
 		build.signSubtitle.Text = string.format("⭐ LV %d  ·  @%s", level, owner.Name)
@@ -844,6 +851,15 @@ function Farm.start(world: WorldBuilder.WorldBuild)
 		if farm and trackId == "FarmSize" then
 			applyUnlocked(farm, Farm.unlockedPlots(player))
 			applyLevel(farm)
+			local level = Upgrade.farmLevel(player)
+			FarmDecor.celebrate(farm.build.center)
+			-- Big levels are news for the whole server
+			if table.find(FarmLevels.Milestones, level) then
+				Remotes.get(Remotes.Names.Notice):FireAllClients({
+					text = string.format("🏡 %s reached FARM LEVEL %d! 🎉", player.DisplayName, level),
+					kind = "good",
+				})
+			end
 		end
 	end)
 

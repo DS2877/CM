@@ -188,10 +188,11 @@ local Products = {
 			color = { 255, 205, 50 },
 		},
 		{
+			-- Deliberately cheap (25 R$): the first purchase is the big step for a player.
 			id = "StarterBundle",
 			name = "Starter Bundle",
 			description = "20 Rare Seeds + 5 Golden Seeds + Luck x2 for 15 min. One time only!",
-			price = 99,
+			price = 25,
 			productId = 3717302133,
 			kind = "bundle",
 			once = true,
