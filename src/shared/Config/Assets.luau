@@ -94,6 +94,7 @@ local Assets = {
 		BotWalk = "rbxassetid://913402848",
 		BotIdle = "rbxassetid://507766388",
 		BotJump = "rbxassetid://507765000",
+		BotSit = "rbxassetid://2506281703",
 	},
 }
 

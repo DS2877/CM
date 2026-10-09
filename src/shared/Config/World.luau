@@ -59,14 +59,15 @@ local World = {
 	SellPadRadius = 4,
 	BunnyStallDistance = 18, -- stall center from the plaza center (the mat is in front of it)
 	BunnyNames = { "Mr. Fluff", "Bun-Bun", "Clover", "Sir Hops" }, -- one per stall, same order
-	-- Mega Bunny: a huge bunny hopping in a big circle around the plaza (client renders it from
-	-- the server clock, so everyone sees it in the same spot). Land on its back to get launched.
-	MegaBunnyRadius = 80,
-	MegaBunnyLapSeconds = 240,
-	MegaBunnyScale = 9,
-	MegaBunnyBounce = 130,
+	-- Places just outside the plaza where some bots hang out (Server/Services/WorldFun builds them,
+	-- Server/Services/Bots uses them): a campsite roasting marshmallows and a fishing lake.
+	CampAngle = 157.5, -- degrees, between two farm paths
+	CampRadius = 78,
+	LakeAngle = 292.5,
+	LakeRadius = 80,
+	LakeSize = 22, -- water diameter
 	-- Bots: Roblox-style farmers walking around the plaza and the paths (server, just for life).
-	Bots = 8,
+	Bots = 8, -- 3 at the campfire, 1 fishing, the rest walking around
 	BotWalkSpeed = 12,
 	-- Upgrade Shops on the plaza, facing the market, so "sell, then upgrade" is two steps.
 	UpgradeStallAngles = { 112.5, 292.5 }, -- degrees around the market (between farm paths)

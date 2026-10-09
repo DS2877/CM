@@ -249,11 +249,294 @@ local function buildTulips(parent: Instance)
 	end
 end
 
+local function cylinder(
+	parent: Instance,
+	name: string,
+	length: number,
+	d: number,
+	cf: CFrame,
+	color: Color3
+): Part
+	-- Roblox cylinders run along X; `cf` places the middle, its X axis is the length
+	return part(parent, {
+		Name = name,
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(length, d, d),
+		CFrame = cf,
+		Color = color,
+	})
+end
+
+-- Campsite: a crackling campfire in a ring of stones, three logs to sit on (the bots roast
+-- marshmallows there), a tent and a lantern. Seats are invisible "CampSeat" parts for the bots.
+local function buildCampsite(parent: Instance)
+	local f = folder("Campsite", parent)
+	local dir = flatDir(World.CampAngle)
+	local c = dir * World.CampRadius
+	-- trampled dirt patch
+	cylinder(
+		f,
+		"CampGround",
+		0.2,
+		18,
+		CFrame.new(c + Vector3.new(0, 0.05, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Color3.fromRGB(170, 130, 90)
+	).CanCollide =
+		false
+	for k = 0, 9 do
+		local a = k * math.pi * 2 / 10
+		part(f, {
+			Name = "FireStone",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.one * 1.1,
+			CFrame = CFrame.new(c + Vector3.new(math.cos(a) * 2, 0.35, math.sin(a) * 2)),
+			Color = Color3.fromRGB(150, 150, 158),
+		})
+	end
+	for _, rot in { 0.6, -0.6 } do
+		cylinder(
+			f,
+			"FireLog",
+			3,
+			0.6,
+			CFrame.new(c + Vector3.new(0, 0.45, 0)) * CFrame.Angles(0, rot, 0),
+			Color3.fromRGB(110, 70, 40)
+		).Material =
+			Enum.Material.Wood
+	end
+	local flame = part(f, {
+		Name = "Campfire",
+		Size = Vector3.new(1.5, 1, 1.5),
+		CFrame = CFrame.new(c + Vector3.new(0, 1, 0)),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+	})
+	local fire = Instance.new("Fire")
+	fire.Size = 4
+	fire.Heat = 8
+	fire.Color = Color3.fromRGB(255, 140, 40)
+	fire.SecondaryColor = Color3.fromRGB(255, 220, 90)
+	fire.Parent = flame
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 170, 80)
+	light.Range = 18
+	light.Brightness = 2
+	light.Parent = flame
+	-- Logs to sit on, facing the fire
+	for k = 0, 2 do
+		local a = k * math.pi * 2 / 3 + 0.4
+		local pos = c + Vector3.new(math.cos(a) * 5.2, 0, math.sin(a) * 5.2)
+		local toFire = (c - pos).Unit
+		local tangent = Vector3.new(-toFire.Z, 0, toFire.X)
+		cylinder(
+			f,
+			"SitLog",
+			3.6,
+			1.3,
+			CFrame.lookAt(pos + Vector3.new(0, 0.65, 0), pos + Vector3.new(0, 0.65, 0) + tangent)
+				* CFrame.Angles(0, math.rad(90), 0),
+			Color3.fromRGB(130, 85, 50)
+		).Material =
+			Enum.Material.Wood
+		local seat = part(f, {
+			Name = "CampSeat",
+			Size = Vector3.one,
+			CFrame = CFrame.lookAt(pos + Vector3.new(0, 2.35, 0), c + Vector3.new(0, 2.35, 0)),
+			Transparency = 1,
+			CanCollide = false,
+			CanQuery = false,
+		})
+		seat:SetAttribute("Seat", k + 1)
+	end
+	-- Tent behind the fire (two sloped panels + a door flap)
+	local tentPos = c + dir * 8.5
+	local tentCF = CFrame.lookAt(tentPos, c)
+	for _, sx in { -1, 1 } do
+		part(f, {
+			Name = "Tent",
+			Size = Vector3.new(0.2, 5.6, 6.5),
+			CFrame = tentCF * CFrame.new(sx * 1.9, 2.1, 0) * CFrame.Angles(0, 0, math.rad(sx * 34)),
+			Color = Color3.fromRGB(255, 140, 50),
+			Material = Enum.Material.Fabric,
+		})
+	end
+	part(f, {
+		Name = "TentBack",
+		Size = Vector3.new(0.6, 0.4, 6.6),
+		CFrame = tentCF * CFrame.new(0, 4.4, 0),
+		Color = Color3.fromRGB(220, 100, 30),
+		Material = Enum.Material.Fabric,
+	})
+	-- Lantern on a post
+	local lp = c + Vector3.new(-dir.Z, 0, dir.X) * 7
+	part(f, {
+		Name = "LanternPost",
+		Size = Vector3.new(0.35, 4, 0.35),
+		CFrame = CFrame.new(lp + Vector3.new(0, 2, 0)),
+		Color = Color3.fromRGB(110, 70, 40),
+		Material = Enum.Material.Wood,
+	})
+	local lantern = part(f, {
+		Name = "Lantern",
+		Size = Vector3.new(0.8, 1, 0.8),
+		CFrame = CFrame.new(lp + Vector3.new(0, 4.3, 0)),
+		Color = Color3.fromRGB(255, 220, 140),
+		Material = Enum.Material.Neon,
+		CanCollide = false,
+	})
+	local ll = Instance.new("PointLight")
+	ll.Color = Color3.fromRGB(255, 210, 140)
+	ll.Range = 10
+	ll.Parent = lantern
+end
+
+-- Fishing lake: water in a sandy rim, reeds, lily pads and a little dock pointing at the middle.
+-- The dock end ("FishSpot") is where the fishing bot stands; "Bobber" floats on the water.
+local function buildLake(parent: Instance)
+	local f = folder("Lake", parent)
+	local dir = flatDir(World.LakeAngle)
+	local c = dir * World.LakeRadius
+	local r = World.LakeSize / 2
+	local flatCF = CFrame.new(c) * CFrame.Angles(0, 0, math.rad(90))
+	cylinder(
+		f,
+		"Shore",
+		0.3,
+		World.LakeSize + 4,
+		flatCF + Vector3.new(0, 0.1, 0),
+		Color3.fromRGB(235, 215, 160)
+	).Material =
+		Enum.Material.Sand
+	local water = cylinder(
+		f,
+		"Water",
+		0.3,
+		World.LakeSize,
+		flatCF + Vector3.new(0, 0.2, 0),
+		Color3.fromRGB(70, 170, 235)
+	)
+	water.Material = Enum.Material.Glass
+	water.Transparency = 0.15
+	water.CanCollide = false
+	-- reeds around the edge
+	for k = 0, 13 do
+		local a = k * math.pi * 2 / 14 + 0.2
+		local base = c + Vector3.new(math.cos(a) * (r + 0.8), 0, math.sin(a) * (r + 0.8))
+		if (base - (c - dir * r)).Magnitude > 4 then -- keep the dock side clear
+			for j = -1, 1 do
+				part(f, {
+					Name = "Reed",
+					Size = Vector3.new(0.18, 2.4 + j * 0.3, 0.18),
+					CFrame = CFrame.new(base + Vector3.new(j * 0.35, 1.2, 0)) * CFrame.Angles(0, 0, j * 0.12),
+					Color = Color3.fromRGB(90, 160, 70),
+					CanCollide = false,
+				})
+			end
+			part(f, {
+				Name = "Cattail",
+				Size = Vector3.new(0.35, 0.8, 0.35),
+				CFrame = CFrame.new(base + Vector3.new(0, 2.6, 0)),
+				Color = Color3.fromRGB(120, 80, 45),
+				CanCollide = false,
+			})
+		end
+	end
+	-- lily pads with a flower
+	for k = 0, 4 do
+		local a = k * 1.3 + 1
+		local p = c + Vector3.new(math.cos(a) * r * 0.6, 0.38, math.sin(a) * r * 0.6)
+		cylinder(
+			f,
+			"LilyPad",
+			0.08,
+			2,
+			CFrame.new(p) * CFrame.Angles(0, 0, math.rad(90)),
+			Color3.fromRGB(90, 180, 80)
+		).CanCollide =
+			false
+		if k % 2 == 0 then
+			part(f, {
+				Name = "LilyFlower",
+				Shape = Enum.PartType.Ball,
+				Size = Vector3.one * 0.6,
+				CFrame = CFrame.new(p + Vector3.new(0.3, 0.2, 0)),
+				Color = Color3.fromRGB(255, 160, 200),
+				CanCollide = false,
+			})
+		end
+	end
+	-- Dock from the plaza-side shore toward the middle
+	local inward = dir -- from the plaza-side edge toward the lake center
+	local dockStart = c - dir * (r + 1.5)
+	local dockEnd = c - dir * (r - 5)
+	local dockMid = (dockStart + dockEnd) / 2
+	part(f, {
+		Name = "Dock",
+		Size = Vector3.new(3.2, 0.4, (dockEnd - dockStart).Magnitude),
+		CFrame = CFrame.lookAt(dockMid + Vector3.new(0, 0.7, 0), dockMid + Vector3.new(0, 0.7, 0) + inward),
+		Color = Color3.fromRGB(190, 132, 78),
+		Material = Enum.Material.WoodPlanks,
+	})
+	for _, along in { 0.2, 0.8 } do
+		for _, sx in { -1, 1 } do
+			local p = dockStart:Lerp(dockEnd, along) + Vector3.new(-inward.Z, 0, inward.X) * sx * 1.5
+			part(f, {
+				Name = "DockPost",
+				Size = Vector3.new(0.4, 1.4, 0.4),
+				CFrame = CFrame.new(p + Vector3.new(0, 0.4, 0)),
+				Color = Color3.fromRGB(120, 78, 46),
+				Material = Enum.Material.Wood,
+			})
+		end
+	end
+	local spot = dockEnd - inward * 0.8
+	part(f, {
+		Name = "FishSpot",
+		Size = Vector3.one,
+		CFrame = CFrame.lookAt(spot + Vector3.new(0, 3.9, 0), spot + inward * 5 + Vector3.new(0, 3.9, 0)),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+	})
+	-- Rod (anchored, held out over the water) and line to a red-white bobber
+	local tip = spot + inward * 3.6 + Vector3.new(0, 6, 0)
+	local hand = spot + inward * 0.9 + Vector3.new(0, 3.6, 0)
+	part(f, {
+		Name = "Rod",
+		Size = Vector3.new(0.15, 0.15, (tip - hand).Magnitude),
+		CFrame = CFrame.lookAt((hand + tip) / 2, tip),
+		Color = Color3.fromRGB(120, 78, 46),
+		CanCollide = false,
+	})
+	local bobberPos = spot + inward * 6.5 + Vector3.new(0, 0.5, 0)
+	part(f, {
+		Name = "FishingLine",
+		Size = Vector3.new(0.05, 0.05, (bobberPos - tip).Magnitude),
+		CFrame = CFrame.lookAt((tip + bobberPos) / 2, bobberPos),
+		Color = Color3.fromRGB(255, 255, 255),
+		CanCollide = false,
+		CanQuery = false,
+	})
+	local bobber = part(f, {
+		Name = "Bobber",
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.one * 0.6,
+		CFrame = CFrame.new(bobberPos),
+		Color = Color3.fromRGB(235, 60, 60),
+		CanCollide = false,
+		CanQuery = false,
+	})
+	bobber:SetAttribute("Rest", bobberPos)
+end
+
 function WorldFun.build(world: Instance)
 	local fun = folder("Fun", world)
 	buildMushrooms(fun)
 	buildBunting(fun)
 	buildTulips(fun)
+	buildCampsite(fun)
+	buildLake(fun)
 end
 
 -- Spots the random decor (trees, bushes, rocks) must keep clear of.
@@ -262,6 +545,12 @@ function WorldFun.blocked(flat: Vector3): boolean
 		if (flat - flatDir(deg) * World.MushroomRadius).Magnitude < 12 then
 			return true
 		end
+	end
+	if (flat - flatDir(World.CampAngle) * World.CampRadius).Magnitude < 20 then
+		return true
+	end
+	if (flat - flatDir(World.LakeAngle) * World.LakeRadius).Magnitude < World.LakeSize / 2 + 8 then
+		return true
 	end
 	return false
 end

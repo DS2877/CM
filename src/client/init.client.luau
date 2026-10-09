@@ -25,7 +25,6 @@ local AdminPanel = require(Controllers.AdminPanel)
 local Plot = require(Controllers.Plot)
 local HarvestFX = require(Controllers.HarvestFX)
 local FarmLevel = require(Controllers.FarmLevel)
-local MegaBunny = require(Controllers.MegaBunny)
 
 -- Plots, pedestals and effects can render before data is loaded.
 Plot.start()
@@ -52,7 +51,6 @@ Store.start()
 Broadcast.start()
 AdminPanel.start()
 FarmLevel.start()
-MegaBunny.start()
 
 -- First view after (re)spawning on your farm: look down over the plots from behind and above,
 -- not at the back of the gate sign. The server moves you onto your spawn pad; once you're

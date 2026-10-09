@@ -55,20 +55,26 @@ local function flat(deg: number, r: number): Vector3
 	return Vector3.new(math.sin(a) * r, 3, math.cos(a) * r)
 end
 
--- Somewhere nice to walk to.
+-- Somewhere nice to walk to (spread over the world, not just the plaza).
 local function randomTarget(): Vector3
 	local roll = rng:NextNumber()
-	if roll < 0.35 then
+	if roll < 0.2 then
 		-- in front of a bunny stall (watch the bunny)
 		local i = rng:NextInteger(1, #World.SellPadAngles)
 		return flat(World.SellPadAngles[i] + rng:NextNumber(-12, 12), World.SellPadDistance + 3)
-	elseif roll < 0.65 then
+	elseif roll < 0.35 then
 		-- around the plaza
-		return flat(rng:NextNumber(0, 360), rng:NextNumber(10, 30))
-	elseif roll < 0.85 then
+		return flat(rng:NextNumber(0, 360), rng:NextNumber(12, 30))
+	elseif roll < 0.6 then
 		-- out along a farm path
 		local k = rng:NextInteger(0, World.FarmCount - 1)
 		return flat(k * (360 / World.FarmCount) + rng:NextNumber(-1.5, 1.5), rng:NextNumber(40, 100))
+	elseif roll < 0.75 then
+		-- visit the campfire
+		return flat(World.CampAngle + rng:NextNumber(-8, 8), World.CampRadius - 9)
+	elseif roll < 0.88 then
+		-- look at the lake
+		return flat(World.LakeAngle + rng:NextNumber(-10, 10), World.LakeRadius - World.LakeSize / 2 - 4)
 	else
 		-- near a bouncy mushroom
 		local deg = pick(World.MushroomAngles)
@@ -257,15 +263,168 @@ local function run(model: Model)
 	end
 end
 
+-- Hold a bot in place (anchored root, a looping pose) for the campfire and the dock.
+local function settle(model: Model, at: CFrame, animId: string): (Humanoid?, BasePart?)
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
+	local root = model:FindFirstChild("HumanoidRootPart")
+	if not humanoid or not root or not root:IsA("BasePart") then
+		return nil, nil
+	end
+	local rootPart = root :: BasePart
+	rootPart.Anchored = true
+	model:PivotTo(at)
+	local found = humanoid:FindFirstChildOfClass("Animator")
+	local animator: Animator = if found then found else Instance.new("Animator")
+	animator.Parent = humanoid
+	local track = loadAnim(animator, animId)
+	if track then
+		track.Looped = true
+		track:Play()
+	end
+	return humanoid, rootPart
+end
+
+-- Roasting marshmallows: sit on a log, stick toward the fire, marshmallow slowly toasts (and
+-- now and then catches fire - whoops - and gets a fresh one).
+local function camper(model: Model, seat: BasePart)
+	local _, root = settle(model, seat.CFrame, Assets.Animations.BotSit)
+	if not root then
+		return
+	end
+	local fireDir = seat.CFrame.LookVector
+	local hand = root.Position + fireDir * 0.8 + Vector3.new(0, 0.2, 0)
+	local tip = root.Position + fireDir * 3.6 + Vector3.new(0, -0.4, 0)
+	local stick = Instance.new("Part")
+	stick.Name = "Stick"
+	stick.Anchored = true
+	stick.CanCollide = false
+	stick.CanQuery = false
+	stick.Size = Vector3.new(0.1, 0.1, (tip - hand).Magnitude)
+	stick.CFrame = CFrame.lookAt((hand + tip) / 2, tip)
+	stick.Color = Color3.fromRGB(120, 78, 46)
+	stick.Parent = model
+	local mallow = Instance.new("Part")
+	mallow.Name = "Marshmallow"
+	mallow.Shape = Enum.PartType.Cylinder
+	mallow.Anchored = true
+	mallow.CanCollide = false
+	mallow.CanQuery = false
+	mallow.Size = Vector3.new(0.6, 0.55, 0.55)
+	mallow.CFrame = CFrame.lookAt(tip, tip + fireDir) * CFrame.Angles(0, math.rad(90), 0)
+	mallow.Material = Enum.Material.SmoothPlastic
+	mallow.Parent = model
+	local raw = Color3.fromRGB(255, 252, 245)
+	local toasted = Color3.fromRGB(205, 140, 70)
+	while model.Parent do
+		mallow.Color = raw
+		for k = 1, 10 do
+			task.wait(rng:NextNumber(1, 2))
+			mallow.Color = raw:Lerp(toasted, k / 10)
+		end
+		if rng:NextNumber() < 0.35 then
+			local oops = Instance.new("Fire")
+			oops.Size = 1.5
+			oops.Heat = 4
+			oops.Parent = mallow
+			mallow.Color = Color3.fromRGB(40, 30, 25)
+			task.wait(2.5)
+			oops:Destroy()
+		end
+		task.wait(rng:NextNumber(1, 3))
+	end
+end
+
+-- Fishing on the dock: the bobber bobs, every now and then it dips, a fish jumps out, splash.
+local function fisher(model: Model, spot: BasePart, bobber: BasePart)
+	local _, root = settle(model, spot.CFrame, Assets.Animations.BotIdle)
+	if not root then
+		return
+	end
+	local rest = bobber:GetAttribute("Rest")
+	local restPos = if typeof(rest) == "Vector3" then rest else bobber.Position
+	local splash = Instance.new("ParticleEmitter")
+	splash.Color = ColorSequence.new(Color3.fromRGB(210, 240, 255))
+	splash.Size = NumberSequence.new(0.4, 0.1)
+	splash.Lifetime = NumberRange.new(0.5, 0.9)
+	splash.Speed = NumberRange.new(6, 10)
+	splash.SpreadAngle = Vector2.new(40, 40)
+	splash.Acceleration = Vector3.new(0, -25, 0)
+	splash.Rate = 0
+	splash.EmissionDirection = Enum.NormalId.Top
+	splash.Parent = bobber
+	local fishColors =
+		{ Color3.fromRGB(255, 150, 60), Color3.fromRGB(120, 190, 255), Color3.fromRGB(255, 210, 80) }
+	while model.Parent do
+		-- gentle bobbing while waiting
+		local waitFor = rng:NextNumber(12, 25)
+		local t0 = os.clock()
+		while os.clock() - t0 < waitFor do
+			bobber.CFrame = CFrame.new(restPos + Vector3.new(0, math.sin(os.clock() * 2) * 0.08, 0))
+			task.wait(0.1)
+		end
+		-- a bite! dip, splash, and a fish flips out of the water onto the dock
+		bobber.CFrame = CFrame.new(restPos - Vector3.new(0, 0.35, 0))
+		splash:Emit(25)
+		local fish = Instance.new("Part")
+		fish.Name = "Fish"
+		fish.Anchored = true
+		fish.CanCollide = false
+		fish.CanQuery = false
+		fish.Size = Vector3.new(0.5, 0.8, 1.6)
+		fish.Color = pick(fishColors)
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.Sphere
+		mesh.Parent = fish
+		fish.Parent = model
+		local from = restPos
+		local to = root.Position + spot.CFrame.LookVector * 1.2 + Vector3.new(0, 0.5, 0)
+		for k = 0, 20 do
+			local f = k / 20
+			local p = from:Lerp(to, f) + Vector3.new(0, math.sin(f * math.pi) * 5, 0)
+			fish.CFrame = CFrame.lookAt(p, to) * CFrame.Angles(f * 12, 0, 0)
+			task.wait(0.03)
+		end
+		task.wait(1.2)
+		fish:Destroy()
+		bobber.CFrame = CFrame.new(restPos)
+	end
+end
+
 function Bots.start()
 	local folder = Instance.new("Folder")
 	folder.Name = "Bots"
 	folder.Parent = workspace
+	local world = workspace:WaitForChild("World")
+	local fun = world:WaitForChild("Fun")
+	local camp = fun:WaitForChild("Campsite")
+	local lake = fun:WaitForChild("Lake")
+	local seats: { BasePart } = {}
+	for _, d in camp:GetChildren() do
+		if d:IsA("BasePart") and d.Name == "CampSeat" then
+			table.insert(seats, d)
+		end
+	end
+	local spot = lake:FindFirstChild("FishSpot")
+	local bobber = lake:FindFirstChild("Bobber")
 	for i = 1, World.Bots do
 		task.spawn(function()
 			task.wait(i * 0.5) -- don't build them all in the same frame
 			local bot = makeBot(i, folder)
-			if bot then
+			if not bot then
+				return
+			end
+			local seat = seats[i]
+			if seat then
+				camper(bot, seat)
+			elseif
+				i == #seats + 1
+				and spot
+				and spot:IsA("BasePart")
+				and bobber
+				and bobber:IsA("BasePart")
+			then
+				fisher(bot, spot, bobber)
+			else
 				run(bot)
 			end
 		end)
