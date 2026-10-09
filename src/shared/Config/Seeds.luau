@@ -1,4 +1,5 @@
 --!strict
+-- A ladder: spending more buys more luck (Basic stays free and endless).
 -- Seed types. The selected seed is used for the next planting (manual or auto-replant) while
 -- the player has any; otherwise Basic. Seeds are bought with in-game cash only, never Robux
 -- (design doc §11). Mystery Seeds turn into one of `mystery` when planted; odds are shown.
@@ -35,6 +36,17 @@ local Seeds: { SeedDef } = {
 		color = { 140, 210, 100 },
 	},
 	{
+		id = "Lucky",
+		name = "Lucky Seed",
+		description = "2x luck – a cheap step up",
+		basePrice = 60,
+		buyable = true,
+		luck = 2,
+		mutationLuck = 1.2,
+		emoji = "🍀",
+		color = { 120, 220, 100 },
+	},
+	{
 		id = "Rare",
 		name = "Rare Seed",
 		description = "Never Common, 3x luck",
@@ -47,6 +59,17 @@ local Seeds: { SeedDef } = {
 		color = { 80, 170, 255 },
 	},
 	{
+		id = "Super",
+		name = "Super Seed",
+		description = "5x luck",
+		basePrice = 600,
+		buyable = true,
+		luck = 5,
+		mutationLuck = 1.6,
+		emoji = "✨",
+		color = { 255, 200, 70 },
+	},
+	{
 		id = "Golden",
 		name = "Golden Seed",
 		description = "Always Golden (x3), 2x luck",
@@ -57,6 +80,30 @@ local Seeds: { SeedDef } = {
 		forceMutation = "Golden",
 		emoji = "⭐",
 		color = { 255, 205, 50 },
+	},
+	{
+		id = "Mega",
+		name = "Mega Seed",
+		description = "Never Common, 8x luck",
+		basePrice = 2500,
+		buyable = true,
+		luck = 8,
+		mutationLuck = 2,
+		minRarity = "Uncommon",
+		emoji = "🌟",
+		color = { 255, 140, 60 },
+	},
+	{
+		id = "Ultra",
+		name = "Ultra Seed",
+		description = "Rare or better, 15x luck",
+		basePrice = 15000,
+		buyable = true,
+		luck = 15,
+		mutationLuck = 2.5,
+		minRarity = "Rare",
+		emoji = "💜",
+		color = { 190, 100, 255 },
 	},
 	{
 		id = "Mystery",
@@ -73,6 +120,18 @@ local Seeds: { SeedDef } = {
 		},
 		emoji = "❓",
 		color = { 190, 110, 255 },
+	},
+	{
+		id = "Cosmic",
+		name = "Cosmic Seed",
+		description = "Epic or better, 30x luck",
+		basePrice = 90000,
+		buyable = true,
+		luck = 30,
+		mutationLuck = 3,
+		minRarity = "Epic",
+		emoji = "🌠",
+		color = { 70, 120, 255 },
 	},
 	{
 		id = "Secret",

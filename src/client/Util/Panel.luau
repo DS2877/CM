@@ -34,7 +34,6 @@ function Panel.new(name: string, title: string, color: Color3, dark: Color3, siz
 		Enabled = false,
 		Parent = playerGui,
 	})
-	UI.autoScale(gui)
 
 	local backdrop: TextButton = UI.new("TextButton", {
 		Name = "Backdrop",
@@ -57,6 +56,8 @@ function Panel.new(name: string, title: string, color: Color3, dark: Color3, siz
 		UI.corner(22),
 		UI.stroke(dark, 4),
 	})
+	-- Only the panel box scales; the backdrop stays full-screen.
+	UI.scaleObject(frame, UI.PANEL_SCALE)
 
 	-- Header band
 	local header = UI.new("Frame", {
@@ -151,7 +152,9 @@ function Panel.new(name: string, title: string, color: Color3, dark: Color3, siz
 			gui.Enabled = open
 			if open then
 				Sound.play("Open")
-				UI.bump(frame, 0.1)
+				-- small slide-up pop (the frame's UIScale is used for screen scaling)
+				frame.Position = UDim2.fromScale(0.5, 0.58)
+				UI.tween(frame, 0.22, { Position = UDim2.fromScale(0.5, 0.53) }, Enum.EasingStyle.Back)
 				if panel.onOpen then
 					panel.onOpen()
 				end

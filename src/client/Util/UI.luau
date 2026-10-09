@@ -142,6 +142,23 @@ function UI.screenScale(): number
 	return math.clamp(math.min(size.Y / 520, size.X / 980), 0.65, 1.25)
 end
 
+-- Menus/panels are drawn a bit smaller than the HUD so their text isn't oversized on phones.
+UI.PANEL_SCALE = 0.8
+
+-- Scales one GuiObject (and its children) with UI.screenScale() * factor. Use this for boxes
+-- in a full-screen layer, so full-screen backdrops stay full-screen.
+function UI.scaleObject(obj: GuiObject, factor: number?)
+	local scale: UIScale = UI.new("UIScale", { Parent = obj })
+	local f = factor or 1
+	scale.Scale = UI.screenScale() * f
+	local camera = workspace.CurrentCamera
+	if camera then
+		camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+			scale.Scale = UI.screenScale() * f
+		end)
+	end
+end
+
 -- Adds a UIScale to a ScreenGui that follows UI.screenScale().
 function UI.autoScale(gui: ScreenGui)
 	local scale: UIScale = UI.new("UIScale", { Parent = gui })

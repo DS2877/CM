@@ -176,8 +176,9 @@ local function update()
 	local arrived: boolean
 	local here = Vector3.new(root.Position.X, 0, root.Position.Z)
 	if target == "market" then
-		pos = Vector3.zero
-		arrived = here.Magnitude <= World.SellRadius + 2
+		local pad, dist = World.nearestSellPad(here)
+		pos = pad
+		arrived = dist <= World.SellPadRadius + 1
 	elseif target == "shop" then
 		pos = nearestPad(root.Position)
 		arrived = Shop.atShop(1)
@@ -195,10 +196,6 @@ local function update()
 	beam.Color = ColorSequence.new(Color3.new(1, 1, 1), color)
 	markerText.Text = if target == "market" then "SELL HERE 🧺" else "UPGRADES ⬆"
 	markerText.TextColor3 = color
-	-- Market: aim at the edge of the green circle nearest to you, not the middle of the stall
-	if target == "market" and here.Magnitude > 0.1 then
-		pos = here.Unit * (World.SellRadius - 2)
-	end
 	anchor.CFrame = CFrame.new(pos + Vector3.new(0, 1, 0))
 	beam.Enabled = true
 	marker.Enabled = true

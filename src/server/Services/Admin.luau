@@ -152,6 +152,9 @@ local function resync(player: Player)
 end
 
 local function resetAccount(admin: Player, target: Player)
+	-- Empty the farm first: otherwise the offline save ("what's in the ground") would write the
+	-- old carrots back into the fresh profile when the player leaves.
+	Farm.refresh(target)
 	if not Data.reset(target) then
 		return
 	end

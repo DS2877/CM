@@ -258,17 +258,6 @@ local function buildGround(world: Folder)
 		Color = COLORS.plaza,
 		CastShadow = false,
 	}, world)
-	-- The sell circle: step onto the green ring around the market and your basket sells.
-	disc("SellRing", Vector3.new(0, 0.34, 0), World.SellRadius * 2 + 1.6, 0.5, {
-		Material = Enum.Material.SmoothPlastic,
-		Color = COLORS.white,
-		CastShadow = false,
-	}, world)
-	disc("SellZone", Vector3.new(0, 0.38, 0), World.SellRadius * 2, 0.5, {
-		Material = Enum.Material.Slate,
-		Color = COLORS.sellGreen,
-		CastShadow = false,
-	}, world)
 	for i = 0, World.FarmCount - 1 do
 		local a = i * (2 * math.pi / World.FarmCount)
 		local dir = Vector3.new(math.sin(a), 0, math.cos(a))
@@ -501,6 +490,68 @@ local function buildMarket(world: Folder): CFrame
 		CanQuery = false,
 		CastShadow = false,
 	}, market)
+
+	-- SELL pads: one in front of each counter. Gold rim, green pad with "SELL" painted on it
+	-- (reads upright as you walk in toward the market) and a SELL sign hanging over the counter.
+	for _, pad in World.sellPads() do
+		local dir = pad.Unit
+		disc("SellPadRim", pad + Vector3.new(0, 0.42, 0), World.SellPadRadius * 2 + 1.2, 0.3, {
+			Material = Enum.Material.SmoothPlastic,
+			Color = COLORS.gold,
+			CastShadow = false,
+		}, market)
+		local green = disc("SellPad", pad + Vector3.new(0, 0.48, 0), World.SellPadRadius * 2, 0.3, {
+			Material = Enum.Material.SmoothPlastic,
+			Color = COLORS.sellGreen,
+			CastShadow = false,
+		}, market)
+		local coins = Instance.new("ParticleEmitter")
+		coins.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+		coins.Rate = 4
+		coins.Lifetime = NumberRange.new(0.8, 1.4)
+		coins.Speed = NumberRange.new(1, 2)
+		coins.SpreadAngle = Vector2.new(20, 20)
+		coins.EmissionDirection = Enum.NormalId.Right -- the disc's axis points up
+		coins.Size = NumberSequence.new(0.35, 0)
+		coins.Color = ColorSequence.new(Color3.fromRGB(255, 225, 90))
+		coins.LightEmission = 0.6
+		coins.Parent = green
+		local plate = part({
+			Name = "SellPlate",
+			Size = Vector3.new(World.SellPadRadius * 1.3, 0.05, World.SellPadRadius * 0.7),
+			CFrame = CFrame.lookAt(pad + Vector3.new(0, 0.66, 0), pad + Vector3.new(0, 0.66, 0) - dir),
+			Transparency = 1,
+			CanCollide = false,
+			CanQuery = false,
+			CastShadow = false,
+		}, market)
+		boardText(plate, Enum.NormalId.Top, Vector2.new(260, 140), {
+			Size = UDim2.fromScale(1, 1),
+			Text = "💰 SELL",
+			Font = Enum.Font.LuckiestGuy,
+			TextColor3 = COLORS.white,
+			TextStrokeColor3 = Color3.fromRGB(20, 80, 30),
+			TextStrokeTransparency = 0,
+		})
+		-- Hanging sign over this side's counter
+		local signPos = Vector3.new(dir.X * (h + 0.4), 8.4, dir.Z * (h + 0.4))
+		local sign = part({
+			Name = "SellSign",
+			Size = Vector3.new(7, 1.8, 0.3),
+			CFrame = CFrame.lookAt(signPos, signPos + dir),
+			Material = Enum.Material.WoodPlanks,
+			Color = COLORS.sellGreen,
+		}, market)
+		boardText(sign, Enum.NormalId.Front, Vector2.new(320, 82), {
+			Size = UDim2.new(1, -16, 1, -8),
+			Position = UDim2.fromOffset(8, 4),
+			Text = "SELL HERE",
+			Font = Enum.Font.LuckiestGuy,
+			TextColor3 = COLORS.white,
+			TextStrokeColor3 = Color3.fromRGB(20, 80, 30),
+			TextStrokeTransparency = 0,
+		})
+	end
 
 	market.Parent = world
 	return CFrame.new(0, 0, 0)

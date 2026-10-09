@@ -50,8 +50,11 @@ local World = {
 	},
 
 	-- Fixed places in the world (design: selling and upgrading are trips, not HUD buttons).
-	-- Sell: walk onto the green circle around the market and the whole basket sells.
-	SellRadius = 17, -- studs from the market center (the green sell circle)
+	-- Sell: step onto one of the SELL pads in front of the market counters (one per side, so
+	-- every farm path leads to one) and the whole basket sells. Walking across the plaza doesn't.
+	SellPadAngles = { 0, 90, 180, 270 }, -- degrees around the market, one pad per counter side
+	SellPadDistance = 17, -- pad center from the market center (just off the wooden deck)
+	SellPadRadius = 3.8,
 	-- Upgrade Shops on the plaza, facing the market, so "sell, then upgrade" is two steps.
 	UpgradeStallAngles = { 112.5, 292.5 }, -- degrees around the market (between farm paths)
 	UpgradeStallDistance = 27, -- stall center from the market center
@@ -63,6 +66,28 @@ local World = {
 	TreeCount = 46,
 	Seed = 2026,
 }
+
+-- Where each SELL pad is (shared by server checks, world build and client).
+function World.sellPads(): { Vector3 }
+	local out = {}
+	for _, deg in World.SellPadAngles do
+		local a = math.rad(deg)
+		table.insert(out, Vector3.new(math.sin(a), 0, math.cos(a)) * World.SellPadDistance)
+	end
+	return out
+end
+
+-- Nearest SELL pad to a position (flat distance), and how far it is.
+function World.nearestSellPad(pos: Vector3): (Vector3, number)
+	local best, bestDist = Vector3.zero, math.huge
+	for _, pad in World.sellPads() do
+		local d = Vector3.new(pos.X - pad.X, 0, pos.Z - pad.Z).Magnitude
+		if d < bestDist then
+			best, bestDist = pad, d
+		end
+	end
+	return best, bestDist
+end
 
 -- Where each Upgrade Shop's pad is (shared by server checks, world build and client).
 function World.upgradePads(): { Vector3 }

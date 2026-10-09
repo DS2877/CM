@@ -41,6 +41,8 @@ local function show(msg: Message)
 		BackgroundTransparency = 1,
 		Parent = gui,
 	})
+	-- Compact: a glanceable note at the top, not a wall
+	UI.scaleObject(root, 0.6)
 
 	-- Avatar face in a bright circle
 	local face: Frame = UI.new("Frame", {
@@ -134,7 +136,6 @@ function Broadcast.start()
 		DisplayOrder = 9,
 		Parent = player:WaitForChild("PlayerGui"),
 	})
-	UI.autoScale(gui)
 	Remotes.get(Remotes.Names.AdminMessage).OnClientEvent:Connect(function(msg: Message)
 		if typeof(msg) == "table" and typeof(msg.text) == "string" then
 			table.insert(queue, msg)

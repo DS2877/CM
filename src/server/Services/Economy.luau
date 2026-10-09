@@ -170,15 +170,15 @@ function Economy.basketFull(player: Player): boolean
 	return Economy.basketCount(player) >= Economy.basketCapacity(player)
 end
 
--- Inside the green sell circle?
+-- Standing on a SELL pad?
 function Economy.inSellZone(player: Player, slack: number?): boolean
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart")
 	if not root or not root:IsA("BasePart") then
 		return false
 	end
-	local offset = (root :: BasePart).Position - marketPosition
-	return Vector3.new(offset.X, 0, offset.Z).Magnitude <= World.SellRadius + (slack or 0)
+	local _, dist = World.nearestSellPad((root :: BasePart).Position - marketPosition)
+	return dist <= World.SellPadRadius + (slack or 0)
 end
 
 -- Puts a harvested carrot in the basket. Farm checks basketFull() first (a full basket leaves
