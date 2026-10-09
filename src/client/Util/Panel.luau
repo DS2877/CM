@@ -1,6 +1,7 @@
 --!strict
 -- Kid-friendly modal panel: bright header band with a big title, red round close button, cream
--- body with a scrolling list. Only one panel is open at a time. Tapping outside closes it.
+-- body with a scrolling list. Only one panel is open at a time.
+-- No dimmed backdrop: the world stays visible and the joystick keeps working; X closes.
 
 local Players = game:GetService("Players")
 
@@ -35,16 +36,6 @@ function Panel.new(name: string, title: string, color: Color3, dark: Color3, siz
 		Parent = playerGui,
 	})
 
-	local backdrop: TextButton = UI.new("TextButton", {
-		Name = "Backdrop",
-		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Color3.fromRGB(20, 30, 60),
-		BackgroundTransparency = 0.55,
-		Text = "",
-		AutoButtonColor = false,
-		Parent = gui,
-	})
-
 	local frame: Frame = UI.new("Frame", {
 		Name = "Panel",
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -56,7 +47,7 @@ function Panel.new(name: string, title: string, color: Color3, dark: Color3, siz
 		UI.corner(22),
 		UI.stroke(dark, 4),
 	})
-	-- Only the panel box scales; the backdrop stays full-screen.
+	-- Only the panel box scales (not the whole layer).
 	UI.scaleObject(frame, UI.PANEL_SCALE)
 
 	-- Header band
@@ -168,9 +159,6 @@ function Panel.new(name: string, title: string, color: Color3, dark: Color3, siz
 		end,
 		onOpen = nil,
 	}
-	backdrop.Activated:Connect(function()
-		panel.setOpen(false)
-	end)
 	close.Activated:Connect(function()
 		panel.setOpen(false)
 	end)

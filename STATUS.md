@@ -9,7 +9,7 @@ Senast uppdaterad: 8 okt 2026 (kväll). Aktuell fas: **Fas 5 – soft launch (f�
 | "Like"-prompten på egen farm | Fixad | Gilla-prompten vid din egen grind visas inte längre för dig, bara för andra spelare. Servern nekar fortfarande självgillning. |
 | Legendary-räknaren | Omgjord | Ingen nedräkning på skärmen längre. Varje farm har en träskylt med tak till höger om grinden ("👑 LEGENDARY – in 123 plants" + gul stapel), läsbar från stigen och inifrån farmen, för alla spelare. Den ändras bara när du planterar (statisk skylt, ingen tickande timer). |
 | HUD: korg + knappar | Fixat | Korgmätaren var extremt lång (den växte av sig själv). Nu ett litet fast kort (🧺 81/120 $13.9K) med en tjock stapel under. Knapparna Daily/Seeds/Index/Shop ligger direkt under korgkortet, högre upp, så de inte krockar med tumspaken. |
-| Menyer såg konstiga ut | Fixat | Den mörka bakgrunden bakom menyer krympte med skärmskalan och täckte bara en ruta. Nu täcker den hela skärmen och bara själva menyrutan skalas. |
+| Menyer såg konstiga ut | Fixat | Den gråa/mörka bakgrunden bakom menyer är borttagen helt. Världen syns och joysticken fungerar medan en meny är öppen; stäng med X. |
 | För stor text i menyer | Fixat | Alla menyer (Upgrades, Seeds, Index, Shop, Daily, erbjudanden, Admin) ritas 20 % mindre (`UI.PANEL_SCALE`). |
 | Admin-pratbubblan | Mindre | Bubblan med avatar är nu ca 60 % av förra storleken. |
 | Färdiga morötter på nytt konto | Fixat | Efter "Reset account" sparades den gamla farmens morötter tillbaka in i det nya kontot (offline-sparningen). Nu töms farmen först, så ett nytt konto börjar med tomma plots: plantera → växa → skörda → tom plot. |
@@ -39,7 +39,7 @@ Philips feedback: "inga knappar för att sälja eller uppgradera, det ska vara f
 | Upgrade Shop | Klar | Uppgraderingsknappen är borta. Två stånd med turkost tak och skylten "⬆ UPGRADES" står på torget, mellan stigarna. Ställ dig på den turkosa plattan framför ståndet så öppnas uppgraderingspanelen. Den stängs när du går därifrån. Servern godkänner bara köp på plattan. |
 | Guidelinje | Klar | En lysande linje från fötterna till nästa plats, med en studsande skylt där ("SELL HERE 🧺" eller "UPGRADES ⬆"). Den visas när korgen är full, vid boom med morötter i korgen, när nästa uppgradering är köpbar, och 12 s efter tryck på målbaren. Döljs när du är framme. |
 | Snabbare gång | Klar | WalkSpeed 22 (Roblox standard 16), så en tur till marknaden tar cirka 5 s åt varje håll. Värdet finns i `Config/World.luau`. |
-| Tutorial | Klar | Plantera → skörda → följ linjen till marknaden och sälj → följ linjen till Upgrade Shop och köp → klart. |
+| Tutorial | Uppdaterad | Plantera (Basic-frön är gratis) → växer (skimmer = sällsynt) → skörda → följ linjen till en SELL-platta och sälj → pil på SEEDS: köp Lucky Seeds (2x tur) → följ linjen till Upgrade Shop och köp → klart. Testa: admin → återställ konto, gå in igen. |
 | Ekonomi | Simulerad | Ny modell med korg och 14 s marknadstur. Tid till nästa köp: 29 s, 1:02, 2:50, 4:59 (alla inom mål). Cirka 26 marknadsturer i timmen. Rapport: `tools/simulation-report.md`. |
 
 **HUD (ombyggd):**

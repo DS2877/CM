@@ -1,18 +1,20 @@
 --!strict
 -- The guided first minute for brand-new players (server sets the "Tutorial" attribute). It reacts
 -- to what the player actually does, never to timers, and points at the real thing:
---   1. a bouncing arrow over an empty plot: "Tap to plant!"
+--   1. a bouncing arrow over an empty plot: "Tap to plant!" (Basic Seeds are free and endless)
 --   2. "Wait for it to grow…" then an arrow over the ready carrot: "Tap to harvest!"
 --   3. the guide line to the market: "Step on a SELL pad to sell!"
---   4. the guide line to the Upgrade Shop: "Buy your first upgrade!"
+--   4. an arrow on the Seeds tile: "Buy Lucky Seeds – more luck!"
+--   5. the guide line to the Upgrade Shop: "Buy your first upgrade!"
 -- Then a celebration, and the server is told it's done (never shown again). Target: the whole
--- core loop (farm -> market -> shop) understood inside a couple of minutes.
+-- core loop (plant -> grow -> harvest -> sell -> better seeds / upgrades) inside a few minutes.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local SeedsConfig = require(ReplicatedStorage.Shared.Config.Seeds)
 
 local UI = require(script.Parent.Parent.Util.UI)
 local Sound = require(script.Parent.Parent.Util.Sound)
@@ -28,6 +30,7 @@ local hintGui: ScreenGui
 local worldArrow: BillboardGui
 local screenArrow: TextLabel
 local step = 0
+local seedsDone = false
 
 local function myPlots(): { BasePart }
 	local farmId = player:GetAttribute("FarmId")
@@ -90,12 +93,35 @@ end
 
 local soldOnce = false
 
+-- The first seed above Basic (the cheapest step up the luck ladder)
+local firstSeed: SeedsConfig.SeedDef? = nil
+for _, s in SeedsConfig do
+	if s.buyable and not s.mystery and (firstSeed == nil or s.basePrice < firstSeed.basePrice) then
+		firstSeed = s
+	end
+end
+
+local function boughtSeed(): boolean
+	for name, v in player:GetAttributes() do
+		if string.sub(name, 1, 5) == "Seed_" and typeof(v) == "number" and v > 0 then
+			return true
+		end
+	end
+	local selected = player:GetAttribute("SelectedSeed")
+	return selected ~= nil and selected ~= "Basic"
+end
+
+local function cash(): number
+	local c = player:GetAttribute("Cash")
+	return if typeof(c) == "number" then c else 0
+end
+
 local function finish()
 	step = 99
 	Guide.setOverride(nil)
 	worldArrow:Destroy()
 	screenArrow:Destroy()
-	say("You're a real farmer now! Find the rarest carrots! 🥕✨")
+	say("You're a farmer now! Luckier seeds = rarer carrots! 🥕✨")
 	Sound.play("Discover")
 	HUD.banner("FARMER UNLOCKED!", Color3.fromRGB(120, 245, 100), 3)
 	Remotes.get(Remotes.Names.TutorialDone):FireServer()
@@ -191,9 +217,10 @@ local function update()
 
 	if upgraded then
 		finish()
-	elseif soldOnce then
-		-- 4. Upgrade: walk to the shop once it's affordable
-		step = 4
+	elseif soldOnce and (seedsDone or boughtSeed()) then
+		-- 5. Upgrade: walk to the shop once it's affordable
+		seedsDone = true
+		step = 5
 		pointAtHud(nil)
 		if HUD.goalAffordable() then
 			Guide.setOverride("shop")
@@ -201,8 +228,22 @@ local function update()
 			pointAtPlot(nil, "")
 		else
 			Guide.setOverride(nil)
-			say("Grow and sell a few more carrots for your first upgrade!")
+			say("Plant, harvest and sell more for your first upgrade!")
 			pointAtPlot(ready or empty, if ready then "HARVEST!" else "PLANT")
+		end
+	elseif soldOnce then
+		-- 4. Better seeds: more money spent = more luck (Basic stays free)
+		step = 4
+		Guide.setOverride(nil)
+		local seed = firstSeed
+		if seed and cash() >= seed.basePrice then
+			say(string.format("Tap SEEDS and buy %ss – %dx luck!", seed.name, seed.luck))
+			pointAtPlot(nil, "")
+			pointAtHud("Seeds")
+		else
+			say("Sell a bit more – then try luckier seeds! Basic Seeds are free.")
+			pointAtPlot(ready or empty, if ready then "HARVEST!" else "PLANT")
+			pointAtHud(nil)
 		end
 	elseif hasBasket and (step == 3 or (not ready and not empty)) then
 		-- 3. Sell: everything planted, carrots in the basket -> to the market
@@ -218,12 +259,12 @@ local function update()
 		pointAtHud(nil)
 	elseif empty then
 		step = 1
-		say("Tap a dirt plot to plant a carrot!")
+		say("Tap a dirt plot to plant – Basic Seeds are free!")
 		pointAtPlot(empty, "TAP!")
 		pointAtHud(nil)
 	else
 		step = math.max(step, 1)
-		say("Your carrots are growing… watch closely!")
+		say("Growing… a shimmer means something rare! ✨")
 		pointAtPlot(nil, "")
 		pointAtHud(nil)
 	end
