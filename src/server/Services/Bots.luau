@@ -60,8 +60,9 @@ local function randomTarget(): Vector3
 	local roll = rng:NextNumber()
 	if roll < 0.2 then
 		-- in front of a bunny stall (watch the bunny)
-		local i = rng:NextInteger(1, #World.SellPadAngles)
-		return flat(World.SellPadAngles[i] + rng:NextNumber(-12, 12), World.SellPadDistance + 3)
+		local pads = World.sellPads()
+		local pad = pads[rng:NextInteger(1, #pads)]
+		return pad * 0.85 + Vector3.new(rng:NextNumber(-4, 4), 3, rng:NextNumber(-4, 4))
 	elseif roll < 0.35 then
 		-- around the plaza
 		return flat(rng:NextNumber(0, 360), rng:NextNumber(12, 30))

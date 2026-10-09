@@ -214,8 +214,8 @@ end
 
 local function buildTulips(parent: Instance)
 	local f = folder("Tulips", parent)
-	local start = 36
-	local stop = World.FarmRingRadius - 3 * (World.PlotSize + World.PlotGap) - World.FarmPadding - 14
+	local start = World.PlazaRadius + 8
+	local stop = World.FarmRingRadius - World.farmHalf() - World.LauncherGateOffset - 10
 	for i = 0, World.FarmCount - 1 do
 		local dir = flatDir(i * (360 / World.FarmCount))
 		local side = Vector3.new(-dir.Z, 0, dir.X)
@@ -223,7 +223,7 @@ local function buildTulips(parent: Instance)
 		for r = start, stop, World.TulipSpacing do
 			for _, s in { -1, 1 } do
 				n += 1
-				local base = dir * r + side * s * 6.2
+				local base = dir * r + side * s * 8.5
 				local color = CANDY[(n % #CANDY) + 1]
 				part(f, {
 					Name = "TulipStem",

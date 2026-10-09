@@ -23,7 +23,7 @@ local Events = {
 	Enabled = true,
 	CycleSeconds = 600,
 	BoomSeconds = 180,
-	MarketRadius = 32, -- studs from the market center that count as "at the market"
+	MarketRadius = 95, -- studs from the square's center that count as "at the market"
 	MarketBonus = 1.2, -- always paid when selling at the market (booms multiply on top)
 
 	Booms = {

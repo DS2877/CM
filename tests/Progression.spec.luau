@@ -37,10 +37,10 @@ return function()
 	-- Farm Level (FarmSize track): 20 levels, 4 plots at level 1 -> 36 at level 20
 	local farm = track("FarmSize")
 	local top = Progression.maxLevel(farm)
-	assert(top == 19, "farm levels 1..20")
+	assert(top == 39, "farm levels 1..40")
 	assert(#(farm.levels :: { number }) == top, "a plot count for every farm level")
 	assert(Progression.plots(farm, 0, Economy.StartingPlots) == 4, "4 plots at start")
-	assert(Progression.plots(farm, top, Economy.StartingPlots) == Economy.MaxPlots, "36 plots at max")
+	assert(Progression.plots(farm, top, Economy.StartingPlots) == Economy.MaxPlots, "64 plots at max")
 	assert(Progression.isMaxed(farm, top) and not Progression.isMaxed(farm, top - 1), "farm size max")
 	assert(Progression.cost(farm, top) == math.huge, "no cost past max")
 	-- Every level's plot count has a cell in the world, and costs only go up

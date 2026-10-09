@@ -16,6 +16,7 @@ local Debris = game:GetService("Debris")
 
 local Shared = ReplicatedStorage.Shared
 local Party = require(Shared.Config.Party)
+local World = require(Shared.Config.World)
 local Market = require(Shared.Market)
 local Remotes = require(Shared.Remotes)
 local DayCycle = require(script.Parent.DayCycle)
@@ -121,7 +122,8 @@ local function startParty(themeId: string?)
 	-- Searchlights around the plaza edge
 	for i = 1, Party.SkyBeams do
 		local a = (i / Party.SkyBeams) * math.pi * 2
-		local base = Vector3.new(math.cos(a) * 42, 0, math.sin(a) * 42)
+		local r = World.PlazaRadius + 4
+		local base = Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
 		local p = neon(Vector3.new(260, 3, 3), themeColors[(i - 1) % #themeColors + 1], 0.6)
 		p.Shape = Enum.PartType.Cylinder
 		table.insert(beams, { part = p, base = base, phase = a, speed = 0.4 + (i % 3) * 0.15 })

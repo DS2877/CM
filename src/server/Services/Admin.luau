@@ -394,7 +394,8 @@ local handlers: { [string]: Handler } = {
 		elseif where == "bring" and targetChar then
 			targetChar:PivotTo(adminCF * CFrame.new(3, 0, 0))
 		elseif where == "market" and targetChar then
-			targetChar:PivotTo(CFrame.new(17, 5, 17))
+			local pad = World.sellPads()[1]
+			targetChar:PivotTo(CFrame.new(pad * 0.8 + Vector3.new(0, 5, 0)))
 		elseif where == "farm" then
 			Farm.sendHome(target)
 		end

@@ -165,10 +165,9 @@ local function bigBunny(parent: Instance, base: CFrame, fur: Color3): Model
 	return model
 end
 
-local function buildStall(parent: Instance, index: number, deg: number)
-	local a = math.rad(deg)
-	local dir = Vector3.new(math.sin(a), 0, math.cos(a))
-	local center = dir * World.BunnyStallDistance
+local function buildStall(parent: Instance, index: number, stallCF: CFrame)
+	local dir = stallCF.LookVector -- toward the mat and the tower
+	local center = stallCF.Position
 	-- -Z (LookVector) points out toward the mat and the arriving players
 	local cf = CFrame.lookAt(center, center + dir)
 	local style = STALLS[(index - 1) % #STALLS + 1]
@@ -417,31 +416,142 @@ local function buildTable(parent: Instance, pos: Vector3, color: Color3)
 end
 
 -- Builds the market into `world` and returns the Market model.
+-- The market hall around the stalls: back wall, a big striped canopy, end columns with
+-- lanterns and a huge "BUNNY MARKET" sign that reads from across the square.
+local function buildHall(parent: Instance)
+	local dir = World.dirOf(World.MarketAngle)
+	local center = dir * World.MarketDistance
+	local cf = CFrame.lookAt(center, center - dir) -- -Z toward the tower
+	local n = #World.BunnyNames
+	local width = n * World.StallSpacing + 10
+	local hall = Instance.new("Model")
+	hall.Name = "MarketHall"
+	part(hall, {
+		Name = "HallFloor",
+		Size = Vector3.new(width, 0.4, 16),
+		CFrame = cf * CFrame.new(0, 0.5, 0.5),
+		Color = Color3.fromRGB(205, 160, 110),
+		Material = Enum.Material.WoodPlanks,
+	})
+	part(hall, {
+		Name = "BackWall",
+		Size = Vector3.new(width, 16, 1.2),
+		CFrame = cf * CFrame.new(0, 8, 8),
+		Color = Color3.fromRGB(255, 236, 205),
+		Material = Enum.Material.Brick,
+	})
+	-- painted carrots along the back wall
+	for k = 0, 9 do
+		part(hall, {
+			Name = "WallCarrot",
+			Size = Vector3.new(1.2, 3, 0.2),
+			CFrame = cf
+				* CFrame.new(-width / 2 + 4 + k * (width - 8) / 9, 12.5, 7.35)
+				* CFrame.Angles(0, 0, math.rad(180)),
+			Color = C.orange,
+			CanCollide = false,
+		})
+	end
+	-- columns with lanterns at both ends and between stalls
+	for k = 0, n do
+		local x = (k - n / 2) * World.StallSpacing -- between the stalls and at both ends
+		for _, z in { -6, 7 } do
+			cyl(hall, "HallColumn", 17, 1.4, cf * CFrame.new(x, 8.5, z), C.cream).Material =
+				Enum.Material.Marble
+		end
+		local lamp =
+			sphere(hall, "HallLantern", Vector3.new(1.4, 1.8, 1.4), cf * CFrame.new(x, 15, -6.9), C.gold)
+		lamp.Material = Enum.Material.Neon
+		local light = Instance.new("PointLight")
+		light.Range = 16
+		light.Brightness = 1.2
+		light.Color = Color3.fromRGB(255, 215, 150)
+		light.Parent = lamp
+	end
+	-- the canopy: wide orange/cream stripes across the whole hall
+	local stripes = math.floor(width / 4)
+	for i = 0, stripes - 1 do
+		local x = -width / 2 + (i + 0.5) * width / stripes
+		part(hall, {
+			Name = "Canopy",
+			Size = Vector3.new(width / stripes + 0.05, 0.5, 18),
+			CFrame = cf * CFrame.new(x, 18.5, 0.5) * CFrame.Angles(math.rad(-10), 0, 0),
+			Color = if i % 2 == 0 then C.orange else C.cream,
+			Material = Enum.Material.Fabric,
+		})
+	end
+	-- scalloped trim along the canopy front
+	for i = 0, stripes * 2 - 1 do
+		local x = -width / 2 + (i + 0.5) * width / (stripes * 2)
+		sphere(
+			hall,
+			"CanopyScallop",
+			Vector3.one * 1.3,
+			cf * CFrame.new(x, 16.9, -8.4),
+			if i % 2 == 0 then C.white else C.orange
+		)
+	end
+	-- the big sign
+	local sign = part(hall, {
+		Name = "MarketSign",
+		Size = Vector3.new(width * 0.6, 6, 0.6),
+		CFrame = cf * CFrame.new(0, 24, -5),
+		Color = Color3.fromRGB(235, 80, 90),
+	})
+	part(hall, {
+		Name = "MarketSignFrame",
+		Size = Vector3.new(width * 0.6 + 1.2, 7.2, 0.4),
+		CFrame = cf * CFrame.new(0, 24, -4.6),
+		Color = C.gold,
+		Material = Enum.Material.Metal,
+	})
+	local g = surface(sign, Enum.NormalId.Front, Vector2.new(800, 150))
+	g.MaxDistance = 400
+	label(g, {
+		Size = UDim2.new(1, -20, 1, -16),
+		Position = UDim2.fromOffset(10, 8),
+		Text = "🐰 BUNNY MARKET 🐰",
+		TextStrokeColor3 = Color3.fromRGB(110, 20, 30),
+	})
+	-- giant bunny ears peeking over the sign
+	for _, sx in { -1, 1 } do
+		local ear = cf * CFrame.new(sx * 5, 31, -4.6) * CFrame.Angles(0, 0, math.rad(-sx * 14))
+		sphere(hall, "SignEar", Vector3.new(3, 10, 1.2), ear, C.white)
+		sphere(hall, "SignEarInner", Vector3.new(1.6, 7.5, 0.4), ear * CFrame.new(0, 0, -0.55), C.pink)
+	end
+	hall.Parent = parent
+end
+
+-- Builds the market into `world` and returns the Market model.
 function BunnyMarket.build(world: Instance): Model
 	local market = Instance.new("Model")
 	market.Name = "Market"
 	buildTower(market)
-	for i, deg in World.SellPadAngles do
-		buildStall(market, i, deg)
+	local tower = market:FindFirstChild("BoomTower")
+	if tower and tower:IsA("Model") then
+		tower.WorldPivot = CFrame.new(0, 0, 0)
+		tower:ScaleTo(World.TowerScale)
 	end
-	local tables = Instance.new("Folder")
-	tables.Name = "Tables"
-	tables.Parent = market
-	for k, deg in { 22.5, 67.5, 157.5, 202.5, 247.5, 337.5 } do
-		local a = math.rad(deg)
-		buildTable(tables, Vector3.new(math.sin(a), 0, math.cos(a)) * 26, CANDY[(k % #CANDY) + 1])
+	buildHall(market)
+	for i, cf in World.marketStalls() do
+		buildStall(market, i, cf)
 	end
 	-- Anchor for the market's ambience sound (client Music controller)
 	part(market, {
 		Name = "SellPoint",
 		Size = Vector3.new(1, 1, 1),
-		CFrame = CFrame.new(0, 3, 0),
+		CFrame = CFrame.new(World.dirOf(World.MarketAngle) * World.MarketDistance + Vector3.new(0, 3, 0)),
 		Transparency = 1,
 		CanCollide = false,
 		CanQuery = false,
 	})
 	market.Parent = world
 	return market
+end
+
+-- A market table under a striped umbrella (the square's districts use these too).
+function BunnyMarket.table(parent: Instance, pos: Vector3, colorIndex: number)
+	buildTable(parent, pos, CANDY[(colorIndex % #CANDY) + 1])
 end
 
 -- The stall model for a SELL pad index (for sale reactions).

@@ -22,7 +22,7 @@ import uuid
 
 UNIVERSE = "10769879996"
 PLACE = "87874194731556"
-SERVER_SIZE = 8
+SERVER_SIZE = 6  # one per farm (Config/World.FarmCount)
 PRODUCTS_FILE = "src/shared/Config/Products.luau"
 LOG_FILE = "tools/ops/ops-log.md"
 API = "https://apis.roblox.com"

@@ -16,7 +16,7 @@ export type Unlock = {
 
 local FarmLevels = {}
 
-FarmLevels.MaxLevel = 20
+FarmLevels.MaxLevel = 40
 
 -- Reaching these levels is announced to the whole server (and the barn changes).
 FarmLevels.Milestones = { 5, 10, 15, 18, 20 }

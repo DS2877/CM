@@ -32,9 +32,9 @@ local DURATION = 4 * 3600
 local REACTION = 0.8
 -- Harvest no longer auto-replants, and you have to walk to each plot: harvest, plant, step on.
 local PLANT_TAP = 1.6
--- Farm -> green circle -> Upgrade Shop -> farm at WalkSpeed 22: ~105 studs each way plus a few
--- seconds on the plaza.
-local TRIP = 14
+-- Farm -> Bunny Launcher (3.2 s flight) -> SELL mat -> Upgrade Workshop -> HOME launcher ->
+-- farm, plus walking on the farm and the square.
+local TRIP = 18
 
 type Purchase = { t: number, track: string, level: number, cost: number }
 type RunResult = {

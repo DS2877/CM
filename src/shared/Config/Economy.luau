@@ -12,6 +12,7 @@ local Economy = {
 	BaseGrowTime = 12, -- seconds, before upgrades
 	MinGrowTime = 3,
 	-- Per-plot multiplier so plots finish at different times (staggered harvest: ~10–18 s at start).
+	-- One per plot, up to MaxPlots.
 	PlotGrowFactors = {
 		0.85,
 		1.0,
@@ -49,6 +50,34 @@ local Economy = {
 		1.05,
 		1.45,
 		0.95,
+		1.1,
+		0.85,
+		1.35,
+		0.95,
+		1.25,
+		1.5,
+		0.9,
+		1.15,
+		1.4,
+		0.8,
+		1.05,
+		1.3,
+		1.2,
+		0.9,
+		1.45,
+		1.0,
+		0.85,
+		1.25,
+		1.1,
+		1.4,
+		0.95,
+		1.35,
+		1.05,
+		0.8,
+		1.2,
+		1.5,
+		1.0,
+		1.15,
 	},
 	GrowJitter = 0.08, -- +/- random fraction added per planting
 	HarvestTolerance = 0.25, -- seconds of latency forgiveness when harvesting
@@ -59,7 +88,7 @@ local Economy = {
 
 	-- Farm
 	StartingPlots = 4,
-	MaxPlots = 36,
+	MaxPlots = 64,
 
 	-- Basket (harvested carrots waiting to be sold at the market). When it's full, ready carrots
 	-- wait on their plots (nothing is lost) until you've sold. Starting capacity; the Basket Size

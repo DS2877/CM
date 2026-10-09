@@ -10,6 +10,7 @@ local World = require(Config.World)
 local Economy = require(Config.Economy)
 local WorldFun = require(script.Parent.WorldFun)
 local BunnyMarket = require(script.Parent.BunnyMarket)
+local Plaza = require(script.Parent.Plaza)
 
 export type FarmBuild = {
 	id: number,
@@ -231,7 +232,7 @@ end
 local function buildGround(world: Folder)
 	part({
 		Name = "Ground",
-		Size = Vector3.new(760, 4, 760),
+		Size = Vector3.new(World.MapHalf * 2, 4, World.MapHalf * 2),
 		CFrame = CFrame.new(0, -2, 0),
 		Material = Enum.Material.Grass,
 		Color = COLORS.grass,
@@ -239,7 +240,7 @@ local function buildGround(world: Folder)
 	}, world)
 
 	-- Invisible walls so nobody walks off the edge.
-	local half = 330
+	local half = World.MapHalf - 20
 	for i = 0, 3 do
 		local angle = i * math.pi / 2
 		part({
@@ -253,12 +254,12 @@ local function buildGround(world: Folder)
 	end
 
 	-- Plaza: terracotta rim and warm cream stone (the Bunny Market stands on it).
-	disc("PlazaRing", Vector3.new(0, 0.2, 0), 70, 0.4, {
+	disc("PlazaRing", Vector3.new(0, 0.2, 0), World.PlazaRadius * 2 + 8, 0.4, {
 		Material = Enum.Material.Brick,
 		Color = COLORS.terracotta,
 		CastShadow = false,
 	}, world)
-	disc("Plaza", Vector3.new(0, 0.3, 0), 64, 0.5, {
+	disc("Plaza", Vector3.new(0, 0.3, 0), World.PlazaRadius * 2, 0.5, {
 		Material = Enum.Material.Slate,
 		Color = COLORS.plaza,
 		CastShadow = false,
@@ -315,139 +316,6 @@ local function boardText(board: BasePart, face: Enum.NormalId, canvas: Vector2, 
 	label(surface, props)
 end
 
--- Upgrade Shop: a small teal-roofed stall on the plaza facing the market. Standing on its pad
--- opens the Upgrades panel (client) and is where the server accepts upgrade purchases. Teal
--- roof = upgrades, orange roof = the market, so the two read apart from far away.
-local function buildUpgradeStall(world: Folder, deg: number)
-	local a = math.rad(deg)
-	local dir = Vector3.new(math.sin(a), 0, math.cos(a))
-	local center = dir * World.UpgradeStallDistance
-	-- Front (-Z) faces the market
-	local cf = CFrame.lookAt(center, Vector3.zero)
-	local model = Instance.new("Model")
-	model.Name = "UpgradeShop"
-	local w, d = 10, 5
-	part({
-		Name = "Floor",
-		Size = Vector3.new(w + 1, 0.5, d + 1),
-		CFrame = cf * CFrame.new(0, 0.5, 0),
-		Material = Enum.Material.WoodPlanks,
-		Color = COLORS.wood,
-	}, model)
-	for _, x in { -w / 2 + 0.5, w / 2 - 0.5 } do
-		for _, z in { -d / 2 + 0.5, d / 2 - 0.5 } do
-			part({
-				Name = "Post",
-				Size = Vector3.new(0.8, 8, 0.8),
-				CFrame = cf * CFrame.new(x, 4.5, z),
-				Material = Enum.Material.Wood,
-				Color = COLORS.white,
-			}, model)
-		end
-	end
-	part({
-		Name = "Counter",
-		Size = Vector3.new(w - 1, 3, 1.6),
-		CFrame = cf * CFrame.new(0, 2.2, -d / 2 + 1),
-		Material = Enum.Material.WoodPlanks,
-		Color = COLORS.wood,
-	}, model)
-	part({
-		Name = "CounterTop",
-		Size = Vector3.new(w - 0.4, 0.3, 2),
-		CFrame = cf * CFrame.new(0, 3.85, -d / 2 + 1),
-		Material = Enum.Material.Wood,
-		Color = COLORS.darkWood,
-	}, model)
-	-- Goods on the counter: a watering can, a seed sack, a toolbox (simple shapes)
-	part({
-		Name = "Toolbox",
-		Size = Vector3.new(1.8, 0.9, 1),
-		CFrame = cf * CFrame.new(-3, 4.45, -d / 2 + 1),
-		Color = COLORS.red,
-	}, model)
-	part({
-		Name = "Sack",
-		Shape = Enum.PartType.Ball,
-		Size = Vector3.new(1.6, 1.6, 1.6),
-		CFrame = cf * CFrame.new(0.2, 4.7, -d / 2 + 1),
-		Material = Enum.Material.Fabric,
-		Color = Color3.fromRGB(220, 190, 130),
-	}, model)
-	pillar("Can", (cf * CFrame.new(3, 4, -d / 2 + 1)).Position, 1.3, 1.2, {
-		Color = COLORS.shopTeal,
-	}, model)
-	-- Striped teal/white awning roof, sloping down toward the front
-	local stripes = 5
-	for i = 0, stripes - 1 do
-		local x = -w / 2 - 0.5 + (w + 1) * (i + 0.5) / stripes
-		part({
-			Name = "Awning",
-			Size = Vector3.new((w + 1) / stripes, 0.4, d + 2.4),
-			CFrame = cf * CFrame.new(x, 8.7, -0.4) * CFrame.Angles(math.rad(-14), 0, 0),
-			Material = Enum.Material.Fabric,
-			Color = if i % 2 == 0 then COLORS.shopTeal else COLORS.white,
-		}, model)
-	end
-	-- Name board on both sides of the roof edge (front: the market side; back: arriving players)
-	local board = part({
-		Name = "NameBoard",
-		Size = Vector3.new(w - 0.6, 2.2, 0.4),
-		CFrame = cf * CFrame.new(0, 7.2, -d / 2 - 0.2),
-		Material = Enum.Material.SmoothPlastic,
-		Color = COLORS.shopTeal:Lerp(Color3.new(0, 0, 0), 0.35),
-	}, model)
-	local text = {
-		Size = UDim2.new(1, -20, 1, -10),
-		Position = UDim2.fromOffset(10, 5),
-		Text = "⬆ UPGRADES",
-		Font = Enum.Font.LuckiestGuy,
-		TextColor3 = COLORS.white,
-		TextStrokeColor3 = Color3.fromRGB(10, 50, 70),
-		TextStrokeTransparency = 0,
-	}
-	boardText(board, Enum.NormalId.Front, Vector2.new(400, 88), text)
-	local back = part({
-		Name = "BackBoard",
-		Size = Vector3.new(w - 0.6, 2.2, 0.4),
-		CFrame = cf * CFrame.new(0, 7.2, d / 2 + 0.2),
-		Material = Enum.Material.SmoothPlastic,
-		Color = COLORS.shopTeal:Lerp(Color3.new(0, 0, 0), 0.35),
-	}, model)
-	boardText(back, Enum.NormalId.Back, Vector2.new(400, 88), text)
-	-- The pad in front: stand here to shop
-	local padPos = center - dir * World.UpgradePadOffset
-	disc("UpgradePadRing", padPos + Vector3.new(0, 0.46, 0), World.UpgradePadRadius * 2 + 1, 0.12, {
-		Color = COLORS.white,
-		CanCollide = false,
-		CastShadow = false,
-	}, model)
-	disc("UpgradePad", padPos + Vector3.new(0, 0.5, 0), World.UpgradePadRadius * 2, 0.12, {
-		Material = Enum.Material.SmoothPlastic,
-		Color = COLORS.shopTeal,
-		CanCollide = false,
-		CastShadow = false,
-	}, model)
-	local plate = part({
-		Name = "UpgradePlate",
-		Size = Vector3.new(World.UpgradePadRadius * 1.6, 0.05, World.UpgradePadRadius * 0.9),
-		CFrame = CFrame.lookAt(padPos + Vector3.new(0, 0.6, 0), padPos + Vector3.new(0, 0.6, 0) + dir),
-		Transparency = 1,
-		CanCollide = false,
-		CanQuery = false,
-		CastShadow = false,
-	}, model)
-	boardText(plate, Enum.NormalId.Top, Vector2.new(300, 160), {
-		Size = UDim2.fromScale(1, 1),
-		Text = "⬆ UPGRADES",
-		Font = Enum.Font.LuckiestGuy,
-		TextColor3 = COLORS.white,
-		TextStrokeColor3 = Color3.fromRGB(10, 50, 70),
-		TextStrokeTransparency = 0,
-	})
-	model.Parent = world
-end
-
 local function buildTree(parent: Instance, pos: Vector3, scale: number, rng: Random)
 	local tree = Instance.new("Model")
 	tree.Name = "Tree"
@@ -484,12 +352,12 @@ end
 -- Rolling hills around the edge frame the valley and hide the end of the world.
 local function buildHills(world: Folder, rng: Random)
 	local hills = folder("Hills", world)
-	local count = 30
+	local count = 44
 	for i = 0, count - 1 do
 		local a = (i + rng:NextNumber() * 0.6) * (2 * math.pi / count)
-		local r = 335 + rng:NextNumber() * 30
-		local w = 90 + rng:NextNumber() * 70
-		local hgt = 40 + rng:NextNumber() * 45
+		local r = World.HillRadius + rng:NextNumber() * 60
+		local w = 150 + rng:NextNumber() * 120
+		local hgt = 55 + rng:NextNumber() * 70
 		part({
 			Name = "Hill",
 			Shape = Enum.PartType.Ball,
@@ -504,25 +372,24 @@ local function buildHills(world: Folder, rng: Random)
 end
 
 -- Is a point inside (or right next to) a farm, its barn, the plaza or a path? Decor stays out.
-local FARM_KEEP_OUT = (3 * (World.PlotSize + World.PlotGap) + World.FarmPadding) * 1.5 + 6
+local FARM_KEEP_OUT = World.farmHalf() * 1.5 + 12
 local function blocked(pos: Vector3): boolean
 	local flat = Vector3.new(pos.X, 0, pos.Z)
-	if flat.Magnitude < 40 then
-		return true -- plaza
+	if flat.Magnitude < World.PlazaRadius + 10 then
+		return true -- the town square
 	end
 	if WorldFun.blocked(flat) then
 		return true -- bouncy mushrooms
 	end
-	for i = 0, World.FarmCount - 1 do
-		local a = i * (2 * math.pi / World.FarmCount)
-		local dir = Vector3.new(math.sin(a), 0, math.cos(a))
+	for id = 1, World.FarmCount do
+		local dir = World.dirOf(World.farmAngle(id))
 		local center = dir * World.FarmRingRadius
 		if (flat - center).Magnitude < FARM_KEEP_OUT then
 			return true
 		end
-		-- the path from the plaza to this farm
+		-- the road from the square to this farm
 		local along = flat:Dot(dir)
-		if along > 0 and along < World.FarmRingRadius and (flat - dir * along).Magnitude < 9 then
+		if along > 0 and along < World.FarmRingRadius and (flat - dir * along).Magnitude < 14 then
 			return true
 		end
 	end
@@ -533,28 +400,17 @@ local function buildDecor(world: Folder)
 	local decor = folder("Decor", world)
 	local rng = Random.new(World.Seed)
 	buildHills(world, rng)
-	local angleStep = 2 * math.pi / World.FarmCount
-
-	-- Trees between farms
-	for i = 0, World.FarmCount - 1 do
-		local a = (i + 0.5) * angleStep
-		for _, r in { 95, 160, 215 } do
-			local pos = Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
-			if not blocked(pos) then
-				buildTree(decor, pos, 0.9 + rng:NextNumber() * 0.4, rng)
-			end
-		end
-	end
 
 	-- Outer ring of trees
 	local placed = 0
 	local attempts = 0
-	while placed < World.TreeCount and attempts < 1000 do
+	while placed < World.TreeCount and attempts < 3000 do
 		attempts += 1
 		local a = rng:NextNumber() * 2 * math.pi
-		local r = 60 + rng:NextNumber() * 255
+		local r = World.PlazaRadius + 30 + rng:NextNumber() * (World.MapHalf - World.PlazaRadius - 110)
 		local pos = Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
-		if math.abs(pos.X) < 315 and math.abs(pos.Z) < 315 and not blocked(pos) then
+		local edge = World.MapHalf - 40
+		if math.abs(pos.X) < edge and math.abs(pos.Z) < edge and not blocked(pos) then
 			buildTree(decor, pos, 0.9 + rng:NextNumber() * 0.8, rng)
 			placed += 1
 		end
@@ -562,9 +418,9 @@ local function buildDecor(world: Folder)
 
 	-- Flowering bushes: a soft green mound dotted with blossoms (reads as a plant, not as loose
 	-- marbles on the grass).
-	for _ = 1, 55 do
+	for _ = 1, 160 do
 		local a = rng:NextNumber() * 2 * math.pi
-		local r = 40 + rng:NextNumber() * 265
+		local r = World.PlazaRadius + 10 + rng:NextNumber() * (World.MapHalf - World.PlazaRadius - 80)
 		local center = Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
 		if not blocked(center) then
 			local color = COLORS.flowers[rng:NextInteger(1, #COLORS.flowers)]
@@ -596,9 +452,9 @@ local function buildDecor(world: Folder)
 	end
 
 	-- Boulders: smooth, half-sunk stones in pairs (big + small), never loose floating cubes.
-	for _ = 1, 18 do
+	for _ = 1, 45 do
 		local a = rng:NextNumber() * 2 * math.pi
-		local r = 45 + rng:NextNumber() * 250
+		local r = World.PlazaRadius + 15 + rng:NextNumber() * (World.MapHalf - World.PlazaRadius - 80)
 		local pos = Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
 		if not blocked(pos) then
 			local s = 2.4 + rng:NextNumber() * 2.6
@@ -623,14 +479,14 @@ local function buildDecor(world: Folder)
 end
 
 local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBuild
-	local angle = (id - 1) * (2 * math.pi / World.FarmCount)
+	local angle = math.rad(World.farmAngle(id))
 	local centerPos =
 		Vector3.new(math.sin(angle) * World.FarmRingRadius, 0, math.cos(angle) * World.FarmRingRadius)
 	-- Look toward the market: local -Z is the front (entrance side).
 	local center = CFrame.lookAt(centerPos, Vector3.zero)
 
 	local cell = World.PlotSize + World.PlotGap
-	local half = 3 * cell - World.PlotGap / 2 + World.FarmPadding
+	local half = World.farmHalf()
 
 	local model = Instance.new("Model")
 	model.Name = "Farm_" .. id
@@ -1099,13 +955,13 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 	end
 
 	-- Path from the plaza to the entrance
-	local startPos = centerPos.Unit * 33
+	local startPos = centerPos.Unit * (World.PlazaRadius - 2)
 	local endPos = (center * CFrame.new(0, 0, -half)).Position
 	local length = (endPos - startPos).Magnitude
 	local pathCF = CFrame.lookAt((startPos + endPos) / 2, endPos)
 	part({
 		Name = "PathEdge",
-		Size = Vector3.new(9.4, 0.16, length),
+		Size = Vector3.new(13.4, 0.16, length),
 		CFrame = pathCF * CFrame.new(0, 0.08, 0),
 		Material = Enum.Material.Slate,
 		Color = COLORS.pathEdge,
@@ -1113,7 +969,7 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 	}, paths)
 	part({
 		Name = "Path",
-		Size = Vector3.new(8, 0.2, length),
+		Size = Vector3.new(12, 0.2, length),
 		CFrame = pathCF * CFrame.new(0, 0.1, 0),
 		Material = Enum.Material.Sand,
 		Color = COLORS.path,
@@ -1144,7 +1000,7 @@ local function buildLeaderboard(
 	def: { id: string, title: string, color: Color3, angle: number }
 ): LeaderboardBuild
 	local a = math.rad(def.angle)
-	local pos = Vector3.new(math.sin(a) * 50, 0, math.cos(a) * 50)
+	local pos = Vector3.new(math.sin(a), 0, math.cos(a)) * World.LeaderboardRadius
 	local cf = CFrame.lookAt(pos, Vector3.zero)
 	local model = Instance.new("Model")
 	model.Name = "Leaderboard_" .. def.id
@@ -1242,8 +1098,8 @@ end
 -- VIP lounge next to the plaza (Market VIP pass). The door is solid for everyone; VIP clients
 -- turn its collision off locally.
 local function buildVipLounge(parent: Instance)
-	local a = math.rad(247.5)
-	local pos = Vector3.new(math.sin(a) * 46, 0, math.cos(a) * 46)
+	local a = math.rad(World.VipAngle)
+	local pos = Vector3.new(math.sin(a), 0, math.cos(a)) * World.VipDistance
 	local cf = CFrame.lookAt(pos, Vector3.zero)
 	local model = Instance.new("Model")
 	model.Name = "VipLounge"
@@ -1356,9 +1212,7 @@ function WorldBuilder.build(): WorldBuild
 	buildGround(world)
 	BunnyMarket.build(world)
 	local marketCFrame = CFrame.new(0, 0, 0)
-	for _, deg in World.UpgradeStallAngles do
-		buildUpgradeStall(world, deg)
-	end
+	Plaza.build(world)
 	buildDecor(world)
 	WorldFun.build(world)
 
@@ -1368,7 +1222,7 @@ function WorldBuilder.build(): WorldBuild
 	spawn.Neutral = true
 	spawn.Duration = 0
 	spawn.Size = Vector3.new(8, 0.4, 8)
-	spawn.CFrame = CFrame.new(17, 0.5, 17) -- between two stalls, not on a SELL mat
+	spawn.CFrame = CFrame.new(0, 0.5, World.SpawnDistance)
 	spawn.Material = Enum.Material.Cobblestone
 	spawn.Color = COLORS.plaza
 	spawn.TopSurface = Enum.SurfaceType.Smooth
@@ -1385,7 +1239,7 @@ function WorldBuilder.build(): WorldBuild
 	part({
 		Name = "PriceBoardAnchor",
 		Size = Vector3.new(1, 1, 1),
-		CFrame = CFrame.new(0, 40, 0),
+		CFrame = CFrame.new(0, 32 * World.TowerScale + 14, 0),
 		Transparency = 1,
 		CanCollide = false,
 		CanQuery = false,
@@ -1396,7 +1250,9 @@ function WorldBuilder.build(): WorldBuild
 
 	local boards = folder("Leaderboards", world)
 	local leaderboards = {}
-	for _, def in LEADERBOARDS do
+	for k, def in LEADERBOARDS do
+		-- side by side in the Hall of Fame
+		def.angle = World.HallOfFameAngle + (k - (#LEADERBOARDS + 1) / 2) * World.LeaderboardSpread
 		table.insert(leaderboards, buildLeaderboard(boards, def))
 	end
 

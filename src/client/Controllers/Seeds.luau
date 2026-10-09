@@ -4,10 +4,12 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage.Shared
 local Config = Shared.Config
 local SeedsConfig = require(Config.Seeds)
+local World = require(Config.World)
 local Upgrades = require(Config.Upgrades)
 local Format = require(Shared.Format)
 local Progression = require(Shared.Progression)
@@ -274,6 +276,36 @@ end
 
 function Seeds.start()
 	build()
+	-- The Seed Store on the square: standing on its pad opens this panel too (the HUD button
+	-- stays the main way for now).
+	local seedPad = World.seedPad()
+	local inside = false
+	local acc = 0
+	RunService.Heartbeat:Connect(function(dt)
+		acc += dt
+		if acc < 0.2 then
+			return
+		end
+		acc = 0
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		if not root or not root:IsA("BasePart") then
+			return
+		end
+		local p = (root :: BasePart).Position
+		local d = Vector3.new(p.X - seedPad.X, 0, p.Z - seedPad.Z).Magnitude
+		if not inside and d <= World.SeedPadRadius then
+			inside = true
+			if not panel.isOpen() then
+				panel.setOpen(true)
+			end
+		elseif inside and d > World.SeedPadRadius + 2.5 then
+			inside = false
+			if panel.isOpen() then
+				panel.setOpen(false)
+			end
+		end
+	end)
 	player.AttributeChanged:Connect(function(name)
 		if
 			panel.isOpen()
