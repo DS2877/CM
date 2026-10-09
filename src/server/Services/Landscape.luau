@@ -22,45 +22,82 @@ end
 
 local terrain: Terrain = workspace.Terrain
 
+-- Every terrain call is guarded: a terrain hiccup must never stop the world from being built.
+local function safe(what: string, fn: () -> ())
+	local ok, err = pcall(function()
+		fn()
+	end)
+	if not ok then
+		warn("Landscape: " .. what .. " failed:", err)
+	end
+end
+
 -- Make the top layer under a flat area plain ground (no grass blades). `cf` is at ground level.
 function Landscape.flatBlock(cf: CFrame, sizeX: number, sizeZ: number, material: Enum.Material?)
-	terrain:FillBlock(
-		cf * CFrame.new(0, -1, 0),
-		Vector3.new(sizeX, 2, sizeZ),
-		material or Enum.Material.Ground
-	)
+	safe("flatBlock", function()
+		terrain:FillBlock(
+			cf * CFrame.new(0, -1, 0),
+			Vector3.new(sizeX, 2, sizeZ),
+			material or Enum.Material.Ground
+		)
+	end)
 end
 
 function Landscape.flatDisc(pos: Vector3, radius: number, material: Enum.Material?)
-	terrain:FillCylinder(CFrame.new(pos.X, -1, pos.Z), 2, radius, material or Enum.Material.Ground)
+	safe("flatDisc", function()
+		terrain:FillCylinder(CFrame.new(pos.X, -1, pos.Z), 2, radius, material or Enum.Material.Ground)
+	end)
 end
 
 -- A terrain lake: sandy bed and shore, real water up to ground level.
 function Landscape.lake(pos: Vector3, radius: number, depth: number)
-	terrain:FillCylinder(CFrame.new(pos.X, -1, pos.Z), 2, radius + 3, Enum.Material.Sand)
-	terrain:FillCylinder(CFrame.new(pos.X, -depth - 1, pos.Z), 2, radius, Enum.Material.Sand)
-	terrain:FillCylinder(CFrame.new(pos.X, -depth / 2, pos.Z), depth, radius, Enum.Material.Water)
+	safe("lake", function()
+		terrain:FillCylinder(CFrame.new(pos.X, -1, pos.Z), 2, radius + 3, Enum.Material.Sand)
+		terrain:FillCylinder(CFrame.new(pos.X, -depth - 1, pos.Z), 2, radius, Enum.Material.Sand)
+		terrain:FillCylinder(CFrame.new(pos.X, -depth / 2, pos.Z), depth, radius, Enum.Material.Water)
+	end)
 end
 
 function Landscape.build()
 	terrain:Clear()
-	terrain.Decoration = true
-	terrain.GrassLength = L.GrassLength
-	terrain.WaterColor = rgb(L.WaterColor)
-	terrain.WaterTransparency = L.WaterTransparency
-	terrain.WaterWaveSize = L.WaterWaveSize
-	terrain.WaterWaveSpeed = L.WaterWaveSpeed
-	terrain.WaterReflectance = L.WaterReflectance
+	-- Animated grass (Terrain.Decoration) can't be set from a script: it's switched on in
+	-- default.project.json. The rest is set here; each one guarded so a property Roblox refuses
+	-- can never stop the world from being built.
+	local function set(prop: string, value: any)
+		local ok, err = pcall(function()
+			(terrain :: any)[prop] = value
+		end)
+		if not ok then
+			warn("Landscape: could not set Terrain." .. prop, err)
+		end
+	end
+	set("GrassLength", L.GrassLength)
+	set("WaterColor", rgb(L.WaterColor))
+	set("WaterTransparency", L.WaterTransparency)
+	set("WaterWaveSize", L.WaterWaveSize)
+	set("WaterWaveSpeed", L.WaterWaveSpeed)
+	set("WaterReflectance", L.WaterReflectance)
 	terrain:SetMaterialColor(Enum.Material.Grass, rgb(L.GrassColor))
 	terrain:SetMaterialColor(Enum.Material.LeafyGrass, rgb(L.LeafyGrassColor))
 	terrain:SetMaterialColor(Enum.Material.Ground, rgb(L.GroundColor))
 	terrain:SetMaterialColor(Enum.Material.Sand, rgb(L.SandColor))
 	terrain:SetMaterialColor(Enum.Material.Rock, rgb(L.RockColor))
-	workspace.GlobalWind = L.Wind
+	pcall(function()
+		workspace.GlobalWind = L.Wind
+	end)
 
 	-- the valley floor: top of the grass at y = 0
-	local size = World.MapHalf * 2
-	terrain:FillBlock(CFrame.new(0, -6, 0), Vector3.new(size, 12, size), Enum.Material.Grass)
+	-- (filled in tiles: one giant fill can be refused)
+	local tile = 200
+	for x = -World.MapHalf, World.MapHalf - 1, tile do
+		for z = -World.MapHalf, World.MapHalf - 1, tile do
+			terrain:FillBlock(
+				CFrame.new(x + tile / 2, -6, z + tile / 2),
+				Vector3.new(tile, 12, tile),
+				Enum.Material.Grass
+			)
+		end
+	end
 
 	-- rolling hills around the edge, some with rocky tops
 	local rng = Random.new(World.Seed + 11)

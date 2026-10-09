@@ -240,6 +240,16 @@ end
 
 local function buildGround(world: Folder)
 	-- The ground itself is terrain (Server/Services/Landscape): living grass, hills, water.
+	-- A solid safety floor sits just under the terrain surface (hidden by it), so nobody can ever
+	-- fall through the world, even if terrain failed to build.
+	part({
+		Name = "SafetyGround",
+		Size = Vector3.new(World.MapHalf * 2, 4, World.MapHalf * 2),
+		CFrame = CFrame.new(0, -9, 0), -- below the lake bed, so it never shows
+		Material = Enum.Material.Grass,
+		Color = COLORS.grass,
+		CastShadow = false,
+	}, world)
 	-- Invisible walls so nobody walks off the edge.
 	local half = World.MapHalf - 20
 	for i = 0, 3 do
@@ -1224,7 +1234,13 @@ function WorldBuilder.build(): WorldBuild
 	Landscape.isOpen = function(p: Vector3): boolean
 		return not blocked(p)
 	end
-	Landscape.build()
+	-- Terrain is the ground; if anything in it fails the rest of the world must still be built
+	local ok, err = pcall(function()
+		Landscape.build()
+	end)
+	if not ok then
+		warn("Landscape failed, using the plain ground:", err)
+	end
 	buildGround(world)
 	BunnyMarket.build(world)
 	local marketCFrame = CFrame.new(0, 0, 0)
