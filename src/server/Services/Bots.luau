@@ -169,10 +169,32 @@ local function makeBot(index: number, folder: Folder): Model?
 		model:Destroy()
 		return nil
 	end
-	humanoid.DisplayName = NAMES[(index - 1) % #NAMES + 1]
+	local name = NAMES[(index - 1) % #NAMES + 1]
+	humanoid.DisplayName = name
 	humanoid.WalkSpeed = World.BotWalkSpeed
-	humanoid.NameDisplayDistance = 60
+	-- Small custom nameplate instead of the big default one
+	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+	local head = model:FindFirstChild("Head")
+	if head and head:IsA("BasePart") then
+		local tag = Instance.new("BillboardGui")
+		tag.Name = "NameTag"
+		tag.Size = UDim2.new(3.5, 0, 0.45, 0)
+		tag.StudsOffset = Vector3.new(0, 2.1, 0)
+		tag.MaxDistance = 45
+		tag.LightInfluence = 0
+		tag.Parent = head
+		local l = Instance.new("TextLabel")
+		l.BackgroundTransparency = 1
+		l.Size = UDim2.fromScale(1, 1)
+		l.Font = Enum.Font.FredokaOne
+		l.TextScaled = true
+		l.Text = name
+		l.TextColor3 = Color3.fromRGB(255, 255, 255)
+		l.TextTransparency = 0.1
+		l.TextStrokeTransparency = 0.5
+		l.Parent = tag
+	end
 	addHat(model)
 	if rng:NextNumber() < 0.5 then
 		addCarrot(model)
@@ -390,22 +412,170 @@ local function fisher(model: Model, spot: BasePart, bobber: BasePart)
 	end
 end
 
+-- Picnic: sitting on the blanket, now and then a happy "😋" (a bite of cake).
+local function picnicker(model: Model, seat: BasePart)
+	local _, root = settle(model, seat.CFrame, Assets.Animations.BotSit)
+	if not root then
+		return
+	end
+	local head = model:FindFirstChild("Head")
+	while model.Parent do
+		task.wait(rng:NextNumber(5, 11))
+		if head and head:IsA("BasePart") then
+			local bb = Instance.new("BillboardGui")
+			bb.Size = UDim2.new(1.4, 0, 1.4, 0)
+			bb.StudsOffset = Vector3.new(0.9, 2.8, 0)
+			bb.MaxDistance = 60
+			bb.LightInfluence = 0
+			local l = Instance.new("TextLabel")
+			l.BackgroundTransparency = 1
+			l.Size = UDim2.fromScale(1, 1)
+			l.TextScaled = true
+			l.Text = pick({ "😋", "🍰", "🧁", "😄", "🎵" })
+			l.Parent = bb
+			bb.Parent = head
+			task.delay(1.8, function()
+				bb:Destroy()
+			end)
+		end
+	end
+end
+
+-- Kite flyer: stands on the meadow; the kite swoops and loops high up, the string follows.
+local function kiteFlyer(model: Model, spot: BasePart, meadow: Instance)
+	local _, root = settle(model, spot.CFrame, Assets.Animations.BotIdle)
+	if not root then
+		return
+	end
+	local kite = meadow:FindFirstChild("Kite")
+	local line = meadow:FindFirstChild("KiteString")
+	if not kite or not kite:IsA("BasePart") or not line or not line:IsA("BasePart") then
+		return
+	end
+	local kitePart = kite :: BasePart
+	local linePart = line :: BasePart
+	-- everything that rides with the kite, kept at its offset
+	local riders: { { part: BasePart, offset: CFrame } } = {}
+	for _, d in kitePart:GetChildren() do
+		if d:IsA("BasePart") then
+			table.insert(riders, { part = d, offset = kitePart.CFrame:ToObjectSpace(d.CFrame) })
+		end
+	end
+	for _, d in meadow:GetChildren() do
+		if d:IsA("BasePart") and d.Name == "KiteBow" then
+			table.insert(riders, { part = d, offset = kitePart.CFrame:ToObjectSpace(d.CFrame) })
+		end
+	end
+	local forward = spot.CFrame.LookVector
+	local right = spot.CFrame.RightVector
+	local hand = root.Position + forward * 0.8 + Vector3.new(0, 0.6, 0)
+	local t = 0
+	while model.Parent do
+		t += 0.1
+		local pos = root.Position
+			+ forward * (24 + math.sin(t * 0.3) * 4)
+			+ right * (math.sin(t * 0.45) * 12)
+			+ Vector3.new(0, 30 + math.sin(t * 0.7) * 5, 0)
+		local cf = CFrame.lookAt(pos, hand) * CFrame.Angles(0, 0, math.rad(45 + math.sin(t * 1.3) * 25))
+		kitePart.CFrame = cf
+		for _, r in riders do
+			r.part.CFrame = cf * r.offset
+		end
+		linePart.Size = Vector3.new(0.05, 0.05, (pos - hand).Magnitude)
+		linePart.CFrame = CFrame.lookAt((hand + pos) / 2, pos)
+		task.wait(0.1)
+	end
+end
+
+-- Painter: stands at the easel; dabs of color slowly fill the canvas (a sunny landscape-ish
+-- picture), then a fresh canvas.
+local function painter(model: Model, spot: BasePart, canvas: SurfaceGui)
+	settle(model, spot.CFrame, Assets.Animations.BotIdle)
+	local palette = {
+		Color3.fromRGB(110, 190, 255), -- sky
+		Color3.fromRGB(110, 210, 90), -- grass
+		Color3.fromRGB(255, 220, 60), -- sun
+		Color3.fromRGB(255, 136, 36), -- carrots
+		Color3.fromRGB(255, 120, 170), -- flowers
+	}
+	while model.Parent do
+		canvas:ClearAllChildren()
+		-- sky and ground bands appear first, then the details
+		for k = 1, 40 do
+			local dot = Instance.new("Frame")
+			local yFrac = rng:NextNumber()
+			local color = if yFrac < 0.45 then palette[1] else palette[2]
+			if k > 25 then
+				color = pick({ palette[3], palette[4], palette[5] })
+			end
+			local size = rng:NextInteger(18, 46)
+			dot.Size = UDim2.fromOffset(size, size)
+			dot.Position = UDim2.new(rng:NextNumber(), -size / 2, yFrac, -size / 2)
+			dot.BackgroundColor3 = color
+			dot.BorderSizePixel = 0
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim.new(0.5, 0)
+			corner.Parent = dot
+			dot.Parent = canvas
+			task.wait(rng:NextNumber(0.8, 1.6))
+		end
+		task.wait(20) -- admire it
+	end
+end
+
 function Bots.start()
 	local folder = Instance.new("Folder")
 	folder.Name = "Bots"
 	folder.Parent = workspace
 	local world = workspace:WaitForChild("World")
 	local fun = world:WaitForChild("Fun")
-	local camp = fun:WaitForChild("Campsite")
-	local lake = fun:WaitForChild("Lake")
-	local seats: { BasePart } = {}
-	for _, d in camp:GetChildren() do
-		if d:IsA("BasePart") and d.Name == "CampSeat" then
-			table.insert(seats, d)
+
+	-- Every bot gets a job somewhere outside the plaza (spare bots, if any, stroll around).
+	local jobs: { (bot: Model) -> () } = {}
+	local function partsNamed(container: Instance, name: string): { BasePart }
+		local out = {}
+		for _, d in container:GetChildren() do
+			if d:IsA("BasePart") and d.Name == name then
+				table.insert(out, d)
+			end
 		end
+		return out
 	end
+	for _, seat in partsNamed(fun:WaitForChild("Campsite"), "CampSeat") do
+		table.insert(jobs, function(bot)
+			camper(bot, seat)
+		end)
+	end
+	local lake = fun:WaitForChild("Lake")
 	local spot = lake:FindFirstChild("FishSpot")
 	local bobber = lake:FindFirstChild("Bobber")
+	if spot and spot:IsA("BasePart") and bobber and bobber:IsA("BasePart") then
+		table.insert(jobs, function(bot)
+			fisher(bot, spot :: BasePart, bobber :: BasePart)
+		end)
+	end
+	for _, seat in partsNamed(fun:WaitForChild("Picnic"), "PicnicSeat") do
+		table.insert(jobs, function(bot)
+			picnicker(bot, seat)
+		end)
+	end
+	local meadow = fun:WaitForChild("KiteMeadow")
+	local kiteSpot = meadow:FindFirstChild("KiteSpot")
+	if kiteSpot and kiteSpot:IsA("BasePart") then
+		table.insert(jobs, function(bot)
+			kiteFlyer(bot, kiteSpot :: BasePart, meadow)
+		end)
+	end
+	local easel = fun:WaitForChild("Easel")
+	local paintSpot = easel:FindFirstChild("PaintSpot")
+	local canvas = easel:FindFirstChild("Canvas")
+	local painting = canvas and canvas:FindFirstChild("Painting")
+	if paintSpot and paintSpot:IsA("BasePart") and painting and painting:IsA("SurfaceGui") then
+		table.insert(jobs, function(bot)
+			painter(bot, paintSpot :: BasePart, painting :: SurfaceGui)
+		end)
+	end
+
 	for i = 1, World.Bots do
 		task.spawn(function()
 			task.wait(i * 0.5) -- don't build them all in the same frame
@@ -413,17 +583,9 @@ function Bots.start()
 			if not bot then
 				return
 			end
-			local seat = seats[i]
-			if seat then
-				camper(bot, seat)
-			elseif
-				i == #seats + 1
-				and spot
-				and spot:IsA("BasePart")
-				and bobber
-				and bobber:IsA("BasePart")
-			then
-				fisher(bot, spot, bobber)
+			local job = jobs[i]
+			if job then
+				job(bot)
 			else
 				run(bot)
 			end

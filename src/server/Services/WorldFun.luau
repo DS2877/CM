@@ -530,6 +530,222 @@ local function buildLake(parent: Instance)
 	bobber:SetAttribute("Rest", bobberPos)
 end
 
+-- Picnic: a checkered blanket with a basket and snacks, two "PicnicSeat" spots facing each other.
+local function buildPicnic(parent: Instance)
+	local f = folder("Picnic", parent)
+	local dir = flatDir(World.PicnicAngle)
+	local c = dir * World.PicnicRadius
+	local cf = CFrame.lookAt(c, c + dir)
+	local n, cell = 4, 1.6
+	for i = 0, n - 1 do
+		for j = 0, n - 1 do
+			part(f, {
+				Name = "Blanket",
+				Size = Vector3.new(cell, 0.1, cell),
+				CFrame = cf * CFrame.new((i - (n - 1) / 2) * cell, 0.06, (j - (n - 1) / 2) * cell),
+				Color = if (i + j) % 2 == 0
+					then Color3.fromRGB(230, 70, 80)
+					else Color3.fromRGB(255, 255, 255),
+				Material = Enum.Material.Fabric,
+				CanCollide = false,
+			})
+		end
+	end
+	-- basket with a handle
+	part(f, {
+		Name = "Basket",
+		Size = Vector3.new(1.4, 0.9, 1),
+		CFrame = cf * CFrame.new(0, 0.55, 0.9),
+		Color = Color3.fromRGB(190, 140, 80),
+		Material = Enum.Material.WoodPlanks,
+	})
+	part(f, {
+		Name = "BasketHandle",
+		Size = Vector3.new(0.12, 0.9, 0.12),
+		CFrame = cf * CFrame.new(0, 1.3, 0.9),
+		Color = Color3.fromRGB(150, 100, 55),
+		CanCollide = false,
+	})
+	-- snacks: a cake, cupcakes, a juice bottle
+	cylinder(
+		f,
+		"Cake",
+		0.5,
+		1,
+		cf * CFrame.new(-0.6, 0.35, -0.6) * CFrame.Angles(0, 0, math.rad(90)),
+		Color3.fromRGB(255, 190, 220)
+	).CanCollide =
+		false
+	for k = 0, 2 do
+		part(f, {
+			Name = "Cupcake",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.one * 0.45,
+			CFrame = cf * CFrame.new(0.5 + k * 0.4, 0.3, -0.4),
+			Color = ({
+				Color3.fromRGB(255, 220, 90),
+				Color3.fromRGB(150, 220, 255),
+				Color3.fromRGB(255, 150, 200),
+			})[k + 1],
+			CanCollide = false,
+		})
+	end
+	cylinder(
+		f,
+		"Juice",
+		0.8,
+		0.35,
+		cf * CFrame.new(1.1, 0.5, 0.6) * CFrame.Angles(0, 0, math.rad(90)),
+		Color3.fromRGB(255, 160, 40)
+	).CanCollide =
+		false
+	for k, side in { -1, 1 } do
+		local seat = part(f, {
+			Name = "PicnicSeat",
+			Size = Vector3.one,
+			CFrame = CFrame.lookAt(
+				(cf * CFrame.new(side * 2.2, 1.55, 0)).Position,
+				(cf * CFrame.new(0, 1.55, 0)).Position
+			),
+			Transparency = 1,
+			CanCollide = false,
+			CanQuery = false,
+		})
+		seat:SetAttribute("Seat", k)
+	end
+end
+
+-- Kite meadow: where the kite flyer stands ("KiteSpot"); the kite itself is moved by the bot.
+local function buildKiteSpot(parent: Instance)
+	local f = folder("KiteMeadow", parent)
+	local dir = flatDir(World.KiteAngle)
+	local c = dir * World.KiteRadius
+	part(f, {
+		Name = "KiteSpot",
+		Size = Vector3.one,
+		-- facing out over the meadow, where the kite flies
+		CFrame = CFrame.lookAt(c + Vector3.new(0, 3, 0), c + dir * 10 + Vector3.new(0, 3, 0)),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+	})
+	local kite = part(f, {
+		Name = "Kite",
+		Size = Vector3.new(3.2, 3.2, 0.15),
+		CFrame = CFrame.new(c + dir * 22 + Vector3.new(0, 30, 0)),
+		Color = Color3.fromRGB(255, 90, 140),
+		CanCollide = false,
+		CanQuery = false,
+	})
+	part(kite, {
+		Name = "KiteStripe",
+		Size = Vector3.new(0.4, 4.4, 0.18),
+		CFrame = kite.CFrame,
+		Color = Color3.fromRGB(255, 220, 60),
+		CanCollide = false,
+		CanQuery = false,
+	})
+	for k = 1, 4 do
+		part(f, {
+			Name = "KiteBow",
+			Size = Vector3.new(0.7, 0.35, 0.1),
+			CFrame = kite.CFrame * CFrame.new(0, -2 - k * 1.1, 0),
+			Color = ({
+				Color3.fromRGB(110, 190, 255),
+				Color3.fromRGB(120, 220, 110),
+				Color3.fromRGB(255, 205, 50),
+				Color3.fromRGB(175, 120, 255),
+			})[k],
+			CanCollide = false,
+			CanQuery = false,
+		})
+	end
+	part(f, {
+		Name = "KiteString",
+		Size = Vector3.new(0.05, 0.05, 1),
+		CFrame = CFrame.new(c),
+		Color = Color3.fromRGB(255, 255, 255),
+		CanCollide = false,
+		CanQuery = false,
+	})
+end
+
+-- Painter's corner: an easel with a canvas facing the plaza (the painter faces the valley).
+local function buildEasel(parent: Instance)
+	local f = folder("Easel", parent)
+	local dir = flatDir(World.PaintAngle)
+	local c = dir * World.PaintRadius
+	local spot = c - dir * 1.8
+	part(f, {
+		Name = "PaintSpot",
+		Size = Vector3.one,
+		CFrame = CFrame.lookAt(spot + Vector3.new(0, 3, 0), c + Vector3.new(0, 3, 0)),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+	})
+	local cf = CFrame.lookAt(c, c - dir) -- canvas front faces the painter / plaza
+	for _, x in { -1.1, 1.1 } do
+		part(f, {
+			Name = "EaselLeg",
+			Size = Vector3.new(0.18, 5, 0.18),
+			CFrame = cf * CFrame.new(x, 2.4, 0) * CFrame.Angles(math.rad(-8), 0, math.rad(x * 6)),
+			Color = Color3.fromRGB(150, 100, 55),
+			Material = Enum.Material.Wood,
+		})
+	end
+	part(f, {
+		Name = "EaselBackLeg",
+		Size = Vector3.new(0.18, 5, 0.18),
+		CFrame = cf * CFrame.new(0, 2.3, 0.9) * CFrame.Angles(math.rad(20), 0, 0),
+		Color = Color3.fromRGB(150, 100, 55),
+		Material = Enum.Material.Wood,
+	})
+	local canvas = part(f, {
+		Name = "Canvas",
+		Size = Vector3.new(3.2, 2.5, 0.12),
+		CFrame = cf * CFrame.new(0, 3.6, -0.2) * CFrame.Angles(math.rad(-8), 0, 0),
+		Color = Color3.fromRGB(255, 252, 240),
+	})
+	local g = Instance.new("SurfaceGui")
+	g.Name = "Painting"
+	g.Face = Enum.NormalId.Front
+	g.CanvasSize = Vector2.new(320, 250)
+	g.LightInfluence = 0.3
+	g.MaxDistance = 80
+	g.Parent = canvas
+	-- palette on a stool
+	cylinder(
+		f,
+		"Stool",
+		1.6,
+		1.2,
+		CFrame.new(spot + (CFrame.lookAt(c, c - dir)).RightVector * 1.6 + Vector3.new(0, 0.8, 0))
+			* CFrame.Angles(0, 0, math.rad(90)),
+		Color3.fromRGB(150, 100, 55)
+	).Material =
+		Enum.Material.Wood
+	for k = 0, 3 do
+		part(f, {
+			Name = "PaintBlob",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.one * 0.35,
+			CFrame = CFrame.new(
+				spot
+					+ (CFrame.lookAt(c, c - dir)).RightVector * 1.6
+					+ Vector3.new(math.cos(k) * 0.35, 1.7, math.sin(k) * 0.35)
+			),
+			Color = ({
+				Color3.fromRGB(255, 80, 90),
+				Color3.fromRGB(80, 160, 255),
+				Color3.fromRGB(255, 220, 60),
+				Color3.fromRGB(110, 210, 90),
+			})[k + 1],
+			CanCollide = false,
+		})
+	end
+end
+
 function WorldFun.build(world: Instance)
 	local fun = folder("Fun", world)
 	buildMushrooms(fun)
@@ -537,6 +753,9 @@ function WorldFun.build(world: Instance)
 	buildTulips(fun)
 	buildCampsite(fun)
 	buildLake(fun)
+	buildPicnic(fun)
+	buildKiteSpot(fun)
+	buildEasel(fun)
 end
 
 -- Spots the random decor (trees, bushes, rocks) must keep clear of.
@@ -551,6 +770,17 @@ function WorldFun.blocked(flat: Vector3): boolean
 	end
 	if (flat - flatDir(World.LakeAngle) * World.LakeRadius).Magnitude < World.LakeSize / 2 + 8 then
 		return true
+	end
+	for _, spot in
+		{
+			{ World.PicnicAngle, World.PicnicRadius },
+			{ World.KiteAngle, World.KiteRadius },
+			{ World.PaintAngle, World.PaintRadius },
+		}
+	do
+		if (flat - flatDir(spot[1]) * spot[2]).Magnitude < 10 then
+			return true
+		end
 	end
 	return false
 end

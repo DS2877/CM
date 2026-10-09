@@ -12,6 +12,7 @@ local suites = {
 	{ name = "OfflinePlan", run = require("./OfflinePlan.spec") },
 	{ name = "Launch", run = require("./Launch.spec") },
 	{ name = "Daily", run = require("./Daily.spec") },
+	{ name = "DayCycle", run = require("./DayCycle.spec") },
 }
 
 local failures = 0

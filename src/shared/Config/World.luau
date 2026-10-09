@@ -66,8 +66,14 @@ local World = {
 	LakeAngle = 292.5,
 	LakeRadius = 80,
 	LakeSize = 22, -- water diameter
+	PicnicAngle = 22.5, -- two bots having a picnic on a checkered blanket
+	PicnicRadius = 76,
+	KiteAngle = 202.5, -- one bot flying a kite
+	KiteRadius = 78,
+	PaintAngle = 337.5, -- one bot painting the valley at an easel
+	PaintRadius = 78,
 	-- Bots: Roblox-style farmers walking around the plaza and the paths (server, just for life).
-	Bots = 8, -- 3 at the campfire, 1 fishing, the rest walking around
+	Bots = 8, -- 3 at the campfire, 1 fishing, 2 at the picnic, 1 flying a kite, 1 painting
 	BotWalkSpeed = 12,
 	-- Upgrade Shops on the plaza, facing the market, so "sell, then upgrade" is two steps.
 	UpgradeStallAngles = { 112.5, 292.5 }, -- degrees around the market (between farm paths)

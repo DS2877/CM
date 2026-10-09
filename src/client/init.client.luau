@@ -26,6 +26,7 @@ local Plot = require(Controllers.Plot)
 local HarvestFX = require(Controllers.HarvestFX)
 local FarmLevel = require(Controllers.FarmLevel)
 local BoomParty = require(Controllers.BoomParty)
+local DayCycle = require(Controllers.DayCycle)
 
 -- Plots, pedestals and effects can render before data is loaded.
 Plot.start()
@@ -52,6 +53,7 @@ Store.start()
 Broadcast.start()
 AdminPanel.start()
 FarmLevel.start()
+DayCycle.start()
 BoomParty.start()
 
 -- First view after (re)spawning on your farm: look down over the plots from behind and above,

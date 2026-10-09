@@ -18,6 +18,7 @@ local Shared = ReplicatedStorage.Shared
 local Party = require(Shared.Config.Party)
 local Market = require(Shared.Market)
 local Remotes = require(Shared.Remotes)
+local DayCycle = require(script.Parent.DayCycle)
 
 local BoomParty = {}
 
@@ -38,7 +39,6 @@ local fireworkAcc = 0
 
 -- What the lighting looks like normally (restored after the party)
 local normal = {
-	clock = Lighting.ClockTime,
 	tint = Color3.new(1, 1, 1),
 	saturation = 0,
 	atmosphereColor = Color3.new(1, 1, 1),
@@ -104,7 +104,10 @@ local function startParty(themeId: string?)
 		table.insert(themeColors, rgb(c))
 	end
 	active = true
-	tween(Lighting, { ClockTime = Party.BoomClockTime })
+	-- Take over the sky: dusk for the party (at night it stays night - fireworks love that)
+	DayCycle.setSuspended(true)
+	local clock, _, dark = DayCycle.now()
+	tween(Lighting, { ClockTime = if dark >= 0.5 then clock else Party.BoomClockTime })
 	if cc then
 		tween(cc, { TintColor = rgb(theme.tint), Saturation = normal.saturation + 0.25 })
 	end
@@ -137,7 +140,18 @@ end
 
 local function stopParty()
 	active = false
-	tween(Lighting, { ClockTime = normal.clock })
+	-- Hand the sky back to the day cycle (glide to where the day is now)
+	local clock = DayCycle.now()
+	local back =
+		TweenService:Create(Lighting, TweenInfo.new(Party.TransitionSeconds, Enum.EasingStyle.Sine), {
+			ClockTime = clock,
+		})
+	back:Play()
+	back.Completed:Connect(function()
+		if not active then
+			DayCycle.setSuspended(false)
+		end
+	end)
 	if cc then
 		tween(cc, { TintColor = normal.tint, Saturation = normal.saturation })
 	end
@@ -333,7 +347,6 @@ function BoomParty.start()
 	atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
 	cc = Lighting:FindFirstChildOfClass("ColorCorrectionEffect")
 	bloom = Lighting:FindFirstChildOfClass("BloomEffect")
-	normal.clock = Lighting.ClockTime
 	if cc then
 		normal.tint = cc.TintColor
 		normal.saturation = cc.Saturation

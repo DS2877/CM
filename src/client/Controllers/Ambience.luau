@@ -13,6 +13,7 @@ local RunService = game:GetService("RunService")
 
 local World = require(ReplicatedStorage.Shared.Config.World)
 local Sound = require(script.Parent.Parent.Util.Sound)
+local DayCycle = require(script.Parent.DayCycle)
 
 local Ambience = {}
 
@@ -34,6 +35,7 @@ type Fly = {
 	target: Vector3,
 	speed: number,
 	phase: number,
+	color: Color3,
 }
 
 local flies: { Fly } = {}
@@ -75,6 +77,7 @@ local function spawnFly(around: Vector3): Fly
 		target = randomSpot(around),
 		speed = 3 + math.random() * 2.5,
 		phase = math.random() * 10,
+		color = color,
 	}
 end
 
@@ -368,6 +371,9 @@ function Ambience.start()
 			table.insert(flies, spawnFly(center))
 		end
 		local t = t0
+		-- At night the butterflies become glowing fireflies
+		local night = DayCycle.darkness() > 0.5
+		local glow = Color3.fromRGB(255, 240, 140)
 		for _, f in flies do
 			local offset = f.target - f.pos
 			if
@@ -385,6 +391,12 @@ function Ambience.start()
 			f.pos += dir * f.speed * dt + Vector3.new(0, math.sin(t * 3 + f.phase) * 0.02, 0)
 			local flap = math.sin(t * 22 + f.phase) * 0.9
 			local base = CFrame.lookAt(f.pos, f.pos + Vector3.new(dir.X, 0, dir.Z) + Vector3.new(0, 0, 1e-3))
+			local wingColor = if night then glow else f.color
+			if f.left.Color ~= wingColor then
+				local mat = if night then Enum.Material.Neon else Enum.Material.SmoothPlastic
+				f.left.Color, f.right.Color = wingColor, wingColor
+				f.left.Material, f.right.Material = mat, mat
+			end
 			f.left.CFrame = base * CFrame.Angles(0, 0, flap) * CFrame.new(-0.2, 0, 0)
 			f.right.CFrame = base * CFrame.Angles(0, 0, -flap) * CFrame.new(0.2, 0, 0)
 		end
