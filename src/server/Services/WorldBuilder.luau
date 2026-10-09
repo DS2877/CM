@@ -833,7 +833,7 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 	-- Legendary board: a wooden notice board right of the gate, readable from the path and from
 	-- inside the farm. Shows how many plantings until this farm's guaranteed Legendary.
 	local luckyCF = gateCF * CFrame.new(gateHalf + 6.5, 0, -1.2)
-	for _, x in { -2.6, 2.6 } do
+	for _, x in { -3.3, 3.3 } do -- just outside the board, so they never cover the text
 		part({
 			Name = "LuckyPost",
 			Size = Vector3.new(0.6, 6.2, 0.6),
@@ -907,7 +907,7 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 	-- Farm Level board left of the gate (mirror of the Legendary board): everyone can read how far
 	-- this farm has come. Standing on the pad in front of it opens the Farm Level panel (owner).
 	local levelCF = gateCF * CFrame.new(-(gateHalf + 6.5), 0, -1.2)
-	for _, x in { -2.8, 2.8 } do
+	for _, x in { -3.5, 3.5 } do -- just outside the board, so they never cover the text
 		part({
 			Name = "LevelPost",
 			Size = Vector3.new(0.6, 6.6, 0.6),

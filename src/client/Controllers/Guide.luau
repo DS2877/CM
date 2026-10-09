@@ -2,7 +2,7 @@
 -- The way to the fixed places in the world. Selling (the market's SELL pads) and upgrading
 -- (an Upgrade Shop pad) are trips, so when one is the next thing to do, a glowing line runs from
 -- your feet to it and a small bouncing marker sits on the spot:
---   * basket full (or a boom while you carry carrots) -> the market
+--   * basket full -> the market (booms show a countdown pill instead, no line)
 --   * the next upgrade is affordable, or you tapped the goal bar -> the nearest Upgrade Shop
 --   * the next farm level is affordable -> your farm's gold Farm Level pad
 --   * the tutorial can force a target
@@ -14,7 +14,6 @@ local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage.Shared
 local World = require(Shared.Config.World)
-local Market = require(Shared.Market)
 
 local UI = require(script.Parent.Parent.Util.UI)
 local HUD = require(script.Parent.HUD)
@@ -57,11 +56,6 @@ local function rootPart(): BasePart?
 	return if root and root:IsA("BasePart") then root else nil
 end
 
-local function attrNumber(name: string): number
-	local v = player:GetAttribute(name)
-	return if typeof(v) == "number" then v else 0
-end
-
 local function nearestPad(from: Vector3): Vector3
 	local best, bestD = pads[1], math.huge
 	for _, p in pads do
@@ -78,10 +72,6 @@ local function chooseTarget(): Target?
 		return override
 	end
 	if HUD.basketFull() then
-		return "market"
-	end
-	local state = Market.state()
-	if state.boomActive and attrNumber("BasketCount") > 0 then
 		return "market"
 	end
 	if HUD.goalAffordable() or os.clock() < requestedUntil then

@@ -17,8 +17,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage.Shared
-local Config = Shared.Config
-local Events = require(Config.Events)
 local EventSchedule = require(Shared.EventSchedule)
 local Market = require(Shared.Market)
 local Format = require(Shared.Format)
@@ -66,7 +64,6 @@ local matLabels: { TextLabel } = {}
 local confetti: ParticleEmitter? = nil
 local timerText: TextLabel
 local timerFrame: Frame
-local arrow: TextLabel
 local pointer: Frame
 local pointerText: TextLabel
 local marketPos = Vector3.new(0, 4, 0)
@@ -309,49 +306,32 @@ local function build()
 		Parent = timerFrame,
 	}, Color3.fromRGB(10, 10, 20), 2)
 
-	-- Screen pill toward the market during a boom (sits under the goal bar)
-	local arrowGui: ScreenGui = UI.new("ScreenGui", {
-		Name = "MarketArrow",
+	-- Small countdown pill under the goal bar: the last minute before a boom, and during it
+	local pillGui: ScreenGui = UI.new("ScreenGui", {
+		Name = "BoomCountdown",
 		ResetOnSpawn = false,
 		DisplayOrder = 3,
 		Parent = playerGui,
 	})
-	UI.autoScale(arrowGui)
-	-- Compact pill just under the top bar: [rotating arrow] MARKET BOOM! 45m
+	UI.autoScale(pillGui)
 	pointer = UI.new("Frame", {
-		Name = "Pointer",
+		Name = "Countdown",
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 6),
-		Size = UDim2.fromOffset(200, 34),
-		BackgroundColor3 = Color3.fromRGB(255, 160, 40),
+		Position = UDim2.new(0.5, 0, 0, 50),
+		Size = UDim2.fromOffset(140, 22),
+		BackgroundColor3 = Color3.fromRGB(255, 150, 40),
 		Visible = false,
-		Parent = arrowGui,
+		Parent = pillGui,
 	}, {
-		UI.corner(17),
-		UI.stroke(Color3.fromRGB(130, 55, 0), 2.5),
+		UI.corner(11),
+		UI.stroke(Color3.fromRGB(130, 55, 0), 1.5),
 	})
-	local circle = UI.new("Frame", {
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 4, 0.5, 0),
-		Size = UDim2.fromOffset(26, 26),
-		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-		Parent = pointer,
-	}, { UI.corner(13), UI.stroke(Color3.fromRGB(130, 55, 0), 2) })
-	arrow = UI.bigText({
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromScale(0.8, 0.8),
-		Text = "▲",
-		TextColor3 = Color3.fromRGB(255, 140, 30),
-		Parent = circle,
-	}, Color3.fromRGB(130, 55, 0), 1.5)
 	pointerText = UI.bigText({
-		Position = UDim2.fromOffset(36, 6),
-		Size = UDim2.new(1, -44, 1, -12),
-		Text = "MARKET BOOM!",
-		TextXAlignment = Enum.TextXAlignment.Left,
+		Position = UDim2.fromOffset(8, 3),
+		Size = UDim2.new(1, -16, 1, -6),
+		Text = "",
 		Parent = pointer,
-	}, Color3.fromRGB(130, 55, 0), 2)
+	}, Color3.fromRGB(110, 45, 0), 1.5)
 end
 
 local function update(state: EventSchedule.State)
@@ -472,32 +452,18 @@ local function animate()
 end
 
 local function updateArrow(state: EventSchedule.State)
-	local camera = workspace.CurrentCamera
-	local character = player.Character
-	local root = character and character:FindFirstChild("HumanoidRootPart")
-	if not state.boomActive or not camera or not root or not root:IsA("BasePart") then
+	local t = now()
+	if state.boomActive then
+		pointer.BackgroundColor3 = Color3.fromRGB(255, 150, 40)
+		pointerText.Text = "🔥 BOOM " .. Format.duration(state.boomEnd - t)
+		pointer.Visible = true
+	elseif state.boomStart - t <= 60 and state.boomStart > t then
+		pointer.BackgroundColor3 = Color3.fromRGB(40, 45, 65)
+		pointerText.Text = "⏰ Boom in " .. Format.duration(state.boomStart - t)
+		pointer.Visible = true
+	else
 		pointer.Visible = false
-		return
 	end
-	local offset = marketPos - (root :: BasePart).Position
-	local flat = Vector3.new(offset.X, 0, offset.Z)
-	local distance = flat.Magnitude
-	if distance <= Events.MarketRadius then
-		pointer.Visible = false
-		return
-	end
-	-- Direction to the market relative to where the camera looks (0 = straight ahead = up).
-	local look = camera.CFrame.LookVector
-	local forward = Vector3.new(look.X, 0, look.Z)
-	if forward.Magnitude < 1e-3 then
-		forward = Vector3.new(0, 0, -1)
-	end
-	forward = forward.Unit
-	local right = Vector3.new(-forward.Z, 0, forward.X)
-	local dir = flat.Unit
-	arrow.Rotation = math.deg(math.atan2(dir:Dot(right), dir:Dot(forward)))
-	pointerText.Text = string.format("MARKET BOOM! %dm", math.floor(distance - Events.MarketRadius + 0.5))
-	pointer.Visible = true
 end
 
 function MarketBoard.start()

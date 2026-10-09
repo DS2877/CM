@@ -356,7 +356,7 @@ local function styleReach(view: View, inReach: boolean)
 		return
 	end
 	view.inReach = inReach
-	bb.Size = if inReach then UDim2.new(4.2, 0, 1.15, 0) else UDim2.new(2.8, 0, 0.7, 0)
+	bb.Size = if inReach then UDim2.new(4.2, 0, 1.15, 0) else UDim2.new(3.4, 0, 0.9, 0)
 	local button = bb:FindFirstChildOfClass("TextButton")
 	if button then
 		button.BackgroundTransparency = if inReach then 0 else 0.35
