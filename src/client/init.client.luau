@@ -59,6 +59,8 @@ BoomParty.start()
 -- First view after (re)spawning on your farm: look down over the plots from behind and above,
 -- not at the back of the gate sign. The server moves you onto your spawn pad; once you're
 -- there, tilt the camera once (the normal camera takes over from that angle).
+local START_ZOOM = 32 -- studs from your character when you spawn (Roblox default is ~12.5)
+
 local function framePlots(character: Model)
 	local rootInst = character:WaitForChild("HumanoidRootPart", 10)
 	if not rootInst or not rootInst:IsA("BasePart") then
@@ -89,6 +91,12 @@ local function framePlots(character: Model)
 	-- High enough to look over the gate beam behind you (it's ~14 studs up)
 	local eye = root.Position - forward * 6 + Vector3.new(0, 16, 0)
 	camera.CFrame = CFrame.lookAt(eye, root.Position + forward * 10)
+	-- Start zoomed out (the camera keeps its own zoom distance, so push it out once and let go:
+	-- players can still pinch/scroll closer afterwards).
+	local minZoom = player.CameraMinZoomDistance
+	player.CameraMinZoomDistance = START_ZOOM
+	task.wait(0.15)
+	player.CameraMinZoomDistance = minZoom
 end
 player.CharacterAdded:Connect(function(character)
 	task.spawn(framePlots, character)
