@@ -46,6 +46,7 @@ local function attach(player: Player)
 			return
 		end
 		local vip = player:GetAttribute("Pass_MarketVIP") == true
+			and player:GetAttribute("Off_Pass_MarketVIP") ~= true
 		local bb: BillboardGui = UI.new("BillboardGui", {
 			Name = "CarrotTitle",
 			Adornee = head,
@@ -79,6 +80,7 @@ local function attach(player: Player)
 	end)
 	player:GetAttributeChangedSignal("BestRarity"):Connect(build)
 	player:GetAttributeChangedSignal("Pass_MarketVIP"):Connect(build)
+	player:GetAttributeChangedSignal("Off_Pass_MarketVIP"):Connect(build)
 	task.spawn(build)
 end
 

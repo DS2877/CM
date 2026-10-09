@@ -10,8 +10,10 @@ local function num(inst: Instance, name: string, default: number): number
 	return if typeof(v) == "number" then v else default
 end
 
+-- Owned AND switched on (players can turn bought passes off; they're on by default).
 function Perks.hasPass(player: Player, passId: string): boolean
 	return player:GetAttribute("Pass_" .. passId) == true
+		and player:GetAttribute("Off_Pass_" .. passId) ~= true
 end
 
 -- Strongest active personal luck boost (1 = none).

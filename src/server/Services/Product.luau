@@ -108,6 +108,25 @@ local function refreshPasses(player: Player)
 	player:SetAttribute("PassesLoaded", true)
 end
 
+-- On/off switches -----------------------------------------------------------
+-- Everything bought is ON by default; players can switch passes off and pause boosts.
+-- Replicated as "Off_<key>" (key = "Pass_X" / "Boost_Y").
+
+local function syncSwitches(player: Player)
+	local data = Data.get(player)
+	if not data then
+		return
+	end
+	for name in player:GetAttributes() do
+		if string.sub(name, 1, 4) == "Off_" and not data.PerksOff[string.sub(name, 5)] then
+			player:SetAttribute(name, nil)
+		end
+	end
+	for key in data.PerksOff do
+		player:SetAttribute("Off_" .. key, true)
+	end
+end
+
 -- Boosts ------------------------------------------------------------------
 
 local function syncBoosts(player: Player)
@@ -119,7 +138,8 @@ local function syncBoosts(player: Player)
 	local mega = false
 	for id, seconds in data.Boosts do
 		local b = boostById[id]
-		if b and seconds > 0 then
+		-- A boost the player switched off is paused: no effect, and its time doesn't tick.
+		if b and seconds > 0 and not data.PerksOff["Boost_" .. id] then
 			if b.stat == "Luck" then
 				luck = math.max(luck, b.mult)
 			elseif b.stat == "Value" then
@@ -329,6 +349,7 @@ function Product.onPlayerReady(player: Player)
 		end
 	end
 	task.spawn(refreshPasses, player)
+	syncSwitches(player)
 	syncBoosts(player)
 	player.CharacterAdded:Connect(function()
 		task.wait(0.5)
@@ -376,6 +397,31 @@ function Product.start()
 			pendingGifts[player] = { target = target.UserId, pass = rawPass :: string }
 		end)
 
+	local toggleLimit = EconomyConfig.RateLimits.TogglePerk
+	local allowToggle = RateLimit.new(toggleLimit.rate, toggleLimit.burst)
+	Remotes.get(Remotes.Names.TogglePerk).OnServerEvent:Connect(function(player, rawKey: unknown)
+		local data = Data.get(player)
+		if not data or not allowToggle(player) or typeof(rawKey) ~= "string" then
+			return
+		end
+		local key = rawKey :: string
+		local valid = false
+		if string.sub(key, 1, 5) == "Pass_" then
+			local id = string.sub(key, 6)
+			valid = passById[id] ~= nil and player:GetAttribute(key) == true
+		elseif string.sub(key, 1, 6) == "Boost_" then
+			local id = string.sub(key, 7)
+			valid = boostById[id] ~= nil and (data.Boosts[id] or 0) > 0
+		end
+		if not valid then
+			return
+		end
+		data.PerksOff[key] = if data.PerksOff[key] then nil else true
+		syncSwitches(player)
+		syncBoosts(player)
+		Economy.sync(player) -- Big Basket / Value Boost change prices and capacity
+	end)
+
 	local trackLimit = EconomyConfig.RateLimits.Track
 	local allowTrack = RateLimit.new(trackLimit.rate, trackLimit.burst)
 	Remotes.get(Remotes.Names.Track).OnServerEvent
@@ -409,6 +455,9 @@ function Product.start()
 				if data then
 					local changed = false
 					for id, seconds in data.Boosts do
+						if data.PerksOff["Boost_" .. id] then
+							continue -- paused by the player
+						end
 						if seconds > 0 then
 							data.Boosts[id] = seconds - 1
 							changed = true

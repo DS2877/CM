@@ -158,7 +158,8 @@ local function resetAccount(admin: Player, target: Player)
 	-- Clear replicated state that the fresh profile no longer has.
 	for name in target:GetAttributes() do
 		if
-			string.sub(name, 1, 5) == "Pass_"
+			string.sub(name, 1, 4) == "Off_"
+			or string.sub(name, 1, 5) == "Pass_"
 			or string.sub(name, 1, 6) == "Boost_"
 			or string.sub(name, 1, 7) == "Bought_"
 		then

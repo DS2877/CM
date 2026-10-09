@@ -72,6 +72,7 @@ export type PlayerData = {
 	FavoritePrompted: boolean,
 	Daily: DailyData,
 	TutorialDone: boolean,
+	PerksOff: { [string]: boolean }, -- bought perks the player switched off ("Pass_X" / "Boost_Y")
 	Stats: Stats,
 }
 
@@ -106,6 +107,7 @@ local TEMPLATE: PlayerData = {
 	FavoritePrompted = false,
 	Daily = { LastClaim = 0, Claims = 0, QuestDay = 0, Progress = {}, Claimed = {}, AllClaimed = false },
 	TutorialDone = false,
+	PerksOff = {},
 	Stats = {
 		Plantings = 0,
 		Harvests = 0,
@@ -133,6 +135,8 @@ local MIGRATIONS: { [number]: (data: PlayerData) -> () } = {
 	[4] = function(data: PlayerData)
 		data.Growing = {}
 	end,
+	-- v5 -> v6: on/off switches for bought perks (all on by default). Filled by Reconcile.
+	[5] = function(_data: PlayerData) end,
 }
 
 local Data = {}

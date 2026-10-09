@@ -4,7 +4,7 @@
 local Economy = {
 	-- DataStore name. CM_Dev_v1 during development, CM_Live_v1 at soft launch.
 	DataStoreName = "CM_Dev_v2",
-	ProfileVersion = 5,
+	ProfileVersion = 6,
 
 	StartingCash = 20,
 
@@ -85,6 +85,7 @@ local Economy = {
 		WaterFarm = { rate = 3, burst = 4 },
 		SetGiftTarget = { rate = 2, burst = 4 },
 		Track = { rate = 4, burst = 8 },
+		TogglePerk = { rate = 3, burst = 5 },
 		SetMusic = { rate = 2, burst = 4 },
 		RedeemCode = { rate = 0.5, burst = 3 },
 		DailyClaim = { rate = 2, burst = 4 },

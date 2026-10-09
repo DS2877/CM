@@ -16,6 +16,7 @@ Remotes.Names = {
 	WaterFarm = "WaterFarm", -- (farmId: number)
 	SetGiftTarget = "SetGiftTarget", -- (targetUserId: number, passId: string)
 	Track = "Track", -- (event: string, detail: string) whitelisted analytics from UI
+	TogglePerk = "TogglePerk", -- (key: string) "Pass_X" or "Boost_Y": switch a bought perk on/off
 	AdminAction = "AdminAction", -- (action: string, args: table) admins only, re-checked on the server
 	SetMusic = "SetMusic", -- (enabled: boolean) saved setting
 	RedeemCode = "RedeemCode", -- (code: string)

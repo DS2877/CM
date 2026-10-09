@@ -292,6 +292,68 @@ local function boostText(): string
 	return table.concat(parts, "   ")
 end
 
+-- "My stuff" switches -----------------------------------------------------
+
+local mineHeader: TextLabel
+local mineGrid: Frame
+local mineSignature = ""
+
+local function mineKeys(): { { key: string, label: string } }
+	local list = {}
+	for _, p in Products.GamePasses do
+		if owns(p.id) then
+			table.insert(list, { key = "Pass_" .. p.id, label = p.emoji .. " " .. p.name })
+		end
+	end
+	for _, b in Products.Boosts do
+		local left = player:GetAttribute("Boost_" .. b.id)
+		local paused = player:GetAttribute("Off_Boost_" .. b.id) == true
+		if (typeof(left) == "number" and left > 0) or paused then
+			table.insert(list, { key = "Boost_" .. b.id, label = b.emoji .. " " .. b.name })
+		end
+	end
+	return list
+end
+
+-- Rebuilds only when the set of owned things or a switch changed (boost timers tick every second).
+local function rebuildMine(force: boolean?)
+	if not mineGrid then
+		return
+	end
+	local list = mineKeys()
+	local parts = {}
+	for _, item in list do
+		table.insert(parts, item.key .. "=" .. tostring(player:GetAttribute("Off_" .. item.key) == true))
+	end
+	local signature = table.concat(parts, ",")
+	if signature == mineSignature and not force then
+		return
+	end
+	mineSignature = signature
+	for _, child in mineGrid:GetChildren() do
+		if child:IsA("GuiObject") then
+			child:Destroy()
+		end
+	end
+	mineHeader.Visible = #list > 0
+	mineGrid.Visible = #list > 0
+	for i, item in list do
+		local on = player:GetAttribute("Off_" .. item.key) ~= true
+		local suffix = if on
+			then "ON ✔"
+			else if string.sub(item.key, 1, 6) == "Boost_" then "PAUSED" else "OFF"
+		local b, _ = Panel.button(
+			{ LayoutOrder = i, Parent = mineGrid },
+			if on then ROBUX_GREEN else GRAY,
+			if on then ROBUX_DARK else GRAY_DARK,
+			item.label .. ": " .. suffix
+		)
+		b.Activated:Connect(function()
+			Remotes.get(Remotes.Names.TogglePerk):FireServer(item.key)
+		end)
+	end
+end
+
 local function buildStore()
 	panel = Panel.new("Store", "Shop", Color3.fromRGB(255, 120, 190), PINK_DARK, Vector2.new(620, 320))
 	UI.new("UIListLayout", {
@@ -307,6 +369,31 @@ local function buildStore()
 		LayoutOrder = 0,
 		Parent = panel.body,
 	})
+	-- My stuff: everything bought, each with an ON/OFF switch (on by default)
+	mineHeader = UI.bigText({
+		Size = UDim2.new(1, -12, 0, 26),
+		Text = "✅ My stuff – tap to turn on/off",
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(90, 200, 120),
+		LayoutOrder = -2,
+		Visible = false,
+		Parent = panel.body,
+	}, Color3.fromRGB(30, 100, 50), 2.5)
+	mineGrid = UI.new("Frame", {
+		Size = UDim2.new(1, -12, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		LayoutOrder = -1,
+		Visible = false,
+		Parent = panel.body,
+	}, {
+		UI.new("UIGridLayout", {
+			CellSize = UDim2.fromOffset(196, 46),
+			CellPadding = UDim2.fromOffset(8, 8),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+
 	-- Codes first: free stuff at the top of the shop builds trust
 	local codeRow =
 		card(1, "🎟️", Color3.fromRGB(90, 200, 120), "Codes", "Find codes in our group & socials")
@@ -371,6 +458,7 @@ local function buildStore()
 		passCard(p, order)
 	end
 	panel.onOpen = function()
+		rebuildMine(true)
 		boostLabel.Text = boostText()
 		for _, c in cards do
 			c.refresh()
@@ -656,6 +744,16 @@ function Store.start()
 		end
 	end)
 	player.AttributeChanged:Connect(function(name)
+		if
+			panel.isOpen()
+			and (
+				string.sub(name, 1, 5) == "Pass_"
+				or string.sub(name, 1, 4) == "Off_"
+				or string.sub(name, 1, 6) == "Boost_"
+			)
+		then
+			rebuildMine()
+		end
 		if string.sub(name, 1, 5) == "Pass_" or string.sub(name, 1, 7) == "Bought_" then
 			for _, c in cards do
 				c.refresh()
