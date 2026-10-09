@@ -1,4 +1,4 @@
-# Creator Hub setup – 2026-10-08 19:16 UTC
+# Creator Hub setup – 2026-10-09 07:21 UTC
 
 Catalog: 15 entries in Products.luau
 
@@ -19,11 +19,12 @@ Catalog: 15 entries in Products.luau
   -> ServerLuck: product 3717302127
   -> MegaLuck: product 3717302129
   -> GoldenSeedPack: product 3717302131
+- PRICE product 'Starter Bundle': 99 -> 25 R$: HTTP 204 
   -> StarterBundle: product 3717302133
   -> LuckyFarmer: product 3717302135
   -> MarketTycoon: product 3717302136
 
 ## Max Players
-- PATCH serverSize=8: HTTP 200 {"path":"universes/10769879996/places/87874194731556","createTime":"2026-10-08T16:01:43.971Z","updateTime":"2026-10-08T19:01:31.016Z","displayName":"Carrot Market \uD83E\uDD55","description":"","serverSize":8,"root":true,"universeRuntimeCreation":false,"templatePlace":""}
+- PATCH serverSize=8: HTTP 200 {"path":"universes/10769879996/places/87874194731556","createTime":"2026-10-08T16:01:43.971Z","updateTime":"2026-10-09T07:13:53.782Z","displayName":"Carrot Market \uD83E\uDD55","description":"","serverSize":8,"root":true,"universeRuntimeCreation":false,"templatePlace":""}
 
 Result: ALL OK
