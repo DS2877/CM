@@ -66,9 +66,20 @@ local World = {
 	FarmLevelPadRadius = 2.6,
 	FarmLevelServerSlack = 4,
 	-- Plots: you walk to a plot to plant or harvest it (flat distance from you to the plot center).
-	PlotReach = 9,
+	PlotReach = 13,
 	PlotReachSlack = 4, -- extra the server accepts (lag)
 	WalkSpeed = 22, -- a bit faster than Roblox's 16: trips to the market feel snappy
+
+	-- Fun stuff (Server/Services/WorldFun, Client/Controllers/Ambience)
+	MushroomAngles = { 67.5, 112.5, 202.5, 337.5 }, -- degrees, between farm paths
+	MushroomRadius = 58,
+	MushroomBounce = 105, -- upward speed when you land on a big bouncy mushroom (~28 studs high)
+	MushroomBounceSmall = 60,
+	BuntingRadius = 38, -- posts with flags and balloons around the plaza
+	TulipSpacing = 7, -- tulips along both sides of every farm path
+	Bunnies = 6, -- hopping around near the camera (client only)
+	Birds = 5,
+	Clouds = 14,
 
 	TreeCount = 46,
 	Seed = 2026,

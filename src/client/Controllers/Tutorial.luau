@@ -5,7 +5,9 @@
 --   2. "Wait for it to grow…" then an arrow over the ready carrot: "Tap to harvest!"
 --   3. the guide line to the market: "Step on a SELL pad to sell!"
 --   4. an arrow on the Seeds tile: "Buy Lucky Seeds – more luck!"
---   5. the guide line to the Upgrade Shop: "Buy your first upgrade!"
+--   5. an arrow on an empty plot: "plant your Lucky Seed!"
+--   6. the guide line to the Upgrade Shop: "Buy your first upgrade!"
+--   7. the guide line to the gold pad by your gate: "Level up your farm!"
 -- Then a celebration, and the server is told it's done (never shown again). Target: the whole
 -- core loop (plant -> grow -> harvest -> sell -> better seeds / upgrades) inside a few minutes.
 
@@ -20,6 +22,7 @@ local UI = require(script.Parent.Parent.Util.UI)
 local Sound = require(script.Parent.Parent.Util.Sound)
 local HUD = require(script.Parent.HUD)
 local Guide = require(script.Parent.Guide)
+local FarmLevel = require(script.Parent.FarmLevel)
 
 local player = Players.LocalPlayer
 
@@ -31,6 +34,7 @@ local worldArrow: BillboardGui
 local screenArrow: TextLabel
 local step = 0
 local seedsDone = false
+local plantedSeed = false
 
 local function myPlots(): { BasePart }
 	local farmId = player:GetAttribute("FarmId")
@@ -218,19 +222,37 @@ local function update()
 	local ready = firstWithState("Ready")
 	local basket = player:GetAttribute("BasketCount")
 	local hasBasket = typeof(basket) == "number" and basket > 0
-	local upgraded = false
+	local shopUpgraded = false
 	for name, v in player:GetAttributes() do
-		if string.sub(name, 1, 4) == "Upg_" and typeof(v) == "number" and v >= 1 then
-			upgraded = true
+		if
+			string.sub(name, 1, 4) == "Upg_"
+			and name ~= "Upg_FarmSize"
+			and typeof(v) == "number"
+			and v >= 1
+		then
+			shopUpgraded = true
 		end
 	end
+	local farmLeveled = (player:GetAttribute("Upg_FarmSize") or 0) :: number >= 1
 
-	if upgraded then
+	if farmLeveled and (shopUpgraded or step >= 7) then
 		finish()
-	elseif soldOnce and (seedsDone or boughtSeed()) then
-		-- 5. Upgrade: walk to the shop once it's affordable
-		seedsDone = true
-		step = 5
+	elseif soldOnce and plantedSeed and shopUpgraded then
+		-- 8. Farm Level: walk to the gold pad by your gate and level up (more plots + decor)
+		step = 8
+		pointAtHud(nil)
+		if FarmLevel.affordable() then
+			Guide.setOverride("farm")
+			say("Follow the line to the gold pad by your gate: LEVEL UP your farm! 🏡")
+			pointAtPlot(nil, "")
+		else
+			Guide.setOverride(nil)
+			say("Sell more carrots to level up your farm – more plots! 🏡")
+			pointAtPlot(ready or empty, if ready then "HARVEST!" else "PLANT")
+		end
+	elseif soldOnce and plantedSeed then
+		-- 7. Upgrade Shop
+		step = 7
 		pointAtHud(nil)
 		if HUD.goalAffordable() then
 			Guide.setOverride("shop")
@@ -241,9 +263,23 @@ local function update()
 			say("Plant, harvest and sell more for your first upgrade!")
 			pointAtPlot(ready or empty, if ready then "HARVEST!" else "PLANT")
 		end
+	elseif soldOnce and (seedsDone or boughtSeed()) then
+		-- 6. Use the new seed: it's selected, plant it
+		seedsDone = true
+		step = 6
+		Guide.setOverride(nil)
+		pointAtHud(nil)
+		local seedName = firstSeed and firstSeed.name or "new seed"
+		if empty then
+			say(string.format("Your %s is ready to use – plant it on an empty plot! 🍀", seedName))
+			pointAtPlot(empty, "PLANT!")
+		else
+			say("Harvest a carrot to free a plot for your new seed!")
+			pointAtPlot(ready, "HARVEST!")
+		end
 	elseif soldOnce then
-		-- 4. Better seeds: more money spent = more luck (Basic stays free)
-		step = 4
+		-- 5. Better seeds: more money spent = more luck (Basic stays free)
+		step = 5
 		Guide.setOverride(nil)
 		local seed = firstSeed
 		if seed and cash() >= seed.basePrice then
@@ -285,6 +321,24 @@ function Tutorial.start()
 		return
 	end
 	build()
+	-- A bought seed was planted when its count goes down
+	local seedCounts: { [string]: number } = {}
+	for name, v in player:GetAttributes() do
+		if string.sub(name, 1, 5) == "Seed_" and typeof(v) == "number" then
+			seedCounts[name] = v
+		end
+	end
+	player.AttributeChanged:Connect(function(name)
+		if string.sub(name, 1, 5) ~= "Seed_" then
+			return
+		end
+		local v = player:GetAttribute(name)
+		local n = if typeof(v) == "number" then v else 0
+		if n < (seedCounts[name] or 0) then
+			plantedSeed = true
+		end
+		seedCounts[name] = n
+	end)
 	local lastBasket = 0
 	player:GetAttributeChangedSignal("BasketCount"):Connect(function()
 		local n = player:GetAttribute("BasketCount")

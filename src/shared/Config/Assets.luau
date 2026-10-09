@@ -47,6 +47,7 @@ local Assets = {
 		},
 		SellBoom = "rbxassetid://1843090702", -- The Joyous Return - Hook (APM, 3 s)
 		Upgrade = "rbxassetid://9040476898", -- Early Bird - Hit1 (APM, 2 s)
+		Boing = "", -- bouncy mushroom (borrows a low bubble pop until uploaded)
 		-- Market & social
 		Bell = "rbxassetid://9125935023", -- Shop Door Bell Ceramic Mug Cowbell Hits Ring (SFX)
 		BoomEnd = "rbxassetid://1841186475", -- Goodnight Mr Uke (APM / KPM, 5 s)

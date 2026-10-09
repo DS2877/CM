@@ -173,6 +173,17 @@ local function myPad(): BasePart?
 	return if pad and pad:IsA("BasePart") then pad else nil
 end
 
+function FarmLevel.padPosition(): Vector3?
+	local pad = myPad()
+	return if pad then pad.Position else nil
+end
+
+-- Can I afford the next farm level right now?
+function FarmLevel.affordable(): boolean
+	local lvl = attrNumber("Upg_FarmSize")
+	return not Progression.isMaxed(track, lvl) and attrNumber("Cash") >= Progression.cost(track, lvl)
+end
+
 function FarmLevel.onPad(extra: number?): boolean
 	local pad = myPad()
 	local character = player.Character

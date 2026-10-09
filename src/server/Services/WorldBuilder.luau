@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = ReplicatedStorage.Shared.Config
 local World = require(Config.World)
 local Economy = require(Config.Economy)
+local WorldFun = require(script.Parent.WorldFun)
 
 export type FarmBuild = {
 	id: number,
@@ -738,6 +739,9 @@ local function blocked(pos: Vector3): boolean
 	local flat = Vector3.new(pos.X, 0, pos.Z)
 	if flat.Magnitude < 40 then
 		return true -- plaza
+	end
+	if WorldFun.blocked(flat) then
+		return true -- bouncy mushrooms
 	end
 	for i = 0, World.FarmCount - 1 do
 		local a = i * (2 * math.pi / World.FarmCount)
@@ -1585,6 +1589,7 @@ function WorldBuilder.build(): WorldBuild
 		buildUpgradeStall(world, deg)
 	end
 	buildDecor(world)
+	WorldFun.build(world)
 
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "Spawn"

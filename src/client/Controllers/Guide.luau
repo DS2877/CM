@@ -4,6 +4,7 @@
 -- your feet to it and a small bouncing marker sits on the spot:
 --   * basket full (or a boom while you carry carrots) -> the market
 --   * the next upgrade is affordable, or you tapped the goal bar -> the nearest Upgrade Shop
+--   * the next farm level is affordable -> your farm's gold Farm Level pad
 --   * the tutorial can force a target
 -- The line hides once you're there.
 
@@ -18,15 +19,17 @@ local Market = require(Shared.Market)
 local UI = require(script.Parent.Parent.Util.UI)
 local HUD = require(script.Parent.HUD)
 local Shop = require(script.Parent.Shop)
+local FarmLevel = require(script.Parent.FarmLevel)
 
 local player = Players.LocalPlayer
 
 local Guide = {}
 
-export type Target = "market" | "shop"
+export type Target = "market" | "shop" | "farm"
 
 local MARKET_COLOR = Color3.fromRGB(120, 235, 100)
 local SHOP_COLOR = Color3.fromRGB(90, 210, 255)
+local FARM_COLOR = Color3.fromRGB(255, 200, 60)
 
 local override: Target? = nil
 local requestedUntil = 0
@@ -83,6 +86,9 @@ local function chooseTarget(): Target?
 	end
 	if HUD.goalAffordable() or os.clock() < requestedUntil then
 		return "shop"
+	end
+	if FarmLevel.affordable() then
+		return "farm"
 	end
 	return nil
 end
@@ -182,6 +188,9 @@ local function update()
 	elseif target == "shop" then
 		pos = nearestPad(root.Position)
 		arrived = Shop.atShop(1)
+	elseif target == "farm" and FarmLevel.padPosition() then
+		pos = FarmLevel.padPosition() :: Vector3
+		arrived = FarmLevel.onPad(1)
 	else
 		beam.Enabled = false
 		marker.Enabled = false
@@ -192,9 +201,15 @@ local function update()
 		marker.Enabled = false
 		return
 	end
-	local color = if target == "market" then MARKET_COLOR else SHOP_COLOR
+	local color = if target == "market"
+		then MARKET_COLOR
+		elseif target == "farm" then FARM_COLOR
+		else SHOP_COLOR
 	beam.Color = ColorSequence.new(Color3.new(1, 1, 1), color)
-	markerText.Text = if target == "market" then "SELL HERE 🧺" else "UPGRADES ⬆"
+	markerText.Text = if target == "market"
+		then "SELL HERE 🧺"
+		elseif target == "farm" then "LEVEL UP 🏡"
+		else "UPGRADES ⬆"
 	markerText.TextColor3 = color
 	anchor.CFrame = CFrame.new(pos + Vector3.new(0, 1, 0))
 	beam.Enabled = true

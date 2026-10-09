@@ -6,6 +6,9 @@ Senast uppdaterad: 8 okt 2026 (kväll). Aktuell fas: **Fas 5 – soft launch (f�
 
 | Del | Status | Hur det testas |
 |---|---|---|
+| Mer levande, barnslig värld | Ny | Studsande jättesvampar (röd/rosa med vita prickar) mellan farmstigarna – hoppa upp på hatten och du flyger ~28 studs, BOING (ljud saknas än, låter som ett lågt "bloop"). Vimpelband och ballongknippen runt torget (ballongerna guppar). Tulpaner i godisfärger längs alla stigar. Kaniner som skuttar runt nära dig, fåglar som cirklar högt upp, fluffiga moln som driver över himlen. Allt rörligt körs bara på klienten. |
+| Räckvidd odlingar | Ändrad | 9 → 13 studs: står du på en odling når du grannodlingarna rakt fram/bak/sidan, men inte hela farmen. |
+| Tutorial | Utökad | Plantera → skörda → sälj på SELL-platta → köp Lucky Seeds (pil på SEEDS) → plantera ett Lucky Seed → köp en uppgradering i Upgrade Shop → följ den gula linjen till guldplattan vid grinden och höj farmen till nivå 2 → klart. Guide-linjen visar också vägen till guldplattan när du har råd med nästa farmnivå. |
 | Första vyn i spelet | Fixad | Skylten över grinden sitter högre (kameran ser under den), kameran tittar ned över odlingarna när du spawnar, och tutorial-texten ligger i en mörk pill längst ned i mitten i stället för mitt över skylten. |
 | Ekonomin | Ombalanserad | Uppgraderingar kostar ~10x mer (Growth Speed 600, Value 1 500, Luck 3 000, Harvest Power 5 000, Basket 4 000). Simuleringen: en marknadsresa köper i snitt 1 uppgradering de första 15 min (max ~3), ett köp var ~1 min i början, 3 min efter en halvtimme, 5 min efter en timme. Se tools/simulation-report.md. |
 | Gå till varje odling | Ny | Du måste stå vid en odling (inom ~9 studs) för att plantera eller skörda. Odlingar inom räckhåll får en stor ljus knapp, resten en liten dämpad. Trycker du på en för långt bort: "Walk over to that plot first!". Servern kollar samma avstånd. (Auto Harvest-passet skördar fortfarande åt dig.) |

@@ -94,6 +94,14 @@ local Audio = {
 		Sell = { group = "SFX", volume = 0.6, pitch = { 0.95, 1.05 }, cooldown = 0.1 },
 		SellBoom = { group = "SFX", volume = 0.55, pitch = { 1, 1 }, duck = 3 },
 		Upgrade = { group = "SFX", volume = 0.45, pitch = { 1, 1 }, cooldown = 0.4, duck = 1.5 },
+		Boing = {
+			group = "SFX",
+			volume = 0.7,
+			pitch = { 0.95, 1.1 },
+			cooldown = 0.3,
+			fallback = "Click",
+			fallbackPitch = 0.55,
+		},
 
 		-- Market & social
 		Bell = { group = "SFX", volume = 0.7, pitch = { 1, 1 }, duck = 3 },
