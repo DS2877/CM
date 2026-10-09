@@ -99,6 +99,7 @@ local World = {
 	WaterfallRadius = 175,
 	PaintAngle = 258,
 	PaintRadius = 140,
+	SlideSpeed = 70, -- how fast the waterfall slide shoots you down
 	FlowerAngle = 330,
 	FlowerRadius = 165,
 

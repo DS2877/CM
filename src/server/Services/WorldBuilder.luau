@@ -11,6 +11,7 @@ local Economy = require(Config.Economy)
 local WorldFun = require(script.Parent.WorldFun)
 local BunnyMarket = require(script.Parent.BunnyMarket)
 local Plaza = require(script.Parent.Plaza)
+local Wilds = require(script.Parent.Wilds)
 
 export type FarmBuild = {
 	id: number,
@@ -378,7 +379,7 @@ local function blocked(pos: Vector3): boolean
 	if flat.Magnitude < World.PlazaRadius + 10 then
 		return true -- the town square
 	end
-	if WorldFun.blocked(flat) then
+	if WorldFun.blocked(flat) or Wilds.blocked(flat) then
 		return true -- bouncy mushrooms
 	end
 	for id = 1, World.FarmCount do
@@ -1215,6 +1216,7 @@ function WorldBuilder.build(): WorldBuild
 	Plaza.build(world)
 	buildDecor(world)
 	WorldFun.build(world)
+	Wilds.build(world)
 
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "Spawn"

@@ -329,9 +329,36 @@ function Ambience.start()
 	bounceParams.FilterType = Enum.RaycastFilterType.Include
 	bounceParams.FilterDescendantsInstances = if mushrooms then { mushrooms } else {}
 
+	-- The waterfall's Super Slide: standing on a "Slide" part shoots you down it
+	local wilds = world and world:WaitForChild("Wilds", 10)
+	local waterfall = wilds and wilds:WaitForChild("Waterfall", 10)
+	local slides = waterfall and waterfall:FindFirstChild("Slides")
+	local slideParams = RaycastParams.new()
+	slideParams.FilterType = Enum.RaycastFilterType.Include
+	slideParams.FilterDescendantsInstances = if slides then { slides } else {}
+	local wasSliding = false
+
 	RunService.Heartbeat:Connect(function()
 		if mushrooms then
 			bounceCheck(bounceParams)
+		end
+		if slides then
+			local character = Players.LocalPlayer.Character
+			local root = character and character:FindFirstChild("HumanoidRootPart")
+			if root and root:IsA("BasePart") then
+				local rootPart = root :: BasePart
+				local hit = workspace:Raycast(rootPart.Position, Vector3.new(0, -4, 0), slideParams)
+				local dir = hit and hit.Instance:GetAttribute("SlideDir")
+				if hit and hit.Instance.Name == "Slide" and typeof(dir) == "Vector3" then
+					if not wasSliding then
+						Sound.play("Boing")
+					end
+					wasSliding = true
+					rootPart.AssemblyLinearVelocity = dir * World.SlideSpeed
+				else
+					wasSliding = false
+				end
+			end
 		end
 	end)
 
