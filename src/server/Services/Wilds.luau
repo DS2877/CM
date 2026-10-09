@@ -13,6 +13,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local World = require(ReplicatedStorage.Shared.Config.World)
+local Landscape = require(script.Parent.Landscape)
 
 local Wilds = {}
 
@@ -172,6 +173,7 @@ local function buildTrails(parent: Instance)
 		local mid = (from + to) / 2
 		local len = (to - from).Magnitude
 		local cf = CFrame.lookAt(mid, mid + dir)
+		Landscape.flatBlock(cf, 8, len)
 		part(f, {
 			Name = "TrailEdge",
 			Size = Vector3.new(6.6, 0.12, len),

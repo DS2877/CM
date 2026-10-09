@@ -15,11 +15,11 @@ local DayCycle = {
 		{ name = "Night", untilFrac = 1, fromClock = 19.5, toClock = 29.5 },
 	} :: { Phase },
 	-- Lighting at full day and at deepest night (blended by how dark it is)
-	DayBrightness = 2.4,
+	DayBrightness = 2.8,
 	NightBrightness = 1.1,
-	DayAmbient = { 120, 112, 105 },
+	DayAmbient = { 130, 120, 110 },
 	NightAmbient = { 95, 105, 145 },
-	DayOutdoorAmbient = { 165, 160, 150 },
+	DayOutdoorAmbient = { 175, 168, 152 },
 	NightOutdoorAmbient = { 110, 120, 170 },
 }
 

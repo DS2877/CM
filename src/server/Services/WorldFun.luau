@@ -9,6 +9,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local World = require(ReplicatedStorage.Shared.Config.World)
+local Landscape = require(script.Parent.Landscape)
 
 local WorldFun = {}
 
@@ -273,6 +274,7 @@ local function buildCampsite(parent: Instance)
 	local f = folder("Campsite", parent)
 	local dir = flatDir(World.CampAngle)
 	local c = dir * World.CampRadius
+	Landscape.flatDisc(c, 10)
 	-- trampled dirt patch
 	cylinder(
 		f,
@@ -398,27 +400,8 @@ local function buildLake(parent: Instance)
 	local dir = flatDir(World.LakeAngle)
 	local c = dir * World.LakeRadius
 	local r = World.LakeSize / 2
-	local flatCF = CFrame.new(c) * CFrame.Angles(0, 0, math.rad(90))
-	cylinder(
-		f,
-		"Shore",
-		0.3,
-		World.LakeSize + 4,
-		flatCF + Vector3.new(0, 0.1, 0),
-		Color3.fromRGB(235, 215, 160)
-	).Material =
-		Enum.Material.Sand
-	local water = cylinder(
-		f,
-		"Water",
-		0.3,
-		World.LakeSize,
-		flatCF + Vector3.new(0, 0.2, 0),
-		Color3.fromRGB(70, 170, 235)
-	)
-	water.Material = Enum.Material.Glass
-	water.Transparency = 0.15
-	water.CanCollide = false
+	-- real terrain water with a sandy shore (waves, reflections)
+	Landscape.lake(c, r, 5)
 	-- reeds around the edge
 	for k = 0, 13 do
 		local a = k * math.pi * 2 / 14 + 0.2
@@ -445,7 +428,7 @@ local function buildLake(parent: Instance)
 	-- lily pads with a flower
 	for k = 0, 4 do
 		local a = k * 1.3 + 1
-		local p = c + Vector3.new(math.cos(a) * r * 0.6, 0.38, math.sin(a) * r * 0.6)
+		local p = c + Vector3.new(math.cos(a) * r * 0.6, 0.08, math.sin(a) * r * 0.6)
 		cylinder(
 			f,
 			"LilyPad",
@@ -535,6 +518,7 @@ local function buildPicnic(parent: Instance)
 	local f = folder("Picnic", parent)
 	local dir = flatDir(World.PicnicAngle)
 	local c = dir * World.PicnicRadius
+	Landscape.flatDisc(c, 5, Enum.Material.LeafyGrass)
 	local cf = CFrame.lookAt(c, c + dir)
 	local n, cell = 4, 1.6
 	for i = 0, n - 1 do

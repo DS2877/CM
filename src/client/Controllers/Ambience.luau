@@ -17,7 +17,7 @@ local DayCycle = require(script.Parent.DayCycle)
 
 local Ambience = {}
 
-local COUNT = 10
+local COUNT = 18
 local RANGE = 60 -- studs around the camera where butterflies live
 local COLORS = {
 	Color3.fromRGB(255, 200, 60),
@@ -307,6 +307,49 @@ function Ambience.start()
 	for _ = 1, World.Birds do
 		table.insert(birds, spawnBird())
 	end
+
+	-- Pollen and dandelion seeds drifting with the wind all around you (a box of particles that
+	-- follows the camera; the terrain grass sways in the same wind)
+	local motes = prop({ Name = "Motes", Size = Vector3.new(110, 14, 110), Transparency = 1 })
+	local pollen = Instance.new("ParticleEmitter")
+	pollen.Shape = Enum.ParticleEmitterShape.Box
+	pollen.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+	pollen.Color = ColorSequence.new(Color3.fromRGB(255, 250, 200), Color3.fromRGB(255, 255, 255))
+	pollen.LightEmission = 0.6
+	pollen.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.2, 0.18),
+		NumberSequenceKeypoint.new(0.8, 0.18),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	pollen.Lifetime = NumberRange.new(6, 9)
+	pollen.Rate = 30
+	pollen.Speed = NumberRange.new(0.2, 0.8)
+	pollen.SpreadAngle = Vector2.new(180, 180)
+	pollen.Drag = 1.5
+	pollen.WindAffectsDrag = true
+	pollen.Parent = motes
+	local seeds = Instance.new("ParticleEmitter")
+	seeds.Shape = Enum.ParticleEmitterShape.Box
+	seeds.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+	seeds.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	seeds.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+	seeds.LightEmission = 0.3
+	seeds.Size = NumberSequence.new(0.35)
+	seeds.Lifetime = NumberRange.new(8, 12)
+	seeds.Rate = 6
+	seeds.Speed = NumberRange.new(0.5, 1)
+	seeds.Rotation = NumberRange.new(0, 360)
+	seeds.RotSpeed = NumberRange.new(-30, 30)
+	seeds.Drag = 1
+	seeds.WindAffectsDrag = true
+	seeds.Parent = motes
+	RunService.Heartbeat:Connect(function()
+		local camera = workspace.CurrentCamera
+		if camera then
+			motes.CFrame = CFrame.new(camera.Focus.Position + Vector3.new(0, 5, 0))
+		end
+	end)
 	for _ = 1, World.Clouds do
 		table.insert(clouds, spawnCloud())
 	end

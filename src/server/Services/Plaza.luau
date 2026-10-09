@@ -16,6 +16,7 @@ local TweenService = game:GetService("TweenService")
 
 local World = require(ReplicatedStorage.Shared.Config.World)
 local BunnyMarket = require(script.Parent.BunnyMarket)
+local Landscape = require(script.Parent.Landscape)
 
 local Plaza = {}
 
@@ -708,6 +709,7 @@ local function buildLaunchers(parent: Instance)
 		m:SetAttribute("FarmId", l.farmId)
 		m:SetAttribute("ToFarm", l.toFarm)
 		local toward = Vector3.new(l.to.X - l.from.X, 0, l.to.Z - l.from.Z).Unit
+		Landscape.flatDisc(l.from, World.LauncherRadius + 2)
 		local cf = CFrame.lookAt(l.from, l.from + toward)
 		-- springy pad: stacked rings and a purple top with a white bunny face
 		for k = 0, 2 do

@@ -12,6 +12,8 @@ local WorldFun = require(script.Parent.WorldFun)
 local BunnyMarket = require(script.Parent.BunnyMarket)
 local Plaza = require(script.Parent.Plaza)
 local Wilds = require(script.Parent.Wilds)
+local Landscape = require(script.Parent.Landscape)
+local LandscapeConfig = require(Config.Landscape)
 
 export type FarmBuild = {
 	id: number,
@@ -189,9 +191,9 @@ local function buildLighting()
 	-- turning neon on phone screens (which already boost saturation).
 	Lighting.ClockTime = 14.6
 	Lighting.GeographicLatitude = 30
-	Lighting.Brightness = 2.4
-	Lighting.Ambient = Color3.fromRGB(120, 112, 105)
-	Lighting.OutdoorAmbient = Color3.fromRGB(165, 160, 150)
+	Lighting.Brightness = 2.8
+	Lighting.Ambient = Color3.fromRGB(130, 120, 110)
+	Lighting.OutdoorAmbient = Color3.fromRGB(175, 168, 152)
 	Lighting.EnvironmentDiffuseScale = 0.5
 	Lighting.EnvironmentSpecularScale = 0.4
 	Lighting.GlobalShadows = true
@@ -208,38 +210,36 @@ local function buildLighting()
 	sky.Parent = Lighting
 
 	local atmosphere = Instance.new("Atmosphere")
-	atmosphere.Density = 0.3
-	atmosphere.Offset = 0.15
-	atmosphere.Color = Color3.fromRGB(205, 225, 245)
-	atmosphere.Decay = Color3.fromRGB(150, 185, 230)
-	atmosphere.Glare = 0
-	atmosphere.Haze = 1.1
+	atmosphere.Density = 0.27
+	atmosphere.Offset = 0.2
+	atmosphere.Color = Color3.fromRGB(210, 232, 255)
+	atmosphere.Decay = Color3.fromRGB(160, 200, 245)
+	atmosphere.Glare = 0.2
+	atmosphere.Haze = 0.9
 	atmosphere.Parent = Lighting
 
 	local bloom = Instance.new("BloomEffect")
-	bloom.Intensity = 0.35
-	bloom.Size = 20
-	bloom.Threshold = 2
+	bloom.Intensity = 0.45
+	bloom.Size = 24
+	bloom.Threshold = 1.7
 	bloom.Parent = Lighting
 
 	local cc = Instance.new("ColorCorrectionEffect")
-	cc.Saturation = 0.12
-	cc.Contrast = 0.1
-	cc.Brightness = 0.02
-	cc.TintColor = Color3.fromRGB(255, 249, 238)
+	cc.Saturation = 0.24
+	cc.Contrast = 0.14
+	cc.Brightness = 0.03
+	cc.TintColor = Color3.fromRGB(255, 248, 235)
 	cc.Parent = Lighting
+
+	-- soft god-rays when you look toward the sun
+	local rays = Instance.new("SunRaysEffect")
+	rays.Intensity = 0.06
+	rays.Spread = 0.7
+	rays.Parent = Lighting
 end
 
 local function buildGround(world: Folder)
-	part({
-		Name = "Ground",
-		Size = Vector3.new(World.MapHalf * 2, 4, World.MapHalf * 2),
-		CFrame = CFrame.new(0, -2, 0),
-		Material = Enum.Material.Grass,
-		Color = COLORS.grass,
-		CastShadow = false,
-	}, world)
-
+	-- The ground itself is terrain (Server/Services/Landscape): living grass, hills, water.
 	-- Invisible walls so nobody walks off the edge.
 	local half = World.MapHalf - 20
 	for i = 0, 3 do
@@ -350,28 +350,6 @@ local function buildTree(parent: Instance, pos: Vector3, scale: number, rng: Ran
 	tree.Parent = parent
 end
 
--- Rolling hills around the edge frame the valley and hide the end of the world.
-local function buildHills(world: Folder, rng: Random)
-	local hills = folder("Hills", world)
-	local count = 44
-	for i = 0, count - 1 do
-		local a = (i + rng:NextNumber() * 0.6) * (2 * math.pi / count)
-		local r = World.HillRadius + rng:NextNumber() * 60
-		local w = 150 + rng:NextNumber() * 120
-		local hgt = 55 + rng:NextNumber() * 70
-		part({
-			Name = "Hill",
-			Shape = Enum.PartType.Ball,
-			Size = Vector3.new(w, w, w),
-			CFrame = CFrame.new(math.sin(a) * r, -w / 2 + hgt, math.cos(a) * r),
-			Material = Enum.Material.Grass,
-			Color = COLORS.grassFar:Lerp(COLORS.grass, rng:NextNumber() * 0.5),
-			CastShadow = false,
-			CanCollide = false,
-		}, hills)
-	end
-end
-
 -- Is a point inside (or right next to) a farm, its barn, the plaza or a path? Decor stays out.
 local FARM_KEEP_OUT = World.farmHalf() * 1.5 + 12
 local LAUNCHERS = World.launchers()
@@ -406,7 +384,6 @@ end
 local function buildDecor(world: Folder)
 	local decor = folder("Decor", world)
 	local rng = Random.new(World.Seed)
-	buildHills(world, rng)
 
 	-- Outer ring of trees
 	local placed = 0
@@ -458,6 +435,31 @@ local function buildDecor(world: Folder)
 		end
 	end
 
+	-- Wildflowers: little clusters of three blooms dotted all over the grass
+	local wild = folder("Wildflowers", decor)
+	for _ = 1, LandscapeConfig.WildflowerClusters do
+		local a = rng:NextNumber() * 2 * math.pi
+		local r = World.PlazaRadius + 8 + rng:NextNumber() * (World.MapHalf - World.PlazaRadius - 60)
+		local center = Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
+		if not blocked(center) then
+			local color = COLORS.flowers[rng:NextInteger(1, #COLORS.flowers)]
+			for k = 1, 3 do
+				local off = Vector3.new(rng:NextNumber(-1.2, 1.2), 0, rng:NextNumber(-1.2, 1.2))
+				local h = 0.9 + rng:NextNumber() * 0.6
+				part({
+					Name = "Wildflower",
+					Shape = Enum.PartType.Ball,
+					Size = Vector3.one * (0.45 + rng:NextNumber() * 0.25),
+					CFrame = CFrame.new(center + off + Vector3.new(0, h, 0)),
+					Color = if k == 3 then COLORS.white else color,
+					CanCollide = false,
+					CanQuery = false,
+					CastShadow = false,
+				}, wild)
+			end
+		end
+	end
+
 	-- Boulders: smooth, half-sunk stones in pairs (big + small), never loose floating cubes.
 	for _ = 1, 45 do
 		local a = rng:NextNumber() * 2 * math.pi
@@ -495,6 +497,8 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 	local cell = World.PlotSize + World.PlotGap
 	local half = World.farmHalf()
 
+	-- no grass blades through the farm ground (the farm has its own mowed lawn)
+	Landscape.flatBlock(center, half * 2 + 4, half * 2 + 4)
 	local model = Instance.new("Model")
 	model.Name = "Farm_" .. id
 	model:SetAttribute("FarmId", id)
@@ -966,6 +970,7 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 	local endPos = (center * CFrame.new(0, 0, -half)).Position
 	local length = (endPos - startPos).Magnitude
 	local pathCF = CFrame.lookAt((startPos + endPos) / 2, endPos)
+	Landscape.flatBlock(pathCF, 16, length + 4)
 	part({
 		Name = "PathEdge",
 		Size = Vector3.new(13.4, 0.16, length),
@@ -1216,6 +1221,10 @@ function WorldBuilder.build(): WorldBuild
 	buildLighting()
 
 	local world = folder("World", workspace)
+	Landscape.isOpen = function(p: Vector3): boolean
+		return not blocked(p)
+	end
+	Landscape.build()
 	buildGround(world)
 	BunnyMarket.build(world)
 	local marketCFrame = CFrame.new(0, 0, 0)
