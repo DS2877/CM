@@ -16,6 +16,7 @@ local World = {
 	FarmGrid = 8, -- plots per side at the biggest farm (8 x 8 = 64)
 	PlotSize = 7,
 	PlotGap = 3,
+	PlotSoilHeight = 1.2, -- raised beds: chunky and easy to see
 	FarmPadding = 9, -- grass between plots and fence (room for the spawn pad and pedestal)
 
 	-- Ground & edges

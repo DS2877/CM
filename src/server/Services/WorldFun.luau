@@ -401,7 +401,7 @@ local function buildLake(parent: Instance)
 	local c = dir * World.LakeRadius
 	local r = World.LakeSize / 2
 	-- real terrain water with a sandy shore (waves, reflections)
-	Landscape.lake(c, r, 5)
+	Landscape.lake(c, r, 4)
 	-- reeds around the edge
 	for k = 0, 13 do
 		local a = k * math.pi * 2 / 14 + 0.2

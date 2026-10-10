@@ -69,6 +69,7 @@ local COLORS = {
 	soil = Color3.fromRGB(96, 64, 42),
 	soilFurrow = Color3.fromRGB(76, 50, 32),
 	soilEdge = Color3.fromRGB(150, 104, 62),
+	plotCorner = Color3.fromRGB(255, 244, 218),
 	path = Color3.fromRGB(196, 150, 100),
 	pathEdge = Color3.fromRGB(160, 120, 80),
 	plaza = Color3.fromRGB(238, 222, 190),
@@ -584,12 +585,13 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 	local plots: { BasePart } = {}
 	for index, c in World.PlotCells do
 		local localPos = Vector3.new(c[1] * cell, 0, c[2] * cell)
-		-- A raised bed of dark soil: reads as "something grows here", and makes every carrot
-		-- color (especially the rare ones) pop against it.
+		-- A chunky raised bed of dark soil in a bright painted frame (the farm's identity color):
+		-- easy to spot from anywhere, and every carrot color pops against the soil.
+		local soilH = World.PlotSoilHeight
 		local plot = part({
 			Name = "Plot_" .. index,
-			Size = Vector3.new(World.PlotSize, 0.8, World.PlotSize),
-			CFrame = center * CFrame.new(localPos + Vector3.new(0, 0.4, 0)),
+			Size = Vector3.new(World.PlotSize, soilH, World.PlotSize),
+			CFrame = center * CFrame.new(localPos + Vector3.new(0, soilH / 2, 0)),
 			Material = Enum.Material.Ground,
 			Color = COLORS.soil,
 			CastShadow = false,
@@ -599,23 +601,64 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 			part({
 				Name = "Furrow",
 				Size = Vector3.new(1.3, 0.25, World.PlotSize - 1.4),
-				CFrame = center * CFrame.new(localPos + Vector3.new(f * 2.1, 0.88, 0)),
+				CFrame = center * CFrame.new(localPos + Vector3.new(f * 2.1, soilH + 0.08, 0)),
 				Material = Enum.Material.Ground,
 				Color = COLORS.soilFurrow,
 				CastShadow = false,
 				CanCollide = false,
 			}, plot)
 		end
-		-- Wooden frame around the bed
-		part({
-			Name = "Rim",
-			Size = Vector3.new(World.PlotSize + 0.9, 0.6, World.PlotSize + 0.9),
-			CFrame = center * CFrame.new(localPos + Vector3.new(0, 0.3, 0)),
-			Material = Enum.Material.Wood,
-			Color = COLORS.soilEdge,
-			CastShadow = false,
-			CanQuery = false,
-		}, plot)
+		-- Painted plank frame, a little higher than the soil
+		local plankW, plankH = 0.7, soilH + 0.35
+		local outer = World.PlotSize / 2 + plankW / 2
+		for side = 0, 3 do
+			local alongX = side < 2
+			local sign = if side % 2 == 0 then 1 else -1
+			part({
+				Name = "Rim",
+				Size = if alongX
+					then Vector3.new(World.PlotSize + plankW * 2, plankH, plankW)
+					else Vector3.new(plankW, plankH, World.PlotSize),
+				CFrame = center * CFrame.new(
+					localPos
+						+ (
+							if alongX
+								then Vector3.new(0, plankH / 2, sign * outer)
+								else Vector3.new(sign * outer, plankH / 2, 0)
+						)
+				),
+				Material = Enum.Material.SmoothPlastic,
+				Color = identity,
+				CastShadow = false,
+				CanQuery = false,
+			}, plot)
+		end
+		-- Cream corner blocks with round caps (toy-like)
+		for _, cx in { -outer, outer } do
+			for _, cz in { -outer, outer } do
+				part({
+					Name = "Corner",
+					Size = Vector3.new(1.1, plankH + 0.3, 1.1),
+					CFrame = center * CFrame.new(localPos + Vector3.new(cx, (plankH + 0.3) / 2, cz)),
+					Material = Enum.Material.SmoothPlastic,
+					Color = COLORS.plotCorner,
+					CastShadow = false,
+					CanCollide = false,
+					CanQuery = false,
+				}, plot)
+				part({
+					Name = "CornerCap",
+					Shape = Enum.PartType.Ball,
+					Size = Vector3.new(1, 1, 1),
+					CFrame = center * CFrame.new(localPos + Vector3.new(cx, plankH + 0.45, cz)),
+					Material = Enum.Material.SmoothPlastic,
+					Color = COLORS.plotCorner,
+					CastShadow = false,
+					CanCollide = false,
+					CanQuery = false,
+				}, plot)
+			end
+		end
 		plot:SetAttribute("FarmId", id)
 		plot:SetAttribute("PlotIndex", index)
 		plot:SetAttribute("Unlocked", false)

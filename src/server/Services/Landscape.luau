@@ -21,9 +21,14 @@ local function rgb(t: { number }): Color3
 end
 
 local terrain: Terrain = workspace.Terrain
--- Terrain is stored in 4-stud cells. A fill must cover whole cells to change their material:
--- a thinner layer leaves the grass (and its blades) in place.
+
+-- Terrain is stored in 4-stud cells; the top layer of cells (y -4 .. 0) is the ground surface.
+-- Roblox draws a full cell's surface a bit above the cell's top, which would bury everything
+-- built at y = 0 (plots, fences, paths). So after filling, Landscape.build measures where the
+-- surface really is (a raycast) and thins the top layer until the surface sits at y = 0.
+-- Every later edit only changes the material of top cells and keeps that thickness.
 local CELL = 4
+local topOccupancy = 1
 
 -- Every terrain call is guarded: a terrain hiccup must never stop the world from being built.
 local function safe(what: string, fn: () -> ())
@@ -35,24 +40,112 @@ local function safe(what: string, fn: () -> ())
 	end
 end
 
--- Make the top cell under a flat area plain ground (no grass blades). `cf` is at ground level.
+-- Edit every top-layer cell whose center (x, z) is inside the box and passes `inside`:
+-- edit(material, occupancy) -> (material, occupancy)
+local function editTop(
+	minX: number,
+	minZ: number,
+	maxX: number,
+	maxZ: number,
+	inside: (number, number) -> boolean,
+	edit: (Enum.Material, number) -> (Enum.Material, number)
+)
+	local x0 = math.floor(minX / CELL) * CELL
+	local z0 = math.floor(minZ / CELL) * CELL
+	local x1 = math.ceil(maxX / CELL) * CELL
+	local z1 = math.ceil(maxZ / CELL) * CELL
+	local region = Region3.new(Vector3.new(x0, -CELL, z0), Vector3.new(x1, 0, z1))
+	local mats: any, occs: any = terrain:ReadVoxels(region, CELL)
+	local size: Vector3 = mats.Size
+	for ix = 1, size.X do
+		local cx = x0 + (ix - 0.5) * CELL
+		for iz = 1, size.Z do
+			local cz = z0 + (iz - 0.5) * CELL
+			if inside(cx, cz) then
+				mats[ix][1][iz], occs[ix][1][iz] = edit(mats[ix][1][iz], occs[ix][1][iz])
+			end
+		end
+	end
+	terrain:WriteVoxels(region, CELL, mats, occs)
+end
+
+-- Change the material of solid top cells (keeps the calibrated surface height)
+local function paint(material: Enum.Material): (Enum.Material, number) -> (Enum.Material, number)
+	return function(m: Enum.Material, o: number)
+		if o > 0 and m ~= Enum.Material.Air and m ~= Enum.Material.Water then
+			return material, o
+		end
+		return m, o
+	end
+end
+
+-- Where is the terrain surface at (x, z)? (nil if the ray finds no terrain)
+local function surfaceAt(x: number, z: number): number?
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { terrain }
+	local hit = workspace:Raycast(Vector3.new(x, 40, z), Vector3.new(0, -80, 0), params)
+	return if hit then hit.Position.Y else nil
+end
+
+local function everywhere(_: number, _: number): boolean
+	return true
+end
+
+-- Thin the top layer until the drawn surface sits at y = 0 (see the note at the top).
+local function calibrate()
+	local half = World.MapHalf
+	for _ = 1, 4 do
+		local h = surfaceAt(2, 2)
+		if h == nil then
+			warn("Landscape: could not measure the terrain surface")
+			return
+		end
+		if math.abs(h) < 0.1 then
+			break
+		end
+		topOccupancy = math.clamp(topOccupancy - h / CELL, 0.02, 1)
+		editTop(-half, -half, half, half, everywhere, function(m: Enum.Material, _: number)
+			return m, topOccupancy
+		end)
+	end
+end
+
+-- Make the top cells under a flat area plain ground (no grass blades). `cf` is at ground level.
 function Landscape.flatBlock(cf: CFrame, sizeX: number, sizeZ: number, material: Enum.Material?)
 	safe("flatBlock", function()
-		terrain:FillBlock(
-			cf * CFrame.new(0, -CELL / 2, 0),
-			Vector3.new(sizeX, CELL, sizeZ),
-			material or Enum.Material.Ground
-		)
+		local hx, hz = sizeX / 2, sizeZ / 2
+		local minX, minZ, maxX, maxZ = math.huge, math.huge, -math.huge, -math.huge
+		for _, c in
+			{
+				Vector3.new(hx, 0, hz),
+				Vector3.new(-hx, 0, hz),
+				Vector3.new(hx, 0, -hz),
+				Vector3.new(-hx, 0, -hz),
+			}
+		do
+			local w = cf:PointToWorldSpace(c)
+			minX, maxX = math.min(minX, w.X), math.max(maxX, w.X)
+			minZ, maxZ = math.min(minZ, w.Z), math.max(maxZ, w.Z)
+		end
+		editTop(minX, minZ, maxX, maxZ, function(x: number, z: number): boolean
+			local l = cf:PointToObjectSpace(Vector3.new(x, cf.Y, z))
+			return math.abs(l.X) <= hx and math.abs(l.Z) <= hz
+		end, paint(material or Enum.Material.Ground))
 	end)
 end
 
 function Landscape.flatDisc(pos: Vector3, radius: number, material: Enum.Material?)
 	safe("flatDisc", function()
-		terrain:FillCylinder(
-			CFrame.new(pos.X, -CELL / 2, pos.Z),
-			CELL,
-			radius,
-			material or Enum.Material.Ground
+		editTop(
+			pos.X - radius,
+			pos.Z - radius,
+			pos.X + radius,
+			pos.Z + radius,
+			function(x: number, z: number): boolean
+				return (x - pos.X) ^ 2 + (z - pos.Z) ^ 2 <= radius * radius
+			end,
+			paint(material or Enum.Material.Ground)
 		)
 	end)
 end
@@ -60,7 +153,6 @@ end
 -- A terrain lake: sandy bed and shore, real water up to ground level.
 function Landscape.lake(pos: Vector3, radius: number, depth: number)
 	safe("lake", function()
-		-- whole terrain cells only (a partial cell never replaces the grass that is already there)
 		local d = math.max(CELL, math.ceil(depth / CELL) * CELL)
 		terrain:FillCylinder(
 			CFrame.new(pos.X, -(d + CELL) / 2, pos.Z),
@@ -69,6 +161,13 @@ function Landscape.lake(pos: Vector3, radius: number, depth: number)
 			Enum.Material.Sand
 		)
 		terrain:FillCylinder(CFrame.new(pos.X, -d / 2, pos.Z), d, radius, Enum.Material.Water)
+		-- the shore and the water surface at the same height as the ground around it
+		local r = radius + 3
+		editTop(pos.X - r, pos.Z - r, pos.X + r, pos.Z + r, function(x: number, z: number): boolean
+			return (x - pos.X) ^ 2 + (z - pos.Z) ^ 2 <= r * r
+		end, function(m: Enum.Material, o: number)
+			return m, if o > 0 then topOccupancy else o
+		end)
 	end)
 end
 
@@ -100,8 +199,7 @@ function Landscape.build()
 		workspace.GlobalWind = L.Wind
 	end)
 
-	-- the valley floor: top of the grass at y = 0
-	-- (filled in tiles: one giant fill can be refused)
+	-- the valley floor, in tiles (one giant fill can be refused), then levelled to y = 0
 	local tile = 200
 	for x = -World.MapHalf, World.MapHalf - 1, tile do
 		for z = -World.MapHalf, World.MapHalf - 1, tile do
@@ -112,6 +210,7 @@ function Landscape.build()
 			)
 		end
 	end
+	safe("calibrate", calibrate)
 
 	-- rolling hills around the edge, some with rocky tops
 	local rng = Random.new(World.Seed + 11)
@@ -149,12 +248,7 @@ function Landscape.build()
 		local a = rng:NextNumber() * 2 * math.pi
 		local r = World.PlazaRadius + 20 + rng:NextNumber() * (World.MapHalf - World.PlazaRadius - 60)
 		local pos = Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
-		terrain:FillCylinder(
-			CFrame.new(pos.X, -CELL / 2, pos.Z),
-			CELL,
-			6 + rng:NextNumber() * 10,
-			Enum.Material.LeafyGrass
-		)
+		Landscape.flatDisc(pos, 6 + rng:NextNumber() * 10, Enum.Material.LeafyGrass)
 	end
 	-- the town square
 	Landscape.flatDisc(Vector3.zero, World.PlazaRadius + 6)

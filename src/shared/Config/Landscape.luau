@@ -2,7 +2,7 @@
 -- The living ground (Server/Services/Landscape): terrain grass, hills, water and wind.
 
 local Landscape = {
-	GrassLength = 0.9, -- terrain grass blades (0.1 - 1)
+	GrassLength = 0.4, -- terrain grass blades (0.1 - 1): short, so plots and paths stay easy to see
 	GrassColor = { 112, 196, 72 }, -- bright, juicy green
 	LeafyGrassColor = { 88, 176, 66 },
 	GroundColor = { 205, 160, 108 }, -- under paths and buildings (matches the dirt paths)
