@@ -508,6 +508,8 @@ local function buildFarm(farmsFolder: Folder, paths: Folder, id: number): FarmBu
 	local half = World.farmHalf()
 
 	-- no grass blades through the farm ground (the farm has its own mowed lawn)
+	-- the barn, house and level decor around the sides/back stand on leafy grass (green, no blades)
+	Landscape.flatBlock(center * CFrame.new(0, 0, 16), half * 2 + 48, half * 2 + 36, Enum.Material.LeafyGrass)
 	Landscape.flatBlock(center, half * 2 + 4, half * 2 + 4)
 	local model = Instance.new("Model")
 	model.Name = "Farm_" .. id

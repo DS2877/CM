@@ -21,6 +21,9 @@ local function rgb(t: { number }): Color3
 end
 
 local terrain: Terrain = workspace.Terrain
+-- Terrain is stored in 4-stud cells. A fill must cover whole cells to change their material:
+-- a thinner layer leaves the grass (and its blades) in place.
+local CELL = 4
 
 -- Every terrain call is guarded: a terrain hiccup must never stop the world from being built.
 local function safe(what: string, fn: () -> ())
@@ -32,12 +35,12 @@ local function safe(what: string, fn: () -> ())
 	end
 end
 
--- Make the top layer under a flat area plain ground (no grass blades). `cf` is at ground level.
+-- Make the top cell under a flat area plain ground (no grass blades). `cf` is at ground level.
 function Landscape.flatBlock(cf: CFrame, sizeX: number, sizeZ: number, material: Enum.Material?)
 	safe("flatBlock", function()
 		terrain:FillBlock(
-			cf * CFrame.new(0, -1, 0),
-			Vector3.new(sizeX, 2, sizeZ),
+			cf * CFrame.new(0, -CELL / 2, 0),
+			Vector3.new(sizeX, CELL, sizeZ),
 			material or Enum.Material.Ground
 		)
 	end)
@@ -45,16 +48,27 @@ end
 
 function Landscape.flatDisc(pos: Vector3, radius: number, material: Enum.Material?)
 	safe("flatDisc", function()
-		terrain:FillCylinder(CFrame.new(pos.X, -1, pos.Z), 2, radius, material or Enum.Material.Ground)
+		terrain:FillCylinder(
+			CFrame.new(pos.X, -CELL / 2, pos.Z),
+			CELL,
+			radius,
+			material or Enum.Material.Ground
+		)
 	end)
 end
 
 -- A terrain lake: sandy bed and shore, real water up to ground level.
 function Landscape.lake(pos: Vector3, radius: number, depth: number)
 	safe("lake", function()
-		terrain:FillCylinder(CFrame.new(pos.X, -1, pos.Z), 2, radius + 3, Enum.Material.Sand)
-		terrain:FillCylinder(CFrame.new(pos.X, -depth - 1, pos.Z), 2, radius, Enum.Material.Sand)
-		terrain:FillCylinder(CFrame.new(pos.X, -depth / 2, pos.Z), depth, radius, Enum.Material.Water)
+		-- whole terrain cells only (a partial cell never replaces the grass that is already there)
+		local d = math.max(CELL, math.ceil(depth / CELL) * CELL)
+		terrain:FillCylinder(
+			CFrame.new(pos.X, -(d + CELL) / 2, pos.Z),
+			d + CELL,
+			radius + 3,
+			Enum.Material.Sand
+		)
+		terrain:FillCylinder(CFrame.new(pos.X, -d / 2, pos.Z), d, radius, Enum.Material.Water)
 	end)
 end
 
@@ -136,8 +150,8 @@ function Landscape.build()
 		local r = World.PlazaRadius + 20 + rng:NextNumber() * (World.MapHalf - World.PlazaRadius - 60)
 		local pos = Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
 		terrain:FillCylinder(
-			CFrame.new(pos.X, -0.6, pos.Z),
-			1.2,
+			CFrame.new(pos.X, -CELL / 2, pos.Z),
+			CELL,
 			6 + rng:NextNumber() * 10,
 			Enum.Material.LeafyGrass
 		)
